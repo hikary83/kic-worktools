@@ -1,0 +1,421 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KIC 업무 도구 · IT 헬프데스크 답변</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Google Fonts & FontAwesome Icons -->
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=Noto+Sans+KR:wght@300;400;500;700;900&display=swap" rel="stylesheet" />
+  <script>
+    tailwind.config = {
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Noto Sans KR', 'Inter', 'sans-serif'],
+          },
+        }
+      }
+    }
+  </script>
+  <style>
+    /* 스크롤바 커스텀 */
+    ::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    ::-webkit-scrollbar-track {
+      background: #f1f5f9;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 4px;
+    }
+    ::-webkit-scrollbar-thumb:hover {
+      background: #94a3b8;
+    }
+  </style>
+</head>
+<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex">
+
+  <!-- 👨‍💻 LNB (사이드바) -->
+  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 shadow-xl">
+    <div class="h-20 flex items-center px-6 border-b border-slate-800 justify-between">
+      <div class="flex items-center gap-3 sidebar-brand">
+        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-500/30">▣</div>
+        <div>
+          <h1 class="text-sm font-extrabold text-white leading-tight">KIC 업무 도구</h1>
+          <span class="text-[10px] text-slate-500 font-bold block mt-0.5">IT · CMS Helper</span>
+        </div>
+      </div>
+      <button onclick="toggleSidebar()" class="w-8 h-8 rounded-lg border border-slate-700 bg-slate-800/40 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">☰</button>
+    </div>
+    
+    <nav class="flex-1 px-3 py-4 space-y-1">
+      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
+        <span class="text-lg">📈</span><span class="sidebar-text">IT 헬프데스크</span>
+      </a>
+      <a href="reply.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-600/10">
+        <span class="text-lg">💬</span><span class="sidebar-text">IT 헬프데스크 답변</span>
+      </a>
+      <a href="notice.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
+        <span class="text-lg">📢</span><span class="sidebar-text">공지사항 생성</span>
+      </a>
+      <a href="delay.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
+        <span class="text-lg">⏳</span><span class="sidebar-text">교정 지연 안내</span>
+      </a>
+      <a href="print.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
+        <span class="text-lg">🏷️</span><span class="sidebar-text">필증 출력 확인</span>
+      </a>
+    </nav>
+  </aside>
+
+  <!-- 📦 메인 콘텐츠 영역 -->
+  <main id="main-content" class="flex-1 pl-64 transition-all duration-300 min-h-screen flex flex-col">
+    <!-- 상단 헤더 -->
+    <header class="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-sm sticky top-0 z-40">
+      <div>
+        <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">💬 IT 헬프데스크 답변 생성</h1>
+        <p class="text-xs font-semibold text-slate-500 mt-1">요청사항과 답변 초안을 바탕으로 사내 공식 답변 문구를 생성합니다.</p>
+      </div>
+      <div class="flex items-center gap-3">
+        <button onclick="clearAll()" class="px-4 py-2.5 rounded-xl border border-slate-200 bg-white text-slate-600 text-sm font-bold hover:bg-slate-50 transition-all">초기화</button>
+        <button id="btnGenerate" onclick="generateReply()" class="px-5 py-2.5 rounded-xl bg-blue-600 text-white text-sm font-bold hover:bg-blue-700 shadow-md shadow-blue-500/10 hover:shadow-blue-500/20 active:scale-[0.98] transition-all">✨ 답변 생성</button>
+      </div>
+    </header>
+
+    <!-- 콘텐츠 그리드 -->
+    <div class="p-8 max-w-7xl w-full mx-auto grid grid-cols-1 lg:grid-cols-12 gap-6 flex-1">
+      
+      <!-- 좌측: 입력 카드 -->
+      <section class="lg:col-span-5 bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col gap-5 h-fit">
+        <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+          <h2 class="text-base font-extrabold text-slate-800">입력 정보</h2>
+          <span class="text-[10px] text-blue-600 bg-blue-50 font-bold px-2 py-1 rounded-md">Ctrl+V 이미지 붙여넣기 가능</span>
+        </div>
+
+        <div class="bg-blue-50/50 border border-blue-100 text-blue-800 text-xs rounded-xl p-4 leading-relaxed font-semibold">
+          💡 <b>사용 방법</b><br>
+          요청사항과 답변 초안을 입력한 뒤 답변 생성을 누르세요. 화면 캡처 이미지는 클립보드에서 <b>Ctrl+V</b>로 바로 붙여넣을 수 있습니다.
+        </div>
+
+        <!-- 이미지 업로드 영역 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-2">참고 이미지 <span class="text-slate-400 font-normal">(선택, 최대 3장)</span></label>
+          <div class="flex flex-wrap gap-3 items-center">
+            <div id="thumbs" class="flex gap-2.5 flex-wrap"></div>
+            <label for="imageInput" class="w-20 h-20 border border-dashed border-slate-300 rounded-xl bg-slate-50 flex flex-col items-center justify-center gap-1 text-slate-500 cursor-pointer hover:bg-slate-100 hover:border-slate-400 transition-all">
+              <span class="text-xl">🖼️</span>
+              <span class="text-[10px] font-bold">업로드</span>
+            </label>
+            <input id="imageInput" class="hidden" type="file" accept="image/*" multiple />
+          </div>
+        </div>
+
+        <!-- 요청사항 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-2">요청사항 입력</label>
+          <textarea id="requestText" class="w-full h-32 border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder-slate-400" placeholder="예) 전산 불량내역서 Excel 다운로드 시 직인(도장) 출력 기능 추가 요청"></textarea>
+        </div>
+
+        <!-- 답변 초안 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 mb-2">답변 초안 <span class="text-red-500">*</span></label>
+          <textarea id="draftAnswer" class="w-full h-24 border border-slate-200 rounded-xl px-3.5 py-3 text-sm focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all placeholder-slate-400" placeholder="예) 직인 출력 기능 추가 방향으로 검토 후 반영하겠습니다."></textarea>
+        </div>
+
+        <!-- 하단 액션 버튼 & 상태창 -->
+        <div class="pt-2 border-t border-slate-100">
+          <div class="flex gap-2">
+            <button onclick="generateReply()" class="flex-1 py-3 rounded-xl bg-blue-600 text-white text-sm font-extrabold hover:bg-blue-700 shadow-lg shadow-blue-600/10 active:scale-[0.98] transition-all">✨ 답변 생성</button>
+            <button onclick="loadSample()" class="px-4 py-3 rounded-xl bg-slate-100 text-slate-600 text-sm font-bold hover:bg-slate-200 active:scale-[0.98] transition-all">샘플</button>
+          </div>
+          <div id="inputStatus" class="mt-3 text-xs font-bold"></div>
+          
+          <!-- 프로그레스 바 -->
+          <div id="progressPanel" class="mt-3 bg-blue-500/90 rounded-xl h-11 hidden relative overflow-hidden shadow-md">
+            <div id="progressFill" class="absolute left-0 top-0 bottom-0 w-0 bg-blue-600 transition-all duration-300"></div>
+            <div class="absolute inset-0 flex items-center justify-center gap-2 text-white text-sm font-extrabold">
+              <span class="w-4 h-4 border-2 border-white/50 border-t-white rounded-full animate-spin"></span>
+              <span id="progressText">답변 생성 중... 0%</span>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 우측: 생성 결과 -->
+      <section class="lg:col-span-7 bg-white border border-slate-200 rounded-2xl shadow-sm p-6 flex flex-col gap-4">
+        <div class="border-b border-slate-100 pb-3 flex justify-between items-center">
+          <h2 class="text-base font-extrabold text-slate-800">생성 결과</h2>
+          <div class="flex gap-2">
+            <button onclick="enableEdit()" class="px-3 py-1.5 rounded-lg border border-slate-200 bg-white text-slate-600 text-xs font-bold hover:bg-slate-50 transition-all">✏️ 직접 수정</button>
+            <button onclick="copyResult()" class="px-3 py-1.5 rounded-lg bg-emerald-50 text-emerald-700 text-xs font-bold hover:bg-emerald-100 transition-all">📋 복사하기</button>
+          </div>
+        </div>
+
+        <div class="flex-1 flex flex-col min-h-[500px]">
+          <div id="emptyState" class="flex-1 border-2 border-dashed border-slate-200 rounded-xl bg-slate-50/50 flex flex-col items-center justify-center text-center p-8 text-slate-400">
+            <span class="text-4xl mb-3">💬</span>
+            <p class="text-sm font-bold">좌측 정보를 입력하고 답변 생성 버튼을 눌러주세요.</p>
+          </div>
+          <textarea id="resultText" class="flex-1 w-full border border-slate-200 rounded-xl px-4 py-4 text-[15px] leading-relaxed font-medium focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all hidden" readonly></textarea>
+        </div>
+        
+        <div id="resultStatus" class="text-xs font-bold"></div>
+      </section>
+
+    </div>
+  </main>
+
+  <!-- 💻 연동 용 config.js 로드 -->
+  <script src="js/config.js"></script>
+  
+  <!-- 💻 핵심 비즈니스 로직 스크립트 -->
+  <script>
+    const images = [];
+    const $ = id => document.getElementById(id);
+    
+    function setStatus(id, msg, type) {
+      const el = $(id);
+      if (!el) return;
+      el.className = 'mt-3 text-xs font-bold';
+      if (type === 'ok') el.classList.add('text-emerald-600');
+      else if (type === 'err') el.classList.add('text-rose-600');
+      else el.classList.add('text-slate-500');
+      el.textContent = msg || '';
+    }
+
+    function cleanReplyText(text) { 
+      return String(text || '').replace(/\*\*/g, '').trim(); 
+    }
+
+    function toggleSidebar() {
+      const sidebar = $('sidebar');
+      const main = $('main-content');
+      sidebar.classList.toggle('w-64');
+      sidebar.classList.toggle('w-20');
+      main.classList.toggle('pl-64');
+      main.classList.toggle('pl-20');
+      document.querySelectorAll('.sidebar-text').forEach(el => el.classList.toggle('hidden'));
+      document.querySelector('.sidebar-brand').classList.toggle('hidden');
+    }
+
+    function addImage(dataUrl, mimeType) { 
+      if (images.length >= 3) {
+        setStatus('inputStatus', '참고 이미지는 최대 3장까지 등록 가능합니다.', 'err');
+        return;
+      } 
+      images.push({ data: dataUrl, mimeType: mimeType || 'image/png' }); 
+      renderImages(); 
+      setStatus('inputStatus', '이미지가 성공적으로 추가되었습니다.', 'ok'); 
+    }
+
+    function renderImages() { 
+      const box = $('thumbs'); 
+      box.innerHTML = ''; 
+      images.forEach((img, i) => { 
+        const d = document.createElement('div'); 
+        d.className = 'relative w-20 h-20 rounded-xl overflow-hidden border border-slate-200 bg-white group'; 
+        d.innerHTML = `
+          <img src="${img.data}" class="w-full h-full object-cover">
+          <button type="button" title="삭제" class="absolute top-1 right-1 w-5 h-5 rounded-full bg-slate-900/80 text-white flex items-center justify-center text-xs font-bold hover:bg-slate-950 transition-all">×</button>
+        `; 
+        d.querySelector('button').onclick = () => {
+          images.splice(i, 1);
+          renderImages();
+        }; 
+        box.appendChild(d); 
+      }); 
+    }
+
+    function readFile(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onerror = reject;
+        reader.onload = () => {
+          const original = reader.result;
+          const img = new Image();
+          img.onerror = () => resolve({ data: original, mimeType: file.type || 'image/png' });
+          img.onload = () => {
+            const MAX_EDGE = 1600;
+            const maxEdge = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height);
+            const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 700 * 1024;
+            if (!shouldOptimize) { 
+              resolve({ data: original, mimeType: file.type || 'image/png' }); 
+              return; 
+            }
+
+            const scale = Math.min(1, MAX_EDGE / maxEdge);
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+            canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+            resolve({ data: canvas.toDataURL('image/jpeg', 0.86), mimeType: 'image/jpeg' });
+          };
+          img.src = original;
+        };
+        reader.readAsDataURL(file);
+      });
+    }
+
+    $('imageInput').addEventListener('change', async e => { 
+      const files = Array.from(e.target.files || []).slice(0, 3); 
+      for (const f of files) { 
+        if (!f.type.startsWith('image/')) continue; 
+        const img = await readFile(f); 
+        addImage(img.data, img.mimeType); 
+      } 
+      e.target.value = ''; 
+    });
+
+    document.addEventListener('paste', e => { 
+      const items = Array.from((e.clipboardData && e.clipboardData.items) || []); 
+      const imgItems = items.filter(item => item.type && item.type.indexOf('image/') === 0); 
+      if (!imgItems.length) return; 
+      e.preventDefault(); 
+      imgItems.forEach(item => { 
+        const file = item.getAsFile(); 
+        if (!file) return; 
+        readFile(file).then(img => addImage(img.data, img.mimeType)); 
+      }); 
+    });
+
+    let progressTimer = null;
+    function clearProgressTimer() { 
+      if (progressTimer) {
+        clearInterval(progressTimer); 
+        progressTimer = null;
+      } 
+    }
+
+    function setProgress(percent, state) {
+      const safe = Math.round(Math.max(0, Math.min(100, percent)));
+      const panel = $('progressPanel');
+      panel.classList.remove('hidden');
+      panel.classList.remove('bg-rose-500', 'bg-emerald-500');
+      
+      if (state === 'err') panel.classList.add('bg-rose-500');
+      if (state === 'done') panel.classList.add('bg-emerald-500');
+      
+      $('progressFill').style.width = safe + '%';
+      $('progressText').textContent = '답변 생성 중... ' + safe + '%';
+    }
+
+    function hideProgress() { 
+      clearProgressTimer(); 
+      $('progressPanel').classList.add('hidden'); 
+      $('progressFill').style.width = '0%'; 
+      $('progressText').textContent = '답변 생성 중... 0%'; 
+    }
+
+    function startProgressSimulation() {
+      clearProgressTimer();
+      let p = 13;
+      setProgress(p);
+      progressTimer = setInterval(() => {
+        if (p < 55) p += 7;
+        else if (p < 82) p += 4;
+        else if (p < 93) p += 2;
+        p = Math.min(p, 93);
+        setProgress(p);
+      }, 700);
+    }
+
+    function setGenerateButtonsBusy(busy) {
+      document.querySelectorAll('button[onclick="generateReply()"]').forEach(btn => {
+        if (busy) {
+          if (!btn.dataset.originalText) btn.dataset.originalText = btn.textContent;
+          btn.disabled = true;
+          btn.textContent = '생성 중...';
+        } else {
+          btn.disabled = false;
+          btn.textContent = btn.dataset.originalText || '✨ 답변 생성';
+        }
+      });
+    }
+
+    async function generateReply() {
+      const requestText = $('requestText').value.trim();
+      const draftAnswer = $('draftAnswer').value.trim();
+      
+      if (!requestText && images.length === 0) {
+        setStatus('inputStatus', '요청사항 또는 참고 이미지를 입력해 주세요.', 'err');
+        return;
+      }
+      if (!draftAnswer) {
+        setStatus('inputStatus', '답변 초안을 입력해 주세요.', 'err');
+        return;
+      }
+
+      setGenerateButtonsBusy(true);
+      setStatus('inputStatus', '');
+      setStatus('resultStatus', '', '');
+      startProgressSimulation();
+
+      try {
+        const res = await callGASApi("generateReply", { requestText, draftAnswer, images });
+        clearProgressTimer();
+        setProgress(100, 'done');
+        setTimeout(() => hideProgress(), 900);
+        setGenerateButtonsBusy(false);
+        
+        const text = cleanReplyText(res.text || res || '');
+        $('emptyState').classList.add('hidden');
+        $('resultText').classList.remove('hidden');
+        $('resultText').value = text;
+        setStatus('inputStatus', '', '');
+        setStatus('resultStatus', '답변이 성공적으로 생성되었습니다.', 'ok');
+      } catch (err) {
+        clearProgressTimer();
+        setProgress(100, 'err');
+        setTimeout(() => hideProgress(), 2500);
+        setGenerateButtonsBusy(false);
+        setStatus('inputStatus', err.message || String(err), 'err');
+      }
+    }
+
+    function enableEdit() { 
+      $('emptyState').classList.add('hidden'); 
+      $('resultText').classList.remove('hidden'); 
+      $('resultText').readOnly = false; 
+      $('resultText').focus(); 
+      setStatus('resultStatus', '직접 수정 모드입니다.', ''); 
+    }
+
+    async function copyResult() { 
+      const text = cleanReplyText($('resultText').value); 
+      $('resultText').value = text; 
+      if (!text) {
+        setStatus('resultStatus', '복사할 답변이 없습니다.', 'err');
+        return;
+      } 
+      try {
+        await navigator.clipboard.writeText(text);
+      } catch (e) {
+        $('resultText').select();
+        document.execCommand('copy');
+      } 
+      setStatus('resultStatus', '답변이 클립보드에 복사되었습니다.', 'ok'); 
+    }
+
+    function clearAll() { 
+      hideProgress(); 
+      images.splice(0); 
+      renderImages(); 
+      ['requestText', 'draftAnswer', 'resultText'].forEach(id => $(id).value = ''); 
+      $('resultText').readOnly = true; 
+      $('resultText').classList.add('hidden'); 
+      $('emptyState').classList.remove('hidden'); 
+      setStatus('inputStatus', '', ''); 
+      setStatus('resultStatus', '', ''); 
+    }
+
+    function loadSample() { 
+      $('requestText').value = '전산 불량내역서 Excel 다운로드 시 직인(도장) 출력 기능 추가 요청'; 
+      $('draftAnswer').value = '직인 출력 기능 추가 방향으로 검토 후 반영하겠습니다.'; 
+    }
+  </script>
+</body>
+</html>

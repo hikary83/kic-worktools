@@ -1,0 +1,610 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KIC 업무 도구 · 공지사항 생성</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    *{box-sizing:border-box}
+    body{margin:0;background:#eef2f7;color:#0f172a;font-family:Arial,'Noto Sans KR','Malgun Gothic',sans-serif}
+    .topbar{position:sticky;top:0;z-index:10;background:rgba(255,255,255,.95);border-bottom:1px solid #dbe3ee;padding:14px 22px;display:flex;justify-content:space-between;align-items:center;gap:16px}
+    .topbar h1{margin:0;font-size:20px;font-weight:900}.topbar p{margin:4px 0 0;color:#64748b;font-size:12px}
+    .btns{display:flex;gap:8px;flex-wrap:wrap;align-items:center}.btn{border:0;border-radius:10px;padding:10px 14px;font-weight:900;cursor:pointer;font-size:13px}.btn.gray{background:#f1f5f9;color:#334155}.btn.indigo{background:#eef2ff;color:#3730a3}.btn.blue{background:#2563eb;color:#fff}.btn.red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3}.btn.line{background:#fff;border:1px dashed #94a3b8;color:#334155}.btn.small{padding:8px 10px;font-size:12px;border-radius:9px}
+    .design-picker{display:flex;align-items:center;gap:8px;background:#f8fafc;border:1px solid #dbe3ee;border-radius:12px;padding:6px 10px}.design-picker span{font-size:12px;font-weight:900;color:#475569;white-space:nowrap}
+    .design-picker select{border:0;background:transparent;font-size:13px;font-weight:900;color:#0f172a;outline:none;padding-right:6px}
+    .app{max-width:1760px;margin:0 auto;padding:22px;display:grid;grid-template-columns:510px 1fr;gap:22px}
+    .panel{background:#fff;border:1px solid #dbe3ee;border-radius:20px;box-shadow:0 6px 18px rgba(15,23,42,.05);padding:18px}.editor{position:sticky;top:84px;max-height:calc(100vh - 106px);overflow:auto}
+    .hint{background:#eff6ff;border:1px solid #bfdbfe;color:#1d4ed8;border-radius:14px;padding:13px;font-size:12px;line-height:1.6;margin-bottom:18px}
+    .section-title{font-size:14px;font-weight:900;margin:18px 0 10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .label{display:block;font-size:12px;font-weight:900;color:#475569;margin:10px 0 6px}.input,.textarea,.select{width:100%;border:1px solid #cbd5e1;border-radius:12px;padding:10px 12px;font-size:13px;outline:none;background:#fff}.textarea{min-height:74px;resize:vertical}
+    .input:focus,.textarea:focus,.select:focus{border-color:#2563eb;box-shadow:0 0 0 3px rgba(37,99,235,.12)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+    .item-box{border:1px solid #dbe3ee;background:#f8fafc;border-radius:14px;padding:12px;margin-bottom:10px}.item-top{display:grid;grid-template-columns:42px 120px 1fr 74px;gap:8px;align-items:center}.rownum{display:flex;align-items:center;justify-content:center;height:40px;border-radius:10px;background:#dbeafe;color:#1d4ed8;font-size:12px;font-weight:900}.delete-btn{height:40px;border-radius:10px;border:1px solid #fecdd3;background:#fff1f2;color:#e11d48;font-weight:900;cursor:pointer}.mini-help{color:#64748b;font-size:11px;margin-top:8px;line-height:1.5}
+    .previewArea{overflow:auto;min-height:calc(100vh - 118px);background:#dbe3ee;padding:20px}.previewHeader{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:14px;color:#475569}.previewHeader h2{margin:0 0 4px;font-size:14px;font-weight:900}.previewHeader p{margin:0;font-size:12px}.previewWrap{display:flex;justify-content:center;transform-origin:top center}.status{font-size:12px;font-weight:900;color:#475569}
+
+    /* Design tokens */
+    .notice{
+      --notice-bg:linear-gradient(180deg,#ffffff 0%,#f8fbff 100%);
+      --notice-border:#0b3b91;
+      --before-bg:linear-gradient(180deg,#eaf3ff,#f7fbff);
+      --before-radius:0 24px 0 80px;
+      --after-bg:radial-gradient(circle at 50% 50%, rgba(59,130,246,.12), rgba(59,130,246,.03) 60%, transparent 70%);
+      --text:#0f172a;
+      --title:#06236d;
+      --title-accent:#2161e0;
+      --pill-bg:linear-gradient(135deg,#073887,#0e52b7);
+      --pill-text:#fff;
+      --pill-shadow:0 10px 24px rgba(14,82,183,.18);
+      --meta-bg:#edf4ff;
+      --meta-border:#d6e6ff;
+      --intro-bg:#f7fbff;
+      --intro-border:#d6e6ff;
+      --card-bg:rgba(255,255,255,.96);
+      --card-border:#d5e4ff;
+      --section-bg:linear-gradient(135deg,#073887,#0e52b7);
+      --section-text:#fff;
+      --change-bg:#fff;
+      --change-border:#d1ddf4;
+      --num-bg:#2161e0;
+      --num-text:#fff;
+      --dash-bg:#d7dee8;
+      --footer-bg:linear-gradient(135deg,#062a73,#073f93);
+      --footer-text:#fff;
+      --footer-icon-bg:#fff;
+      --footer-icon-text:#073f93;
+      --deco-opacity:.13;
+      width:1080px;min-height:1180px;height:auto;background:var(--notice-bg);border:5px solid var(--notice-border);border-radius:30px;overflow:hidden;position:relative;box-shadow:0 18px 38px rgba(15,23,42,.16);font-family:Arial,'Noto Sans KR','Malgun Gothic',sans-serif;color:var(--text)
+    }
+    .notice:before{content:"";position:absolute;right:0;top:0;width:250px;height:250px;background:var(--before-bg);border-radius:var(--before-radius)}
+    .notice:after{content:"";position:absolute;left:-90px;bottom:-120px;width:360px;height:260px;background:var(--after-bg)}
+    .deco{position:absolute;z-index:1;color:#2563eb;opacity:var(--deco-opacity);font-weight:900;pointer-events:none}
+    .deco.d1{right:74px;top:58px;font-size:72px;transform:rotate(10deg)}
+    .deco.d2{right:42px;top:168px;font-size:46px;transform:rotate(-12deg)}
+    .deco.d3{right:188px;top:132px;font-size:40px;transform:rotate(8deg)}
+    .notice-inner{position:relative;z-index:2;padding:54px 56px 44px}
+
+    .masthead{position:relative;padding:8px 0 4px}
+    .accent-bar{display:inline-block;padding:12px 22px;border-radius:999px;background:var(--pill-bg);color:var(--pill-text);font-size:20px;font-weight:900;letter-spacing:.4px;margin-bottom:18px;box-shadow:var(--pill-shadow);max-width:100%;line-height:1.15;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+    .title{margin:0;color:var(--title);font-size:72px;line-height:1.02;font-weight:1000;letter-spacing:-2.2px;max-width:960px;white-space:normal;word-break:break-all;overflow-wrap:anywhere}
+    .title .blue{color:var(--title-accent)}
+    .meta-row{display:flex;flex-wrap:wrap;gap:12px;margin-top:24px}
+    .meta-chip{display:inline-flex;align-items:center;gap:10px;padding:14px 18px;border-radius:18px;background:var(--meta-bg);border:1px solid var(--meta-border);color:var(--text);font-size:28px;font-weight:900;line-height:1.2;white-space:nowrap}
+    .meta-chip .icon{font-size:26px;line-height:1}
+    .intro-box{margin-top:22px;border:1px solid var(--intro-border);background:var(--intro-bg);border-radius:22px;padding:24px 28px}
+    .intro{margin:0;font-size:31px;line-height:1.44;font-weight:900;letter-spacing:-1.1px;max-width:100%;word-break:keep-all;overflow-wrap:anywhere}
+
+    .card{position:relative;border:2px solid var(--card-border);border-radius:28px;background:var(--card-bg);padding:92px 32px 28px;margin-top:28px;overflow:visible}
+    .label-tab{position:absolute;left:0;top:0;min-height:70px;height:70px;max-width:calc(100% - 36px);padding:0 30px;border-radius:24px 24px 24px 0;background:var(--section-bg);display:flex;align-items:center;justify-content:flex-start;text-align:left;color:var(--section-text);font-size:40px;font-weight:1000;letter-spacing:-1.2px;line-height:1.05;word-break:keep-all;white-space:normal}
+
+    /* [업데이트] Grid 대신 브라우저와 html2canvas 둘 다 오차 없이 100% 완벽히 렌더링하는 전통적 Block 모델 도입 */
+    .change-grid{display:grid;gap:18px;align-items:stretch;grid-auto-flow:row;overflow:visible}
+    .change{
+      background:var(--change-bg);
+      border:2px solid var(--change-border);
+      border-radius:28px;
+      padding:20px 14px 16px;
+      text-align:center;
+      height:202px;
+      min-height:202px;
+      box-shadow:0 3px 0 rgba(37,99,235,.03);
+      display:block;
+      box-sizing:border-box;
+    }
+    .num{
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      background:var(--num-bg);
+      color:var(--num-text);
+      font-size:23px;
+      font-weight:900;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      margin:0 auto 14px;
+      line-height:1;
+    }
+    .change .icon{
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      width:100%;
+      height:44px;
+      font-size:42px;
+      line-height:1;
+      margin:0 auto 12px;
+    }
+    .dash{display:none!important;width:0!important;height:0!important;margin:0!important;padding:0!important;border:0!important;background:transparent!important}
+    .change-text{
+      width:100%;
+      display:flex;
+      align-items:flex-start;
+      justify-content:center;
+      font-size:18px;
+      line-height:1.25;
+      font-weight:900;
+      letter-spacing:-.7px;
+      word-break:keep-all;
+      overflow-wrap:anywhere;
+      white-space:normal;
+      margin:0 auto;
+    }
+    .change-text.small{font-size:16.5px;line-height:1.24}
+    .change-text.mini{font-size:15px;line-height:1.22}
+
+    .checks{display:grid;grid-template-columns:220px 1fr;gap:14px;align-items:center}
+    .check-ill{height:230px;display:flex;align-items:center;justify-content:center;font-size:118px;line-height:1;color:#0d58dc;position:relative}.check-badge{position:absolute;right:34px;top:34px;width:76px;height:76px;border-radius:50%;background:#fff;color:#1f5edb;display:flex;align-items:center;justify-content:center;font-size:46px;line-height:1;box-shadow:0 10px 20px rgba(31,94,219,.18)}.check-list{list-style:none;padding:0;margin:0 10px 0 0}.check-list li{display:flex;gap:16px;font-size:28px;line-height:1.45;font-weight:700;color:var(--text);padding:10px 0;border-bottom:2px dashed #d1d5db;word-break:keep-all;overflow-wrap:anywhere}.check-list li.small{font-size:25px;line-height:1.38}.check-list li:last-child{border-bottom:0}.dot{width:12px;height:12px;border-radius:50%;background:#135de0;margin-top:13px;flex:0 0 auto}
+    .footer{position:relative;z-index:3;margin:30px 45px 0;height:88px;border-radius:20px;background:var(--footer-bg);color:var(--footer-text);display:flex;align-items:center;justify-content:center;gap:22px;font-size:29px;font-weight:900;box-shadow:0 12px 24px rgba(6,42,115,.24)}.footerIcon{width:62px;height:62px;border-radius:50%;background:var(--footer-icon-bg);color:var(--footer-icon-text);display:flex;align-items:center;justify-content:center;font-size:34px}
+
+    /* Design 2: soft card */
+    body.design-2 .notice{
+      --notice-bg:linear-gradient(180deg,#fffdf8 0%,#f8fbff 46%,#ffffff 100%);
+      --notice-border:#1d4ed8;
+      --before-bg:linear-gradient(180deg,#e0f2fe,#eef6ff);
+      --before-radius:0 24px 0 120px;
+      --after-bg:radial-gradient(circle at 50% 50%, rgba(251,191,36,.16), rgba(96,165,250,.06) 62%, transparent 72%);
+      --title:#12316c;
+      --title-accent:#0f6bff;
+      --pill-bg:linear-gradient(135deg,#1d4ed8,#3b82f6);
+      --meta-bg:#ffffff;
+      --meta-border:#dbeafe;
+      --intro-bg:#ffffff;
+      --intro-border:#dbeafe;
+      --card-bg:#ffffff;
+      --card-border:#dbeafe;
+      --section-bg:linear-gradient(135deg,#1e40af,#2563eb);
+      --change-bg:linear-gradient(180deg,#ffffff 0%,#fbfdff 100%);
+      --change-border:#dbeafe;
+      --num-bg:#2563eb;
+      --footer-bg:linear-gradient(135deg,#1d4ed8,#2563eb);
+      --footer-icon-text:#1d4ed8;
+      --deco-opacity:.18;
+    }
+    body.design-2 .notice:before{width:330px;height:320px}
+    body.design-2 .notice:after{left:auto;right:-80px;bottom:-60px;width:300px;height:220px}
+    body.design-2 .deco.d1{right:60px;top:92px;font-size:90px}
+    body.design-2 .deco.d2{right:150px;top:48px;font-size:54px}
+    body.design-2 .deco.d3{right:22px;top:190px;font-size:58px}
+    body.design-2 .accent-bar{letter-spacing:.2px}
+    body.design-2 .label-tab{border-radius:20px 20px 20px 0;box-shadow:0 10px 20px rgba(37,99,235,.18)}
+    body.design-2 .change{box-shadow:0 16px 24px rgba(37,99,235,.06)}
+    body.design-2 .card{box-shadow:0 8px 24px rgba(15,23,42,.04)}
+
+    /* Design 3: line + mint accent */
+    body.design-3 .notice{
+      --notice-bg:linear-gradient(180deg,#f8fbff 0%,#ffffff 100%);
+      --notice-border:#0f3b8f;
+      --before-bg:linear-gradient(180deg,#e8fff9,#eef7ff);
+      --before-radius:0 0 0 140px;
+      --after-bg:radial-gradient(circle at 50% 50%, rgba(16,185,129,.12), rgba(37,99,235,.04) 60%, transparent 72%);
+      --title:#0b2a66;
+      --title-accent:#10b981;
+      --pill-bg:linear-gradient(135deg,#0f3b8f,#114ebd);
+      --meta-bg:#f8fffd;
+      --meta-border:#c7f0e2;
+      --intro-bg:#fafdff;
+      --intro-border:#dbeafe;
+      --card-bg:#ffffff;
+      --card-border:#cfe2ff;
+      --section-bg:linear-gradient(135deg,#0f3b8f,#2563eb);
+      --change-bg:#ffffff;
+      --change-border:#d8e8ff;
+      --num-bg:#10b981;
+      --num-text:#ffffff;
+      --dash-bg:#bfe9dd;
+      --footer-bg:linear-gradient(135deg,#0f3b8f,#0b57c9);
+      --footer-icon-text:#10b981;
+      --deco-opacity:.14;
+    }
+    body.design-3 .notice:before{width:300px;height:300px}
+    body.design-3 .deco{color:#10b981}
+    body.design-3 .accent-bar{box-shadow:none;border:2px solid rgba(255,255,255,.4)}
+    body.design-3 .meta-chip{border-width:2px}
+    body.design-3 .label-tab{box-shadow:none}
+    body.design-3 .change{border-style:solid;box-shadow:none}
+    body.design-3 .footer{box-shadow:none}
+    body.design-3 .dot{background:#10b981}
+    body.design-3 .check-badge{color:#10b981}
+
+
+    /* PNG 내보내기: 입력값 텍스트가 살짝 위로 뜨는 현상을 보정합니다. */
+    .notice.notice-export .label-tab {
+      align-items: center !important;
+      padding-top: 8px !important;
+      line-height: 1 !important;
+    }
+    .notice.notice-export .meta-chip {
+      padding-top: 16px !important;
+      padding-bottom: 12px !important;
+    }
+    .notice.notice-export .intro {
+      transform: translateY(2px) !important;
+    }
+    .notice.notice-export .change-text {
+      transform: translateY(4px) !important;
+    }
+    .notice.notice-export .change .icon {
+      transform: translateY(1px) !important;
+    }
+    .notice.notice-export .check-list li {
+      align-items: flex-start !important;
+    }
+    .notice.notice-export .check-list li span:last-child {
+      display: inline-block !important;
+      transform: translateY(4px) !important;
+    }
+    .notice.notice-export .footer {
+      align-items: center !important;
+      padding-top: 3px !important;
+    }
+
+    @media(max-width:1280px){.previewWrap{transform:scale(.68);height:930px}.app{grid-template-columns:470px 1fr}}
+    @media(max-width:980px){.app{grid-template-columns:1fr}.editor{position:static;max-height:none}.previewWrap{transform:scale(.55);height:760px}.item-top{grid-template-columns:42px 1fr 68px}.item-top .select{grid-column:2 / span 1}.item-top .input{grid-column:1 / -1}}
+
+    /* KIC 업무 도구 통합 UI 보정 */
+    body{background:#f8fafc!important;color:#1e293b!important;font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif!important}
+    .topbar{position:static!important;top:auto!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;padding:18px 20px!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04)!important;margin:22px auto 20px!important;width:calc(100% - 44px)!important;max-width:1440px!important}
+    .topbar h1{font-size:22px!important;font-weight:900!important;color:#1e293b!important;letter-spacing:-.4px!important}.topbar p{color:#64748b!important;font-weight:700!important}
+    .app{max-width:1500px!important;padding:0 22px 22px!important;grid-template-columns:420px 1fr!important;gap:20px!important}.panel{border:1px solid #e2e8f0!important;border-radius:16px!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04)!important}.editor{top:22px!important}
+    .hint{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important;border-radius:12px!important}.section-title{color:#1e293b!important;border-bottom-color:#e2e8f0!important}.label{color:#475569!important}.input,.textarea,.select{border-color:#cbd5e1!important;border-radius:10px!important}.btn{border-radius:10px!important;font-size:13px!important}.btn.blue{background:#2563eb!important}.btn.gray{background:#f1f5f9!important;color:#475569!important}.btn.indigo{background:#eef2ff!important;color:#3730a3!important}.design-picker{border-color:#e2e8f0!important;background:#f8fafc!important;border-radius:10px!important}.previewArea{background:#f1f5f9!important;border:1px solid #e2e8f0!important;border-radius:16px!important;min-height:calc(100vh - 120px)!important}.previewHeader{color:#64748b!important}.previewHeader h2{color:#1e293b!important}
+    @media(max-width:980px){.app{grid-template-columns:1fr!important}.editor{position:static!important}.previewWrap{transform:scale(.55)!important;height:760px!important}}
+
+  </style>
+
+  <style>
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb *{box-sizing:border-box}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
+    .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
+    .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-link:hover{background:#1e293b;color:#fff}
+    .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
+    .kic-tool-offset{min-height:100vh;margin-left:244px;background:#f8fafc}
+
+    .kic-lnb-toggle{margin-left:auto;width:34px;height:34px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(255,255,255,.06);color:#cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
+    .kic-lnb-toggle:hover{background:#1e293b;color:#fff}
+    body.kic-lnb-collapsed .kic-lnb{width:76px}
+    body.kic-lnb-collapsed .kic-tool-offset{margin-left:76px}
+    body.kic-lnb-collapsed .kic-lnb-brand{height:112px;padding:12px 8px;justify-content:flex-start;flex-direction:column;gap:8px}
+    body.kic-lnb-collapsed .kic-lnb-logo{width:40px;height:40px;border-radius:13px;font-size:18px;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
+    body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px}
+    body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
+    body.kic-lnb-collapsed .kic-lnb-link{position:relative}
+    body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
+    @media(max-width:900px){body.kic-lnb-collapsed .kic-lnb{width:auto}.kic-lnb-toggle{display:none}body.kic-lnb-collapsed .kic-tool-offset{margin-left:0}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
+
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto}.kic-lnb-link{flex:0 0 auto}.kic-tool-offset{margin-left:0}}
+  </style>
+
+  <style>body.kic-with-lnb{padding-left:244px!important}body.kic-lnb-collapsed.kic-with-lnb{padding-left:76px!important}@media(max-width:900px){body.kic-with-lnb,body.kic-lnb-collapsed.kic-with-lnb{padding-left:0!important}}</style>
+</head>
+<body class="design-1 kic-with-lnb">
+
+  <aside class="kic-lnb">
+    <div class="kic-lnb-brand">
+      <div class="kic-lnb-logo">▣</div>
+      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div><button class="kic-lnb-toggle" type="button" onclick="toggleKicLnb()" title="메뉴 접기/펼치기">☰</button>
+    </div>
+    <nav class="kic-lnb-nav">
+      <a class="kic-lnb-link" data-title="IT 헬프데스크" href="index.html"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
+      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="reply.html"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
+      <a class="kic-lnb-link kic-active" data-title="공지사항 생성" href="notice.html"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
+      <a class="kic-lnb-link" data-title="교정 지연 안내" href="delay.html"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
+      <a class="kic-lnb-link" data-title="필증 출력 확인" href="print.html"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
+    </nav>
+  </aside>
+
+  <div class="topbar">
+    <div>
+      <h1><span style="color:#2563eb">📢</span> 공지사항 생성</h1>
+      <p>CMS 업데이트 공지 이미지와 공지글을 생성합니다.</p>
+    </div>
+    <div class="btns">
+      <label class="design-picker">
+        <span>디자인 선택</span>
+        <select id="designSelect">
+          <option value="design-1">시안 1 · 클래식 블루</option>
+          <option value="design-2">시안 2 · 소프트 카드</option>
+          <option value="design-3">시안 3 · 민트 포인트</option>
+        </select>
+      </label>
+      <button class="btn gray" id="btnSample">샘플 불러오기</button>
+      <button class="btn indigo" id="btnCopy">공지글 복사</button>
+      <button class="btn blue" id="btnDownload">PNG 다운로드</button>
+    </div>
+  </div>
+
+  <main class="app">
+    <aside class="panel editor">
+      <div class="hint"><b>사용 방법</b><br>왼쪽에 내용을 입력하면 오른쪽 미리보기가 자동으로 바뀝니다. 우측 상단에서 디자인 시안을 바꿔가며 비교할 수 있습니다.</div>
+
+      <div class="section-title">기본 정보</div>
+      <label class="label">상단 배지 문구</label>
+      <input id="topBadge" class="input">
+      <label class="label">제목</label>
+      <input id="title" class="input">
+      <div class="grid2">
+        <div><label class="label">적용일</label><input id="date" class="input"></div>
+        <div><label class="label">대상</label><input id="target" class="input"></div>
+      </div>
+      <label class="label">소개 문구</label>
+      <textarea id="intro" class="textarea"></textarea>
+      <label class="label">하단 안내 문구</label>
+      <input id="footer" class="input">
+
+      <div class="section-title">섹션 문구</div>
+      <div class="grid2">
+        <div><label class="label">주요 반영 사항 제목</label><input id="changesTitle" class="input"></div>
+        <div><label class="label">확인 필요 사항 제목</label><input id="checksTitle" class="input"></div>
+      </div>
+
+      <div class="section-title">
+        <span>주요 반영 사항</span>
+        <button class="btn line small" id="btnAddChange" type="button">+ 항목 추가</button>
+      </div>
+      <div id="changeInputs"></div>
+      <div class="mini-help">※ 최대 9개까지 권장합니다. 4개 이상이면 자동으로 2~3열 배치됩니다.</div>
+
+      <div class="section-title">
+        <span>확인 필요 사항</span>
+        <button class="btn line small" id="btnAddCheck" type="button">+ 항목 추가</button>
+      </div>
+      <div id="checkInputs"></div>
+      <div class="mini-help">※ 긴 문구도 카드 폭에 맞춰 자동 줄바꿈됩니다.</div>
+
+      <div class="section-title">옵션</div>
+      <button class="btn red" id="btnClear" style="width:100%">입력값 초기화</button>
+    </aside>
+
+    <section class="previewArea">
+      <div class="previewHeader">
+        <div><h2>미리보기</h2><p>다운로드 시 미리보기 영역만 이미지로 저장됩니다.</p></div>
+        <span id="status" class="status"></span>
+      </div>
+      <div class="previewWrap">
+        <div id="notice" class="notice">
+          <div class="deco d1">✦</div><div class="deco d2">⚙</div><div class="deco d3">↻</div>
+          <div class="notice-inner">
+            <section class="masthead">
+              <div id="pTopBadge" class="accent-bar">KIC CMS UPDATE NOTICE</div>
+              <h1 id="pTitle" class="title"></h1>
+              <div class="meta-row">
+                <div class="meta-chip"><span class="icon">🗓️</span><span>적용일: <span id="pDate"></span></span></div>
+                <div class="meta-chip"><span class="icon">👤</span><span>대상: <span id="pTarget"></span></span></div>
+              </div>
+              <div class="intro-box">
+                <p id="pIntro" class="intro"></p>
+              </div>
+            </section>
+
+            <section class="card">
+              <div id="pChangesTitle" class="label-tab">📋 주요 반영 사항</div>
+              <div id="pChanges" class="change-grid"></div>
+            </section>
+
+            <section class="card">
+              <div id="pChecksTitle" class="label-tab">❕ 확인 필요 사항</div>
+              <div class="checks">
+                <div class="check-ill">📋<div class="check-badge">✓</div></div>
+                <ul id="pChecks" class="check-list"></ul>
+              </div>
+            </section>
+
+            <div class="footer"><div class="footerIcon">📣</div><span id="pFooter"></span></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <script>
+    const sample = {
+      topBadge:'KIC CMS UPDATE NOTICE',
+      title:'CMS 2026년 2분기 정기 업데이트 안내',
+      date:'2026년 6월 22일',
+      target:'전 지사 CMS 사용자',
+      intro:'이번 업데이트는 현업 요청사항을 바탕으로 업무 편의성 개선과 오류 수정 중심으로 반영되었습니다.',
+      footer:'자세한 내용은 공지 본문을 확인해 주세요.',
+      changesTitle:'주요 반영 사항',
+      checksTitle:'확인 필요 사항',
+      changes:[
+        {icon:'🖥️', text:'접수/입고 화면 사용성 개선'},
+        {icon:'🐞', text:'성적서 출력 관련 오류 수정'},
+        {icon:'📝', text:'승인 후 수정 사유 문구 정정'},
+        {icon:'🔍', text:'CWIZ 업체 정보 조회 안정화'},
+        {icon:'🖱️', text:'공통 화면 문구 및 버튼명 정리'}
+      ],
+      checks:[
+        '업데이트 후 기존 업무는 동일하게 이용 가능합니다.',
+        '일부 메뉴명, 선택 항목, 안내 문구가 변경되었을 수 있습니다.',
+        '오류 발생 시 화면 캡처, 접수번호, 업체명, 발생 메뉴를 함께 전달해 주세요.'
+      ]
+    };
+
+    const iconOptions = [
+      ['🖥️','화면'],['🐞','오류'],['📝','문구'],['🔍','조회'],['🖱️','버튼'],['⚙️','설정'],['📄','문서'],['📊','통계'],['🔗','연동'],['🛡️','보안'],['✅','완료'],['📌','안내']
+    ];
+
+    let changeItems = [];
+    let checkItems = [];
+    function esc(v){return String(v||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;')}
+    function filenameSafe(t){return String(t||'CMS_업데이트_공지').replace(/[\\/:*?"<>|]/g,'').replace(/\s+/g,'_').slice(0,80)+'.png'}
+    function setStatus(t){const el=document.getElementById('status');el.textContent=t;clearTimeout(window.__timer);window.__timer=setTimeout(()=>el.textContent='',3000)}
+    function splitTitle(t){t=String(t||'').trim();const key='정기 업데이트 안내';if(!t)return 'CMS 업데이트 안내';if(t.includes(key)){return esc(t.replace(key,'')).trim()+' <span class="blue">'+esc(key)+'</span>'}return esc(t)}
+    function changeTextClass(text){const len=String(text||'').replace(/\s+/g,'').length; if(len>24) return 'mini'; if(len>14) return 'small'; return '';}
+    function checkTextClass(text){const len=String(text||'').replace(/\s+/g,'').length; return len>38 ? 'small' : '';}
+    function iconSelectHtml(selected){return `<select class="select change-icon">${iconOptions.map(([icon,label])=>`<option value="${icon}" ${selected===icon?'selected':''}>${icon} ${label}</option>`).join('')}</select>`;}
+    function applyDesign(value){document.body.classList.remove('design-1','design-2','design-3');document.body.classList.add(value||'design-1');updateNoticeHeight();}
+
+    function renderChangeInputs(){
+      const box=document.getElementById('changeInputs'); box.innerHTML='';
+      changeItems.forEach((item,index)=>{
+        const row=document.createElement('div'); row.className='item-box';
+        row.innerHTML=`<div class="item-top"><span class="rownum">${String(index+1).padStart(2,'0')}</span>${iconSelectHtml(item.icon)}<input class="input change-text-input" placeholder="주요 반영 사항 ${index+1}" value="${esc(item.text)}"><button class="delete-btn" type="button">삭제</button></div>`;
+        row.querySelector('.change-icon').addEventListener('change',e=>{changeItems[index].icon=e.target.value; render();});
+        row.querySelector('.change-text-input').addEventListener('input',e=>{changeItems[index].text=e.target.value; render();});
+        row.querySelector('.delete-btn').addEventListener('click',()=>{ if(changeItems.length===1){alert('주요 반영 사항은 최소 1개 이상 있어야 합니다.'); return;} changeItems.splice(index,1); renderChangeInputs(); render(); });
+        box.appendChild(row);
+      });
+    }
+    function renderCheckInputs(){
+      const box=document.getElementById('checkInputs'); box.innerHTML='';
+      checkItems.forEach((item,index)=>{
+        const row=document.createElement('div'); row.className='item-box';
+        row.innerHTML=`<div class="item-top" style="grid-template-columns:42px 1fr 74px"><span class="rownum">${index+1}</span><input class="input check-text-input" placeholder="확인 필요 사항 ${index+1}" value="${esc(item)}"><button class="delete-btn" type="button">삭제</button></div>`;
+        row.querySelector('.check-text-input').addEventListener('input',e=>{checkItems[index]=e.target.value; render();});
+        row.querySelector('.delete-btn').addEventListener('click',()=>{ if(checkItems.length===1){alert('확인 필요 사항은 최소 1개 이상 있어야 합니다.'); return;} checkItems.splice(index,1); renderCheckInputs(); render(); });
+        box.appendChild(row);
+      });
+    }
+    function addChange(icon='📌', text=''){ if(changeItems.length>=9){alert('주요 반영 사항은 최대 9개까지 권장합니다.'); return;} changeItems.push({icon,text}); renderChangeInputs(); render(); }
+    function addCheck(text=''){ if(checkItems.length>=7){alert('확인 필요 사항은 최대 7개까지 권장합니다.'); return;} checkItems.push(text); renderCheckInputs(); render(); }
+    function loadSample(){
+      document.getElementById('topBadge').value=sample.topBadge;
+      document.getElementById('title').value=sample.title;
+      document.getElementById('date').value=sample.date;
+      document.getElementById('target').value=sample.target;
+      document.getElementById('intro').value=sample.intro;
+      document.getElementById('footer').value=sample.footer;
+      document.getElementById('changesTitle').value=sample.changesTitle;
+      document.getElementById('checksTitle').value=sample.checksTitle;
+      changeItems=sample.changes.map(v=>({icon:v.icon,text:v.text}));
+      checkItems=sample.checks.slice();
+      renderChangeInputs(); renderCheckInputs(); render();
+    }
+    function clearForm(){
+      ['topBadge','title','date','target','intro','footer','changesTitle','checksTitle'].forEach(id=>document.getElementById(id).value='');
+      changeItems=[{icon:'📌', text:''}]; checkItems=['']; renderChangeInputs(); renderCheckInputs(); render();
+    }
+    function render(){
+      const topBadgeValue=document.getElementById('topBadge').value||'KIC CMS UPDATE NOTICE';
+      const titleValue=document.getElementById('title').value||'CMS 업데이트 안내';
+      document.getElementById('pTopBadge').textContent=topBadgeValue;
+      document.getElementById('pTitle').innerHTML=splitTitle(titleValue);
+      const titleEl=document.getElementById('pTitle');
+      const titleLen=String(titleValue).replace(/\s+/g,'').length;
+      titleEl.style.fontSize = titleLen > 34 ? '56px' : (titleLen > 22 ? '64px' : '72px');
+      document.getElementById('pDate').textContent=document.getElementById('date').value||'-';
+      document.getElementById('pTarget').textContent=document.getElementById('target').value||'-';
+      document.getElementById('pIntro').textContent=document.getElementById('intro').value||'';
+      document.getElementById('pFooter').textContent=document.getElementById('footer').value||'자세한 내용은 공지 본문을 확인해 주세요.';
+      document.getElementById('pChangesTitle').innerHTML='📋 '+esc(document.getElementById('changesTitle').value||'주요 반영 사항');
+      document.getElementById('pChecksTitle').innerHTML='❕ '+esc(document.getElementById('checksTitle').value||'확인 필요 사항');
+
+      const rawChanges=changeItems.slice(0,9).map(v=>({icon:v.icon || '📌', text:String(v.text||'').trim()}));
+      const lastFilledIndex=rawChanges.reduce((last,item,idx)=> item.text ? idx : last, -1);
+      const changes=lastFilledIndex >= 0 ? rawChanges.slice(0, lastFilledIndex + 1) : [];
+      const pc=document.getElementById('pChanges'); pc.innerHTML='';
+      const visible=changes.length?changes:[{icon:'📌', text:'주요 반영 사항을 입력해 주세요.'}];
+      let cols=1; const count=visible.length;
+      if(count>=7) cols=3; else if(count>=4) cols=3; else if(count===3) cols=3; else if(count===2) cols=2;
+      pc.style.gridTemplateColumns=`repeat(${cols}, 1fr)`;
+      visible.forEach((item,i)=>{ const displayText=item.text || '내용 입력'; pc.insertAdjacentHTML('beforeend', `<div class="change"><div class="num">${String(i+1).padStart(2,'0')}</div><div class="icon">${esc(item.icon)}</div><div class="change-text ${changeTextClass(displayText)}">${esc(displayText)}</div></div>`); });
+
+      const checks=checkItems.map(v=>String(v||'').trim()).filter(Boolean);
+      const pk=document.getElementById('pChecks'); pk.innerHTML='';
+      (checks.length?checks:['확인 필요 사항을 입력해 주세요.']).forEach(txt=>{ pk.insertAdjacentHTML('beforeend', `<li class="${checkTextClass(txt)}"><span class="dot"></span><span>${esc(txt)}</span></li>`); });
+
+      updateNoticeHeight();
+    }
+
+    function getNoticeContentHeight(targetNotice) {
+      const notice = targetNotice || document.getElementById('notice');
+      if (!notice) return 1180;
+      const inner = notice.querySelector('.notice-inner');
+      if (!inner) return 1180;
+      const innerHeight = Math.ceil(Math.max(inner.scrollHeight, inner.getBoundingClientRect().height));
+      return Math.max(980, innerHeight + 14);
+    }
+
+    function updateNoticeHeight(){
+      const notice=document.getElementById('notice');
+      if(!notice) return;
+      const apply=()=>{
+        notice.style.minHeight='0';
+        notice.style.height='auto';
+        const h=getNoticeContentHeight(notice);
+        notice.style.height=h+'px';
+      };
+      requestAnimationFrame(apply);
+      setTimeout(apply, 80);
+      setTimeout(apply, 220);
+    }
+    function noticeText(){
+      const changes=changeItems.map(v=>String(v.text||'').trim()).filter(Boolean);
+      const checks=checkItems.map(v=>String(v||'').trim()).filter(Boolean);
+      return `${document.getElementById('title').value.trim()}\n\n${document.getElementById('intro').value.trim()}\n\n1. 업데이트 정보\n- 적용일: ${document.getElementById('date').value.trim()}\n- 대상: ${document.getElementById('target').value.trim()}\n\n2. ${document.getElementById('changesTitle').value.trim()||'주요 반영 사항'}\n${changes.map((v,i)=>`${i+1}) ${v}`).join('\n')}\n\n3. ${document.getElementById('checksTitle').value.trim()||'확인 필요 사항'}\n${checks.map(v=>`- ${v}`).join('\n')}\n\n자세한 내용은 첨부된 이미지 및 공지 내용을 확인해 주세요.`;
+    }
+    async function copyText(){
+      try{await navigator.clipboard.writeText(noticeText())}catch(e){const ta=document.createElement('textarea');ta.value=noticeText();document.body.appendChild(ta);ta.select();document.execCommand('copy');ta.remove()}
+      setStatus('공지글이 복사되었습니다.');
+    }
+    async function downloadPng(){
+      const btn=document.getElementById('btnDownload'); const old=btn.innerHTML; btn.disabled=true; btn.innerHTML='생성 중...'; setStatus('이미지 생성 중...');
+      try{
+        if(document.fonts&&document.fonts.ready) await document.fonts.ready;
+        updateNoticeHeight();
+        await new Promise(resolve => setTimeout(resolve, 260));
+        const original=document.getElementById('notice');
+        updateNoticeHeight();
+        await new Promise(resolve => requestAnimationFrame(resolve));
+        const clone=original.cloneNode(true);
+        clone.classList.add('notice-export');
+        
+        clone.style.minHeight='0';
+        clone.style.height='auto';
+        
+        const holder=document.createElement('div');
+        holder.style.position='fixed'; holder.style.left='-99999px'; holder.style.top='0'; holder.style.width='1080px'; holder.style.background='#fff';
+        holder.className = document.body.className;
+        holder.appendChild(clone); document.body.appendChild(holder);
+        const exportHeight=getNoticeContentHeight(clone);
+        clone.style.height=exportHeight+'px';
+        const canvas=await html2canvas(clone,{backgroundColor:'#ffffff',scale:2,useCORS:true,logging:false,width:1080,height:exportHeight,windowWidth:1080,windowHeight:exportHeight+20,scrollX:0,scrollY:0});
+        holder.remove();
+        const a=document.createElement('a'); a.download=filenameSafe(document.getElementById('title').value); a.href=canvas.toDataURL('image/png'); a.click(); setStatus('PNG 다운로드 완료');
+      }catch(e){alert('PNG 생성 중 오류가 발생했습니다.\n'+e.message); setStatus('PNG 생성 실패');}
+      finally{btn.disabled=false; btn.innerHTML=old;}
+    }
+    function init(){
+      changeItems=[{icon:'📌', text:''}]; checkItems=['']; renderChangeInputs(); renderCheckInputs();
+      document.querySelectorAll('input,textarea').forEach(el=>el.addEventListener('input', render));
+      document.getElementById('designSelect').addEventListener('change',e=>applyDesign(e.target.value));
+      document.getElementById('btnAddChange').addEventListener('click',()=>addChange());
+      document.getElementById('btnAddCheck').addEventListener('click',()=>addCheck());
+      document.getElementById('btnSample').addEventListener('click',loadSample);
+      document.getElementById('btnClear').addEventListener('click',clearForm);
+      document.getElementById('btnCopy').addEventListener('click',copyText);
+      document.getElementById('btnDownload').addEventListener('click',downloadPng);
+      applyDesign('design-1');
+      loadSample();
+    }
+    document.addEventListener('DOMContentLoaded', init);
+  </script>
+
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('kicLnbCollapsed') === 'Y') {
+          document.body.classList.add('kic-lnb-collapsed');
+        }
+      } catch(e) {}
+    })();
+    function toggleKicLnb(){
+      document.body.classList.toggle('kic-lnb-collapsed');
+      try {
+        localStorage.setItem('kicLnbCollapsed', document.body.classList.contains('kic-lnb-collapsed') ? 'Y' : 'N');
+      } catch(e) {}
+    }
+  </script>
+
+</body>
+</html>

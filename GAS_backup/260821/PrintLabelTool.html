@@ -1,0 +1,337 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KIC 업무 도구 · 필증 출력 확인</title>
+  <style>
+    :root{
+      --bg:#f6f8fc; --card:#ffffff; --line:#dbe4f0; --text:#0f172a; --muted:#64748b;
+      --blue:#2563eb; --blue-dark:#143f9d; --blue-soft:#eff6ff; --green:#10b981; --red:#ef4444; --orange:#f97316;
+      --shadow:0 18px 38px rgba(15,23,42,.08); --radius:22px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0;min-height:100vh;font-family:"Noto Sans KR","Malgun Gothic",Arial,sans-serif;color:var(--text);background:radial-gradient(circle at 18% 10%,rgba(37,99,235,.12),transparent 30%),radial-gradient(circle at 88% 12%,rgba(16,185,129,.10),transparent 26%),var(--bg)}
+    .wrap{max-width:1200px;margin:0 auto;padding:34px 22px 44px}
+    .top{display:flex;justify-content:space-between;align-items:flex-start;gap:20px;margin-bottom:22px}
+    .title h1{margin:0;font-size:30px;letter-spacing:-.8px;display:flex;align-items:center;gap:10px}
+    .title p{margin:8px 0 0;color:var(--muted);font-size:14px;line-height:1.55}
+    .badge{display:inline-flex;align-items:center;gap:8px;background:#0b2a66;color:#fff;border-radius:999px;padding:10px 16px;font-weight:900;font-size:13px;box-shadow:0 12px 24px rgba(11,42,102,.16);white-space:nowrap}
+    .grid{display:grid;grid-template-columns:360px 1fr;gap:22px;align-items:start}
+    .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);overflow:hidden}
+    .card-head{padding:18px 20px;background:linear-gradient(135deg,#f8fbff,#ffffff);border-bottom:1px solid var(--line);display:flex;justify-content:space-between;align-items:center;gap:12px}
+    .card-head h2{margin:0;font-size:17px;letter-spacing:-.3px}
+    .card-head .caption{font-size:12px;color:#64748b;font-weight:900;white-space:nowrap}
+    .card-body{padding:20px}
+    .hint{background:var(--blue-soft);border:1px solid #bfdbfe;color:#1d4ed8;border-radius:16px;padding:13px 14px;font-size:13px;line-height:1.6;margin-bottom:18px}
+    label{display:block;font-weight:900;font-size:13px;color:#334155;margin:14px 0 7px}
+    .required{color:var(--red)}
+    input,select,textarea{width:100%;border:1px solid #cbd5e1;border-radius:14px;background:#fff;padding:12px 13px;font-size:14px;outline:none;color:var(--text);font-family:inherit}
+    textarea{min-height:184px;resize:vertical;font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;font-size:12px;line-height:1.55}
+    input:focus,select:focus,textarea:focus{border-color:var(--blue);box-shadow:0 0 0 4px rgba(37,99,235,.12)}
+    .radio-group{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+    .radio-card{position:relative;border:1px solid #cbd5e1;border-radius:14px;background:#fff;padding:12px 12px;cursor:pointer;display:flex;align-items:center;gap:9px;font-size:13px;font-weight:900;color:#334155}
+    .radio-card input{width:auto;margin:0;accent-color:var(--blue)}
+    .radio-card:has(input:checked){border-color:var(--blue);background:#eff6ff;color:#1d4ed8;box-shadow:0 0 0 3px rgba(37,99,235,.10)}
+    .btns{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+    button{border:0;border-radius:14px;padding:12px 15px;font-weight:900;cursor:pointer;font-family:inherit;font-size:14px;transition:.15s transform,.15s opacity,.15s background}
+    button:active{transform:scale(.98)}
+    .primary{background:var(--blue);color:#fff;box-shadow:0 10px 20px rgba(37,99,235,.20)}
+    .dark{background:#0f172a;color:#fff}.soft{background:#eef2ff;color:#3730a3;border:1px solid #c7d2fe}.ghost{background:#f1f5f9;color:#334155;border:1px solid #e2e8f0}.danger{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3}
+    .status{margin-top:12px;font-size:13px;font-weight:900;color:var(--muted);min-height:20px;line-height:1.5}.status.ok{color:var(--green)}.status.err{color:var(--red)}.status.warn{color:var(--orange)}
+    .small-note{margin-top:16px;background:#f8fafc;border:1px dashed #cbd5e1;border-radius:14px;padding:12px 13px;color:#64748b;font-size:12px;line-height:1.6}
+    .response-help{background:#fff7ed;border:1px solid #fed7aa;color:#9a3412;border-radius:14px;padding:12px 13px;font-size:12px;line-height:1.6;margin-bottom:12px}
+    .parsed-summary{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:14px 0}.summary-pill{border:1px solid #dbeafe;background:#eff6ff;border-radius:15px;padding:13px 14px}.summary-pill b{display:block;color:#1d4ed8;font-size:12px;margin-bottom:4px}.summary-pill span{font-size:18px;font-weight:900;color:#0f172a}
+    .label-card-list{display:grid;grid-template-columns:1fr;gap:12px;margin-top:12px}.label-card{border:1px solid #dbe4f0;background:#fff;border-radius:18px;padding:16px;box-shadow:0 6px 16px rgba(15,23,42,.04)}
+    .label-card-head{display:flex;justify-content:space-between;align-items:center;gap:10px;margin-bottom:12px;border-bottom:1px dashed #dbe4f0;padding-bottom:10px}.label-card-title{font-size:15px;font-weight:900;color:#0f172a;letter-spacing:-.2px}.label-card-no{font-family:ui-monospace,SFMono-Regular,Consolas,"Liberation Mono",monospace;background:#0f172a;color:#fde68a;border-radius:999px;padding:5px 9px;font-size:12px;font-weight:900;white-space:nowrap}
+    .label-fields{display:grid;grid-template-columns:160px 1fr;gap:8px 12px;align-items:start}.label-fields .k{font-size:12px;font-weight:900;color:#475569;background:#f8fafc;border-radius:8px;padding:7px 8px}.label-fields .v{font-size:13px;font-weight:800;color:#0f172a;padding:7px 0;word-break:break-all}
+    .empty-state{border:1px dashed #cbd5e1;background:#f8fafc;border-radius:16px;padding:20px;text-align:center;color:#94a3b8;font-weight:900;font-size:13px;line-height:1.6}
+    .footer-note{margin-top:22px;color:#64748b;font-size:12px;line-height:1.6;text-align:center}
+    @media(max-width:900px){.grid{grid-template-columns:1fr}.top{flex-direction:column}.badge{align-self:flex-start}.parsed-summary{grid-template-columns:1fr}.label-fields{grid-template-columns:1fr}.label-fields .v{padding-left:8px}.radio-group{grid-template-columns:1fr}}
+
+    /* KIC 업무 도구 통합 UI 보정 */
+    body{background:#f8fafc!important;color:#1e293b!important;font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif!important}.wrap{max-width:1420px!important;padding:22px!important}.top{background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px 20px;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04);margin-bottom:20px}.title h1{font-size:22px!important;color:#1e293b!important}.title p{color:#64748b!important}.badge{background:#eff6ff!important;color:#1d4ed8!important;box-shadow:none!important;border:1px solid #bfdbfe!important}.grid{grid-template-columns:380px 1fr!important}.card{border-color:#e2e8f0!important;border-radius:16px!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04)!important}.card-head{background:#fff!important}.card-head h2{color:#1e293b!important}.hint,.response-help{border-radius:12px!important}.primary{background:#2563eb!important}.dark{background:#0f172a!important}.soft{background:#eef2ff!important;color:#3730a3!important}.ghost{background:#f8fafc!important;color:#475569!important}.danger{background:#fff1f2!important;color:#e11d48!important}input,select,textarea{border-radius:10px!important}.label-card{border-color:#e2e8f0!important;border-radius:14px!important}.summary-pill{border-radius:12px!important}.footer-note{display:none!important}@media(max-width:900px){.grid{grid-template-columns:1fr!important}}
+
+  </style>
+
+  <style>
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb *{box-sizing:border-box}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
+    .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
+    .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-link:hover{background:#1e293b;color:#fff}
+    .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
+    .kic-tool-offset{min-height:100vh;margin-left:244px;background:#f8fafc}
+
+    .kic-lnb-toggle{margin-left:auto;width:34px;height:34px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(255,255,255,.06);color:#cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
+    .kic-lnb-toggle:hover{background:#1e293b;color:#fff}
+    body.kic-lnb-collapsed .kic-lnb{width:76px}
+    body.kic-lnb-collapsed .kic-tool-offset{margin-left:76px}
+    body.kic-lnb-collapsed .kic-lnb-brand{height:112px;padding:12px 8px;justify-content:flex-start;flex-direction:column;gap:8px}
+    body.kic-lnb-collapsed .kic-lnb-logo{width:40px;height:40px;border-radius:13px;font-size:18px;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
+    body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px}
+    body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
+    body.kic-lnb-collapsed .kic-lnb-link{position:relative}
+    body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
+    @media(max-width:900px){body.kic-lnb-collapsed .kic-lnb{width:auto}.kic-lnb-toggle{display:none}body.kic-lnb-collapsed .kic-tool-offset{margin-left:0}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
+
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto}.kic-lnb-link{flex:0 0 auto}.kic-tool-offset{margin-left:0}}
+  </style>
+
+  <style>body.kic-with-lnb{padding-left:244px!important}body.kic-lnb-collapsed.kic-with-lnb{padding-left:76px!important}@media(max-width:900px){body.kic-with-lnb,body.kic-lnb-collapsed.kic-with-lnb{padding-left:0!important}}</style>
+</head>
+<body class="kic-with-lnb">
+
+  <aside class="kic-lnb">
+    <div class="kic-lnb-brand">
+      <div class="kic-lnb-logo">▣</div>
+      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div><button class="kic-lnb-toggle" type="button" onclick="toggleKicLnb()" title="메뉴 접기/펼치기">☰</button>
+    </div>
+    <nav class="kic-lnb-nav">
+            <a class="kic-lnb-link" data-title="IT 헬프데스크" href="<?= toolHelpdeskUrl ?>"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
+      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="<?= toolReplyUrl ?>"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
+      <a class="kic-lnb-link" data-title="공지사항 생성" href="<?= toolNoticeUrl ?>"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
+      <a class="kic-lnb-link" data-title="교정 지연 안내" href="<?= toolDelayUrl ?>"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
+      <a class="kic-lnb-link kic-active" data-title="필증 출력 확인" href="<?= toolPrintUrl ?>"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
+    </nav>
+  </aside>
+
+  <div class="wrap">
+    <div class="top">
+      <div class="title">
+        <h1><span style="color:#2563eb">🏷️</span> 필증 출력 확인</h1>
+        <p><b>kpo_idx</b>와 지사를 선택해 디버그 URL을 생성하고, API 응답을 카드 형태로 확인합니다.</p>
+      </div>
+      <div class="badge">KIC 업무 도구</div>
+    </div>
+
+    <div class="grid">
+      <section class="card">
+        <div class="card-head">
+          <h2>입력</h2>
+          <button class="ghost" type="button" onclick="loadSample()">샘플</button>
+        </div>
+        <div class="card-body">
+          <div class="hint">
+            이 화면에서는 <b>kpo_idx</b>, <b>지사</b>, <b>디버그 출력 여부</b>만 선택합니다.<br>
+            <b>cmd=resp_print_label</b>, <b>m_company_idx=100</b>은 자동 적용됩니다.
+          </div>
+
+          <label>kpo_idx <span class="required">*</span></label>
+          <input id="kpoIdx" inputmode="numeric" placeholder="예: 1494325" />
+
+          <label>지사 선택 <span class="required">*</span></label>
+          <select id="mGroup">
+            <option value="1" selected>본사</option>
+            <option value="11">대전지사</option>
+            <option value="12">부산지사</option>
+          </select>
+
+          <label>koc_debug</label>
+          <div class="radio-group">
+            <label class="radio-card"><input type="radio" name="kocDebug" value="0" checked> 0 · 일반</label>
+            <label class="radio-card"><input type="radio" name="kocDebug" value="1"> 1 · 디버그</label>
+          </div>
+
+          <div class="btns">
+            <button class="primary" type="button" onclick="generateUrl()">URL 생성</button>
+            <button class="soft" type="button" onclick="openGeneratedUrl()">브라우저 열기</button>
+            <button class="dark" type="button" onclick="copyUrl()">URL 복사</button>
+            <button class="danger" type="button" onclick="clearForm()">초기화</button>
+          </div>
+          <div id="formStatus" class="status"></div>
+
+          <div class="small-note">
+            URL은 화면에 표시하지 않습니다. <b>브라우저 열기</b> 또는 <b>URL 복사</b> 버튼으로 사용하세요.<br>
+            API 응답은 오른쪽 영역에 붙여넣은 뒤 <b>응답 분석</b>을 누르면 됩니다.
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <div class="card-head">
+          <h2>API 응답 분석</h2>
+          <span class="caption">label_type별 카드 표시</span>
+        </div>
+        <div class="card-body">
+          <div class="response-help">
+            생성한 URL을 브라우저에서 열고, 화면에 표시된 API 응답을 전체 복사해서 아래에 붙여넣으세요.<br>
+            <b>label_type=0/1</b>은 교정필증, <b>label_type=5</b>는 접수표찰 항목으로 표시됩니다.
+          </div>
+
+          <label>API 응답 붙여넣기</label>
+          <textarea id="apiResponse" placeholder='예: {"list":{"label_type":1,"label_cnt":2,"koc_calibration_no0":"26008900-1", ... }}'></textarea>
+
+          <div class="btns" style="margin-top:10px">
+            <button class="primary" type="button" onclick="analyzeApiResponse()">응답 분석</button>
+            <button class="soft" type="button" onclick="loadSampleResponse()">교정필증 샘플</button>
+            <button class="soft" type="button" onclick="loadSampleReceiptResponse()">접수표찰 샘플</button>
+            <button class="ghost" type="button" onclick="clearResponse()">응답 초기화</button>
+          </div>
+          <div id="responseStatus" class="status"></div>
+
+          <div id="parsedSummary" class="parsed-summary" style="display:none">
+            <div class="summary-pill"><b>라벨용지</b><span id="parsedLabelType">-</span></div>
+            <div class="summary-pill"><b>인쇄수량</b><span id="parsedLabelCount">-</span></div>
+          </div>
+          <div id="labelCards" class="label-card-list">
+            <div class="empty-state">API 응답을 붙여넣으면 라벨타입에 맞춰 카드가 표시됩니다.</div>
+          </div>
+        </div>
+      </section>
+    </div>
+
+    <div class="footer-note">
+      ※ URL 생성 외 별도 데이터 저장 기능은 없습니다.
+    </div>
+  </div>
+
+  <script>
+    const BASE_URL = 'https://cms.kic21.co.kr/correction/get_correct_excel_info.php';
+    const FIXED_CMD = 'resp_print_label';
+    const FIXED_COMPANY_IDX = '100';
+    const SAMPLE_RESPONSE = '{"list":{"label_type":1,"label_cnt":2,"koc_calibration_no0":"26008900-1","kcs_machine0":"DHAK0003","koc_calibration_date0":"2026-06-16","koc_calibration_next_date0":"2027-06-16","kpo_cmi_idx0":1512510,"koc_calibration_no1":"26008900-2","kcs_machine1":"29507936","koc_calibration_date1":"2026-06-16","koc_calibration_next_date1":"2027-06-16","kpo_cmi_idx1":603217}}';
+    const SAMPLE_RECEIPT_RESPONSE = '{"list":{"label_type":5,"label_cnt":2,"koc_calibration_no0":"26008900-1","top_customer0":"한국계측산업(주)","kor_receipt_date0":"2026-06-16","km_name0":"POWER METER","kcs_machine0":"DHAK0003","kor_customer0":"택배 / 한국계측산업(주)","save_path0":"대전지사","kpc_customer0":"","koc_calibration_no1":"26008900-2","top_customer1":"한국계측산업(주)","kor_receipt_date1":"2026-06-16","km_name1":"DIGITAL MULTIMETER","kcs_machine1":"29507936","kor_customer1":"방문 / 한국계측산업(주)","save_path1":"대전지사","kpc_customer1":"외주업체A"}}';
+    let generatedUrl = '';
+
+    function $(id){ return document.getElementById(id); }
+    function setStatus(id, msg, type){ const el=$(id); el.className='status '+(type||''); el.textContent=msg||''; }
+    function onlyDigits(value){ return String(value||'').trim().replace(/[^0-9]/g,''); }
+    function getKocDebug(){ return document.querySelector('input[name="kocDebug"]:checked')?.value || '0'; }
+
+    function buildUrl(){
+      const kpoIdx = onlyDigits($('kpoIdx').value);
+      const mGroup = $('mGroup').value;
+      const kocDebug = getKocDebug();
+      if(!kpoIdx) throw new Error('kpo_idx 값을 입력하세요.');
+      if(!mGroup) throw new Error('지사를 선택하세요.');
+      const params = new URLSearchParams();
+      params.set('kpo_idx', kpoIdx);
+      params.set('cmd', FIXED_CMD);
+      params.set('koc_debug', kocDebug);
+      params.set('m_group', mGroup);
+      params.set('m_company_idx', FIXED_COMPANY_IDX);
+      return BASE_URL + '?' + params.toString();
+    }
+
+    function generateUrl(){
+      try{
+        generatedUrl = buildUrl();
+        setStatus('formStatus', 'URL이 생성되었습니다. 브라우저 열기 또는 URL 복사를 사용하세요.', 'ok');
+      }catch(e){
+        generatedUrl = '';
+        setStatus('formStatus', e.message, 'err');
+      }
+    }
+
+    async function copyUrl(){
+      if(!generatedUrl) generateUrl();
+      if(!generatedUrl) return;
+      try{ await navigator.clipboard.writeText(generatedUrl); }
+      catch(e){ const temp=document.createElement('textarea'); temp.value=generatedUrl; document.body.appendChild(temp); temp.select(); document.execCommand('copy'); temp.remove(); }
+      setStatus('formStatus', 'URL이 복사되었습니다.', 'ok');
+    }
+
+    function openGeneratedUrl(){
+      if(!generatedUrl) generateUrl();
+      if(!generatedUrl) return;
+      window.open(generatedUrl, '_blank', 'noopener,noreferrer');
+    }
+
+    function loadSample(){
+      $('kpoIdx').value = '1494325';
+      $('mGroup').value = '1';
+      document.querySelector('input[name="kocDebug"][value="1"]').checked = true;
+      generateUrl();
+    }
+
+    function labelTypeName(value){ const code=String(value ?? '').trim(); const map={'0':'교정필증(대)','1':'교정필증(소)','5':'접수표찰'}; return map[code] ? `${map[code]} (${code})` : (code ? `알 수 없음 (${code})` : '-'); }
+    function findMatchingBrace(text,startIndex){ let depth=0,inString=false,escape=false; for(let i=startIndex;i<text.length;i++){ const ch=text[i]; if(inString){ if(escape) escape=false; else if(ch==='\\') escape=true; else if(ch==='"') inString=false; continue; } if(ch==='"'){inString=true;continue;} if(ch==='{') depth++; if(ch==='}'){depth--; if(depth===0) return i;} } return -1; }
+    function parseJsonPart(raw){ const start=raw.indexOf('{'); if(start<0) return null; const end=findMatchingBrace(raw,start); if(end<0) return null; return JSON.parse(raw.slice(start,end+1)); }
+    function parsePhpArrayDump(raw){ const obj={}; const regex=/^\s*\[([^\]]+)\]\s*=>\s*(.*)$/gm; let m; while((m=regex.exec(raw))!==null){ const key=String(m[1]||'').trim(); let value=String(m[2]||'').trim(); if(!key||value==='Array'||value==='('||value===')') continue; value=value.replace(/^"|"$/g,'').trim(); obj[key]=value; } return Object.keys(obj).length ? {list:obj} : null; }
+    function parseApiResponseText(raw){ const text=String(raw||'').trim(); if(!text) throw new Error('API 응답 내용을 붙여넣어 주세요.'); let parsed=null; try{parsed=parseJsonPart(text);}catch(e){parsed=null;} if(!parsed) parsed=parsePhpArrayDump(text); if(!parsed) throw new Error('JSON 또는 Array 출력에서 값을 찾지 못했습니다. 응답 내용을 전체 복사해서 붙여넣어 주세요.'); const list=parsed.list||parsed; if(!list||typeof list!=='object') throw new Error('list 데이터를 찾지 못했습니다.'); return list; }
+    function getMaxIndexedCount(list){
+      const keys=Object.keys(list||{}); let maxIdx=-1;
+      keys.forEach(key=>{ const m=key.match(/(?:koc_calibration_no|kcs_machine|koc_calibration_date|koc_calibration_next_date|kpo_cmi_idx|top_customer|kor_receipt_date|km_name|kor_customer|save_path|kpc_customer)(\d+)$/); if(m) maxIdx=Math.max(maxIdx,Number(m[1])); });
+      const labelCnt=parseInt(list.label_cnt,10);
+      return Math.max(Number.isFinite(labelCnt)?labelCnt:0,maxIdx+1);
+    }
+    function valueOrDash(value){ if(value===null||value===undefined||String(value).trim()==='') return '-'; return String(value).trim(); }
+    function escapeHtml(value){ return String(value||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;'); }
+    function renderField(label, value){ return `<div class="k">${escapeHtml(label)}</div><div class="v">${escapeHtml(valueOrDash(value))}</div>`; }
+
+    function renderCalibrationCard(list, i){
+      const no=valueOrDash(list['koc_calibration_no'+i]);
+      const machine=valueOrDash(list['kcs_machine'+i]);
+      const date=valueOrDash(list['koc_calibration_date'+i]);
+      const nextDate=valueOrDash(list['koc_calibration_next_date'+i]);
+      const cmi=valueOrDash(list['kpo_cmi_idx'+i]);
+      const card=document.createElement('div'); card.className='label-card';
+      card.innerHTML=`<div class="label-card-head"><div class="label-card-title">성적서번호: ${escapeHtml(no)}</div><div class="label-card-no">#${String(i+1).padStart(2,'0')}</div></div><div class="label-fields">${renderField('기기번호', machine)}${renderField('교정일자', date)}${renderField('차기교정일자', nextDate)}${renderField('CMI ID', cmi)}</div>`;
+      return card;
+    }
+
+    function renderReceiptCard(list, i){
+      const no=valueOrDash(list['koc_calibration_no'+i]);
+      const topCustomer=valueOrDash(list['top_customer'+i]);
+      const receiptDate=valueOrDash(list['kor_receipt_date'+i]);
+      const name=valueOrDash(list['km_name'+i]);
+      const machine=valueOrDash(list['kcs_machine'+i]);
+      const customer=valueOrDash(list['kor_customer'+i]);
+      const savePath=valueOrDash(list['save_path'+i]);
+      const outsource=valueOrDash(list['kpc_customer'+i]);
+      const card=document.createElement('div'); card.className='label-card';
+      card.innerHTML=`<div class="label-card-head"><div class="label-card-title">성적서번호: ${escapeHtml(no)}</div><div class="label-card-no">#${String(i+1).padStart(2,'0')}</div></div><div class="label-fields">${renderField('대표 업체명', topCustomer)}${renderField('접수 일자', receiptDate)}${renderField('기기명', name)}${renderField('기기번호', machine)}${renderField('접수 방식 / 신청 업체명', customer)}${renderField('보관 위치', savePath)}${renderField('외주(대행) 업체명', outsource)}</div>`;
+      return card;
+    }
+
+    function renderLabelCards(list){
+      const labelTypeCode = String(list.label_type ?? '').trim();
+      const cnt = getMaxIndexedCount(list);
+      $('parsedSummary').style.display = 'grid';
+      $('parsedLabelType').textContent = labelTypeName(list.label_type);
+      $('parsedLabelCount').textContent = valueOrDash(list.label_cnt || cnt);
+      const cards = $('labelCards'); cards.innerHTML = '';
+      if(!cnt){ cards.innerHTML='<div class="empty-state">표시할 라벨 데이터가 없습니다.</div>'; return; }
+      for(let i=0;i<cnt;i++) cards.appendChild(labelTypeCode === '5' ? renderReceiptCard(list, i) : renderCalibrationCard(list, i));
+    }
+
+    function analyzeApiResponse(){
+      try{ const list = parseApiResponseText($('apiResponse').value); renderLabelCards(list); setStatus('responseStatus','API 응답을 카드로 정리했습니다.','ok'); }
+      catch(e){ $('parsedSummary').style.display='none'; $('labelCards').innerHTML='<div class="empty-state">분석에 실패했습니다. API 응답 원문을 다시 확인해 주세요.</div>'; setStatus('responseStatus',e.message,'err'); }
+    }
+    function loadSampleResponse(){ $('apiResponse').value = SAMPLE_RESPONSE; analyzeApiResponse(); }
+    function loadSampleReceiptResponse(){ $('apiResponse').value = SAMPLE_RECEIPT_RESPONSE; analyzeApiResponse(); }
+    function clearResponse(){ $('apiResponse').value=''; $('parsedSummary').style.display='none'; $('labelCards').innerHTML='<div class="empty-state">API 응답을 붙여넣으면 라벨타입에 맞춰 카드가 표시됩니다.</div>'; setStatus('responseStatus','',''); }
+    function clearForm(){ $('kpoIdx').value=''; $('mGroup').value='1'; document.querySelector('input[name="kocDebug"][value="0"]').checked=true; generatedUrl=''; setStatus('formStatus','',''); clearResponse(); }
+    ['kpoIdx','mGroup'].forEach(id=>$(id).addEventListener('input',()=>setStatus('formStatus','','')));
+    document.querySelectorAll('input[name="kocDebug"]').forEach(el=>el.addEventListener('change',()=>{ generatedUrl=''; setStatus('formStatus','디버그 값이 변경되었습니다. URL 생성을 다시 눌러주세요.','warn'); }));
+  </script>
+
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('kicLnbCollapsed') === 'Y') {
+          document.body.classList.add('kic-lnb-collapsed');
+        }
+      } catch(e) {}
+    })();
+    function toggleKicLnb(){
+      document.body.classList.toggle('kic-lnb-collapsed');
+      try {
+        localStorage.setItem('kicLnbCollapsed', document.body.classList.contains('kic-lnb-collapsed') ? 'Y' : 'N');
+      } catch(e) {}
+    }
+  </script>
+
+</body>
+</html>

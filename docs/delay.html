@@ -1,0 +1,372 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KIC 업무 도구 · 교정 지연 안내</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <style>
+    :root{
+      --card-bg1:#effff8;--card-bg2:#ffffff;--card-bg3:#d8fff0;
+      --shape-ring:rgba(16,185,129,.16);--shape-stripe1:rgba(16,185,129,.45);--shape-stripe2:rgba(16,185,129,.38);--dots:#7ee7c0;
+      --pill1:#0a704d;--pill2:#20b978;--title-dark:#06442d;--title-accent:#1fc47e;--line-accent:#1fc47e;
+      --field-title:#187a54;--field-border:#9ff0cb;--circle1:#15a66f;--circle2:#1fbb79;--footer1:#0b6b48;--footer2:#12885f;--footer-shadow:rgba(0,94,60,.25);
+      --thumb-bg1:#79e3d0;--thumb-bg2:#5ed7da;--thumb-bg3:#54c2ee;--thumb-badge1:#18a56f;--thumb-badge2:#27c987;--thumb-grid:#bff8e8;--thumb-line:rgba(255,255,255,.35);--thumb-line-accent:#96fff0;--thumb-corner:rgba(255,255,255,.28)
+    }
+    *{box-sizing:border-box}
+    body{margin:0;background:#f1f5f9;color:#0f172a;font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .topbar{max-width:1440px;margin:22px auto 18px;background:#fff;border:1px solid #e2e8f0;border-radius:16px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:14px;box-shadow:0 4px 8px rgba(15,23,42,.06)}
+    .topbar h1{margin:0;font-size:22px;font-weight:900;letter-spacing:-.5px}.topbar p{margin:5px 0 0;font-size:12px;color:#64748b;font-weight:700}
+    .btns{display:flex;gap:8px;align-items:center;flex-wrap:wrap}.btn{border:0;border-radius:10px;padding:11px 15px;font-size:13px;font-weight:900;cursor:pointer}.btn.blue{background:#2563eb;color:#fff}.btn.gray{background:#f1f5f9;color:#475569}.btn.green{background:#10b981;color:#fff}.btn.red{background:#fff1f2;color:#e11d48;border:1px solid #fecdd3}
+    .app{max-width:1440px;margin:0 auto 28px;padding:0 22px;display:grid;grid-template-columns:420px 1fr;gap:20px}.panel{background:#fff;border:1px solid #e2e8f0;border-radius:16px;box-shadow:0 4px 8px rgba(15,23,42,.06)}.editor{padding:18px;height:calc(100vh - 140px);overflow:auto;position:sticky;top:20px}.previewPanel{padding:18px;background:#e8eef6;overflow:auto;min-height:calc(100vh - 140px)}
+    .hint{background:#ecfdf5;border:1px solid #a7f3d0;color:#047857;border-radius:12px;padding:12px 14px;font-size:12px;line-height:1.6;margin-bottom:16px}.section-title{font-size:14px;font-weight:900;margin:18px 0 10px;padding-bottom:8px;border-bottom:1px solid #e2e8f0}.label{display:block;font-size:12px;font-weight:900;color:#475569;margin:10px 0 6px}.input{width:100%;border:1px solid #cbd5e1;border-radius:10px;padding:10px 12px;font-size:13px;outline:none}.input:focus{border-color:#10b981;box-shadow:0 0 0 3px rgba(16,185,129,.14)}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.mini{font-size:11px;color:#64748b;line-height:1.5;margin-top:8px}.previewHead{display:flex;justify-content:space-between;margin-bottom:14px}.previewHead h2{font-size:14px;margin:0;font-weight:900}.previewHead p{font-size:12px;margin:4px 0 0;color:#64748b}
+
+    .colorOptions{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:6px}
+    .colorOption{display:flex;align-items:center;gap:10px;border:1px solid #dbe3ee;border-radius:12px;padding:10px 12px;cursor:pointer;background:#fff}
+    .colorOption input{margin:0}
+    .swatch{width:18px;height:18px;border-radius:50%;border:2px solid rgba(255,255,255,.95);box-shadow:0 0 0 1px rgba(15,23,42,.12)}
+    .colorOption.active{border-color:#94a3b8;background:#f8fafc;box-shadow:0 0 0 2px rgba(148,163,184,.18) inset}
+    .colorOption span.txt{font-size:12px;font-weight:800;color:#334155}
+
+    .previewWrap{display:flex;justify-content:center}.delay-card{width:800px;height:1000px;position:relative;overflow:hidden;background:linear-gradient(145deg,var(--card-bg1) 0%,var(--card-bg2) 45%,var(--card-bg3) 100%);border-radius:0;box-shadow:0 20px 45px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif;color:#114234}.delay-card:before{content:"";position:absolute;inset:18px 18px 148px;background:rgba(255,255,255,.88);border-radius:34px}.delay-card:after{content:"";position:absolute;left:42px;right:42px;bottom:46px;height:118px;border-radius:24px;background:linear-gradient(135deg,var(--footer1),var(--footer2));box-shadow:0 16px 26px var(--footer-shadow)}
+    .shape-a{position:absolute;right:-64px;top:-84px;width:215px;height:215px;border:34px solid var(--shape-ring);border-radius:50%}.shape-b{position:absolute;right:36px;top:95px;width:92px;height:92px;background:repeating-linear-gradient(135deg,var(--shape-stripe1) 0 4px,transparent 4px 10px);border-radius:50%}.shape-c{position:absolute;left:-42px;bottom:190px;width:98px;height:98px;background:repeating-linear-gradient(135deg,var(--shape-stripe2) 0 4px,transparent 4px 10px);border-radius:50%}.dots{position:absolute;left:54px;top:54px;width:72px;display:grid;grid-template-columns:repeat(4,10px);gap:11px}.dots span{width:8px;height:8px;border-radius:50%;background:var(--dots)}
+    .content{position:relative;z-index:2;padding:58px 58px 0;text-align:center}.kic-pill{display:inline-flex;align-items:center;justify-content:center;min-width:126px;height:44px;padding:0 22px;border-radius:999px;background:linear-gradient(135deg,var(--pill1),var(--pill2));color:#fff;font-size:31px;font-weight:1000;letter-spacing:1px;box-shadow:0 8px 20px rgba(0,0,0,.16);white-space:nowrap}.title-main{margin:30px 0 0;font-size:58px;line-height:1.03;font-weight:1000;letter-spacing:-4px;color:var(--title-dark);text-shadow:0 2px 0 rgba(0,0,0,.04)}.title-main span{display:block;white-space:nowrap}.title-main .accent{color:var(--title-accent);font-size:67px;letter-spacing:-5px}.title-line{width:310px;height:3px;background:#d6d6d6;margin:25px auto 18px;position:relative}.title-line:before{content:"";position:absolute;left:0;top:-2px;width:78px;height:7px;background:var(--line-accent);border-radius:99px}.subtitle{display:block;max-width:100%;font-size:20px;color:#444;letter-spacing:-.7px;margin-bottom:18px;white-space:nowrap}
+    .info{position:relative;z-index:2;margin:0 76px;text-align:left}.info-row{display:grid;grid-template-columns:86px 1fr;gap:20px;align-items:center;border-bottom:2px dotted var(--field-border);padding:18px 0}.info-row:last-child{border-bottom:0}.circle{width:72px;height:72px;border-radius:50%;background:linear-gradient(135deg,var(--circle1),var(--circle2));display:flex;align-items:center;justify-content:center;color:#fff;font-size:38px;box-shadow:0 8px 18px rgba(0,0,0,.14)}.info-text{border-left:3px solid var(--line-accent);padding-left:18px;min-width:0}.field-title{font-size:30px;font-weight:1000;color:var(--field-title);line-height:1.05;letter-spacing:-1.6px}.field-value{margin-top:4px;font-size:27px;color:#666;line-height:1.06;white-space:nowrap;letter-spacing:-1.1px;display:inline-block;max-width:100%}
+    .footer{position:absolute;z-index:4;left:74px;right:74px;bottom:58px;height:92px;display:grid;grid-template-columns:1fr 1px 1fr;align-items:center;color:#fff}.divider{height:62px;background:rgba(255,255,255,.5)}.person{display:grid;grid-template-columns:62px 1fr;gap:12px;align-items:center;min-width:0}.person.right{padding-left:18px}.personInfo{min-width:0}.personIcon{width:62px;height:62px;border:2px solid rgba(255,255,255,.85);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:32px}.role{display:block;max-width:100%;font-size:19px;font-weight:900;white-space:nowrap}.nameTel{display:block;max-width:100%;font-size:15px;margin-top:4px;white-space:nowrap;color:rgba(255,255,255,.92);letter-spacing:-.4px}.status{font-size:12px;font-weight:900;color:#047857}
+
+    .hiddenStage{position:fixed;left:-99999px;top:0;pointer-events:none;opacity:0}
+    .thumb-card{width:580px;height:360px;position:relative;overflow:hidden;background:linear-gradient(135deg,var(--thumb-bg1) 0%,var(--thumb-bg2) 45%,var(--thumb-bg3) 100%);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .thumb-badge{position:absolute;left:50px;top:40px;min-width:118px;height:32px;padding:0 18px;border-radius:999px;background:linear-gradient(135deg,var(--thumb-badge1),var(--thumb-badge2));display:inline-flex;align-items:center;justify-content:center;color:#fff;font-size:20px;font-weight:1000;letter-spacing:-.3px}
+    .thumb-title{position:absolute;left:42px;top:122px;width:390px;color:#fff;text-shadow:4px 6px 0 rgba(0,0,0,.22);line-height:.93;letter-spacing:-2.6px;font-weight:1000;white-space:nowrap}
+    .thumb-title1,.thumb-title2{display:block}
+    .thumb-title1{font-size:62px}
+    .thumb-title2{font-size:66px}
+    .thumb-item{position:absolute;left:45px;right:34px;top:270px;color:#fff;font-weight:900;line-height:1.04;letter-spacing:-1.2px;text-shadow:3px 4px 0 rgba(0,0,0,.18);white-space:normal;word-break:keep-all;overflow-wrap:break-word}
+    .thumb-item .ko{display:block;font-size:35px;white-space:normal;word-break:keep-all;overflow-wrap:break-word}
+    .thumb-item .en{display:block;font-size:30px;white-space:normal;word-break:break-word;overflow-wrap:anywhere}
+    .thumb-accent-line{position:absolute;left:41px;top:260px;width:185px;height:6px;border-radius:999px;background:var(--thumb-line)}
+    .thumb-accent-line:after{content:'';position:absolute;left:0;top:0;width:90px;height:6px;border-radius:999px;background:var(--thumb-line-accent)}
+    .thumb-corner{position:absolute;border-radius:50%;border:26px solid var(--thumb-corner)}
+    .thumb-corner.a{right:-55px;top:-55px;width:150px;height:150px}
+    .thumb-grid{position:absolute;left:44px;top:44px;display:grid;grid-template-columns:repeat(4,8px);gap:10px;opacity:.85}
+    .thumb-grid span{width:8px;height:8px;border-radius:50%;background:var(--thumb-grid)}
+    .thumb-board{position:absolute;right:38px;top:49px;width:175px;height:130px;transform:rotate(12deg)}
+    .thumb-board .frame{position:absolute;inset:0;border-radius:16px;background:linear-gradient(135deg,#ef8646,#f2b14d);box-shadow:0 14px 24px rgba(0,0,0,.18)}
+    .thumb-board .inner{position:absolute;left:13px;right:13px;top:13px;bottom:13px;border-radius:10px;background:#ffd782}
+    .thumb-board .pin{position:absolute;width:16px;height:16px;border-radius:50%;background:#f33c66;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+    .thumb-board .pin.p1{left:18px;top:18px}.thumb-board .pin.p2{right:18px;top:18px}.thumb-board .pin.p3{left:18px;bottom:18px}
+    .thumb-board .paper{position:absolute;border-radius:8px;box-shadow:0 6px 10px rgba(0,0,0,.12)}
+    .thumb-board .paper.a{left:28px;top:24px;width:54px;height:40px;background:linear-gradient(180deg,#75d3ff,#e2f8ff)}
+    .thumb-board .paper.b{left:60px;top:56px;width:48px;height:34px;background:linear-gradient(135deg,#89f06a,#26c97c);transform:rotate(-16deg)}
+    .thumb-board .paper.c{right:26px;top:28px;width:48px;height:58px;background:linear-gradient(180deg,#ffffff,#eef1ff);transform:rotate(-6deg)}
+    .thumb-board .paper.d{right:36px;bottom:18px;width:56px;height:12px;background:#f3a35d;border-radius:8px}
+    .thumb-board .string{position:absolute;left:80px;top:-18px;width:2px;height:30px;background:rgba(255,255,255,.8)}
+    .thumb-board .hook{position:absolute;left:61px;top:-18px;width:40px;height:22px;border:5px solid rgba(255,255,255,.75);border-bottom:0;border-left-color:transparent;border-right-color:transparent;border-radius:30px 30px 0 0}
+    @media(max-width:980px){.app{grid-template-columns:1fr}.editor{height:auto;position:static}.previewWrap{transform:scale(.58);transform-origin:top center;height:610px}}
+  </style>
+
+  <style>
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb *{box-sizing:border-box}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
+    .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
+    .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-link:hover{background:#1e293b;color:#fff}
+    .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
+    .kic-lnb-toggle{margin-left:auto;width:34px;height:34px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(255,255,255,.06);color:#cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
+    .kic-lnb-toggle:hover{background:#1e293b;color:#fff}
+    body.kic-lnb-collapsed .kic-lnb{width:76px}
+    body.kic-lnb-collapsed .kic-lnb-brand{height:112px;padding:12px 8px;justify-content:flex-start;flex-direction:column;gap:8px}
+    body.kic-lnb-collapsed .kic-lnb-logo{width:40px;height:40px;border-radius:13px;font-size:18px;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
+    body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px;position:relative}
+    body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
+    body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
+    body.kic-with-lnb{padding-left:244px!important}
+    body.kic-lnb-collapsed.kic-with-lnb{padding-left:76px!important}
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto}.kic-lnb-link{flex:0 0 auto}.kic-lnb-toggle{display:none}body.kic-with-lnb,body.kic-lnb-collapsed.kic-with-lnb{padding-left:0!important}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
+  </style>
+</head>
+<body class="kic-with-lnb">
+
+  <aside class="kic-lnb">
+    <div class="kic-lnb-brand">
+      <div class="kic-lnb-logo">▣</div>
+      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div>
+      <button class="kic-lnb-toggle" type="button" onclick="toggleKicLnb()" title="메뉴 접기/펼치기">☰</button>
+    </div>
+    <nav class="kic-lnb-nav">
+      <a class="kic-lnb-link" data-title="IT 헬프데스크" href="index.html"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
+      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="reply.html"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
+      <a class="kic-lnb-link" data-title="공지사항 생성" href="notice.html"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
+      <a class="kic-lnb-link kic-active" data-title="교정 지연 안내" href="delay.html"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
+      <a class="kic-lnb-link" data-title="필증 출력 확인" href="print.html"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
+    </nav>
+  </aside>
+
+  <header class="topbar">
+    <div><h1>⏳ 교정 지연 안내</h1><p>일부 품목 교정 지연 안내 팝업 이미지와 썸네일을 생성합니다.</p></div>
+    <div class="btns"><button class="btn gray" id="btnSample">샘플</button><button class="btn blue" id="btnThumbDownload">썸네일 다운로드</button><button class="btn green" id="btnDownload">PNG 다운로드</button></div>
+  </header>
+  <main class="app">
+    <aside class="panel editor">
+      <div class="hint"><b>사용 방법</b><br>빨간 박스로 표시했던 영역만 입력하면 오른쪽 미리보기가 바뀝니다. 긴 문구는 줄바꿈하지 않고 자동으로 글자 크기와 자간을 줄여 맞춥니다.</div>
+
+      <div class="section-title">컬러 선택</div>
+      <div id="themeOptions" class="colorOptions">
+        <label class="colorOption active"><input type="radio" name="theme" value="green" checked><span class="swatch" style="background:linear-gradient(135deg,#15a66f,#1fbb79)"></span><span class="txt">녹색</span></label>
+        <label class="colorOption"><input type="radio" name="theme" value="blue"><span class="swatch" style="background:linear-gradient(135deg,#2447c7,#3f6cf2)"></span><span class="txt">파란색</span></label>
+        <label class="colorOption"><input type="radio" name="theme" value="purple"><span class="swatch" style="background:linear-gradient(135deg,#5d1bb6,#8a3bf0)"></span><span class="txt">보라색</span></label>
+        <label class="colorOption"><input type="radio" name="theme" value="yellow"><span class="swatch" style="background:linear-gradient(135deg,#c98d00,#f0c43f)"></span><span class="txt">노란색</span></label>
+        <label class="colorOption"><input type="radio" name="theme" value="red"><span class="swatch" style="background:linear-gradient(135deg,#c72a2a,#ef5757)"></span><span class="txt">빨간색</span></label>
+      </div>
+      <div class="section-title">안내 문구</div>
+      <label class="label">상단 KIC 문구</label><input id="badge" class="input" value="KIC">
+      <label class="label">대제목 1</label><input id="title1" class="input" value="일부 품목">
+      <label class="label">대제목 2</label><input id="title2" class="input" value="교정 지연 안내">
+      <label class="label">설명 문구</label><input id="subtitle" class="input" value="보다 정확하고 안정적인 교정을 위해 최선을 다하겠습니다.">
+      <div class="section-title">상세 정보</div>
+      <label class="label">기간</label><input id="period" class="input" value="2026년 06월 15일 ~ 06월 29일">
+      <label class="label">표준기</label><input id="standard" class="input" value="ROGOWSKI CURRENT WAVEFORM TRANSDUCER">
+      <label class="label">대상품목</label><input id="item" class="input" value="서지 발생기 (LIGHTING SURGE SIMULATOR)">
+      <label class="label">개시예정일</label><input id="startDate" class="input" value="2026년 06월 29일 이후 (본 예정일은 변경될 수 있습니다.)">
+      <div class="section-title">담당자</div>
+      <div class="grid2"><div><label class="label">교정기술본부 담당자</label><input id="calName" class="input" value="김선구 팀장"></div><div><label class="label">연락처</label><input id="calTel" class="input" value="02-6359-1941"></div></div>
+      <div class="grid2"><div><label class="label">고객지원팀 담당자</label><input id="csName" class="input" value="최보혜 팀장"></div><div><label class="label">연락처</label><input id="csTel" class="input" value="02-863-1903"></div></div>
+      <div class="mini">※ 입력 내용이 길어도 안내 이미지에서는 한 줄 유지되도록 자동 축소됩니다.</div>
+    </aside>
+    <section class="panel previewPanel">
+      <div class="previewHead"><div><h2>미리보기</h2><p>다운로드 시 아래 이미지가 저장됩니다.</p></div><span id="status" class="status"></span></div>
+      <div class="previewWrap">
+        <div id="delayCard" class="delay-card">
+          <div class="shape-a"></div><div class="shape-b"></div><div class="shape-c"></div><div class="dots"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="content"><div id="pBadge" class="kic-pill">KIC</div><h1 class="title-main"><span id="pTitle1">일부 품목</span><span id="pTitle2" class="accent">교정 지연 안내</span></h1><div class="title-line"></div><div id="pSubtitle" class="subtitle">보다 정확하고 안정적인 교정을 위해 최선을 다하겠습니다.</div></div>
+          <div class="info">
+            <div class="info-row"><div class="circle">▣</div><div class="info-text"><div class="field-title">기간</div><div id="pPeriod" class="field-value">2026년 06월 15일 ~ 06월 29일</div></div></div>
+            <div class="info-row"><div class="circle">◎</div><div class="info-text"><div class="field-title">표준기</div><div id="pStandard" class="field-value">ROGOWSKI CURRENT WAVEFORM TRANSDUCER</div></div></div>
+            <div class="info-row"><div class="circle">◇</div><div class="info-text"><div class="field-title">대상품목</div><div id="pItem" class="field-value">서지 발생기 (LIGHTING SURGE SIMULATOR)</div></div></div>
+            <div class="info-row"><div class="circle">◷</div><div class="info-text"><div class="field-title">개시예정일</div><div id="pStartDate" class="field-value">2026년 06월 29일 이후 (본 예정일은 변경될 수 있습니다.)</div></div></div>
+          </div>
+          <div class="footer"><div class="person"><div class="personIcon">♙</div><div class="personInfo"><div class="role">교정기술본부 담당자</div><div class="nameTel"><span id="pCalName">김선구 팀장</span> (<span id="pCalTel">02-6359-1941</span>)</div></div></div><div class="divider"></div><div class="person right"><div class="personIcon">♙</div><div class="personInfo"><div class="role">고객지원팀 담당자</div><div class="nameTel"><span id="pCsName">최보혜 팀장</span> (<span id="pCsTel">02-863-1903</span>)</div></div></div></div>
+        </div>
+      </div>
+
+      <div class="hiddenStage" aria-hidden="true">
+        <div id="thumbCard" class="thumb-card">
+          <div class="thumb-corner a"></div>
+          <div class="thumb-grid"><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span><span></span></div>
+          <div class="thumb-badge">Notice</div>
+          <div class="thumb-title">
+            <span id="pThumbTitle1" class="thumb-title1">일부 품목</span>
+            <span id="pThumbTitle2" class="thumb-title2">교정 지연 안내</span>
+          </div>
+          <div class="thumb-accent-line"></div>
+          <div id="pThumbItem" class="thumb-item"><span class="ko">서지 발생기</span><span class="en">(LIGHTING SURGE SIMULATOR)</span></div>
+          <div class="thumb-board">
+            <div class="hook"></div><div class="string"></div>
+            <div class="frame"></div><div class="inner"></div>
+            <div class="paper a"></div><div class="paper b"></div><div class="paper c"></div><div class="paper d"></div>
+            <div class="pin p1"></div><div class="pin p2"></div><div class="pin p3"></div>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+  <script>
+
+    const themes={
+      green:{cardBg:'#effff8',vars:{'--card-bg1':'#effff8','--card-bg2':'#ffffff','--card-bg3':'#d8fff0','--shape-ring':'rgba(16,185,129,.16)','--shape-stripe1':'rgba(16,185,129,.45)','--shape-stripe2':'rgba(16,185,129,.38)','--dots':'#7ee7c0','--pill1':'#0a704d','--pill2':'#20b978','--title-dark':'#06442d','--title-accent':'#1fc47e','--line-accent':'#1fc47e','--field-title':'#187a54','--field-border':'#9ff0cb','--circle1':'#15a66f','--circle2':'#1fbb79','--footer1':'#0b6b48','--footer2':'#12885f','--footer-shadow':'rgba(0,94,60,.25)','--thumb-bg1':'#79e3d0','--thumb-bg2':'#5ed7da','--thumb-bg3':'#54c2ee','--thumb-badge1':'#18a56f','--thumb-badge2':'#27c987','--thumb-grid':'#bff8e8','--thumb-line':'rgba(255,255,255,.35)','--thumb-line-accent':'#96fff0','--thumb-corner':'rgba(255,255,255,.28)'}},
+      blue:{cardBg:'#eef3ff',vars:{'--card-bg1':'#eef3ff','--card-bg2':'#ffffff','--card-bg3':'#dfe8ff','--shape-ring':'rgba(59,130,246,.16)','--shape-stripe1':'rgba(59,130,246,.45)','--shape-stripe2':'rgba(59,130,246,.38)','--dots':'#97b8ff','--pill1':'#1833ad','--pill2':'#2f56d8','--title-dark':'#0d1f72','--title-accent':'#2e4fe0','--line-accent':'#2e4fe0','--field-title':'#253ca4','--field-border':'#b7c8ff','--circle1':'#2342bc','--circle2':'#355de5','--footer1':'#1b2f8f','--footer2':'#2843c6','--footer-shadow':'rgba(37,70,181,.24)','--thumb-bg1':'#8ab2ff','--thumb-bg2':'#67a6ff','--thumb-bg3':'#65d1f5','--thumb-badge1':'#2447c7','--thumb-badge2':'#3f6cf2','--thumb-grid':'#d4e2ff','--thumb-line':'rgba(255,255,255,.38)','--thumb-line-accent':'#d7e6ff','--thumb-corner':'rgba(255,255,255,.28)'}},
+      purple:{cardBg:'#f5efff',vars:{'--card-bg1':'#f5efff','--card-bg2':'#ffffff','--card-bg3':'#eadcff','--shape-ring':'rgba(139,92,246,.15)','--shape-stripe1':'rgba(168,85,247,.45)','--shape-stripe2':'rgba(168,85,247,.36)','--dots':'#c7a4ff','--pill1':'#5918af','--pill2':'#812fe5','--title-dark':'#31105a','--title-accent':'#7f31e0','--line-accent':'#7f31e0','--field-title':'#5e23a9','--field-border':'#d5b4ff','--circle1':'#6924ba','--circle2':'#8d39f1','--footer1':'#4d198f','--footer2':'#7028c7','--footer-shadow':'rgba(93,33,171,.24)','--thumb-bg1':'#caa5ff','--thumb-bg2':'#a98bff','--thumb-bg3':'#8f90ff','--thumb-badge1':'#6a26c0','--thumb-badge2':'#8e49ea','--thumb-grid':'#e3d2ff','--thumb-line':'rgba(255,255,255,.38)','--thumb-line-accent':'#ecd9ff','--thumb-corner':'rgba(255,255,255,.28)'}},
+      yellow:{cardBg:'#fff9e8',vars:{'--card-bg1':'#fff9e8','--card-bg2':'#ffffff','--card-bg3':'#fff2c8','--shape-ring':'rgba(250,204,21,.17)','--shape-stripe1':'rgba(245,158,11,.42)','--shape-stripe2':'rgba(234,179,8,.36)','--dots':'#f8dd8a','--pill1':'#a76b00','--pill2':'#e5b22b','--title-dark':'#7a5200','--title-accent':'#d49a00','--line-accent':'#d9a30a','--field-title':'#8c6307','--field-border':'#f4d67e','--circle1':'#bb8608','--circle2':'#e2af20','--footer1':'#926400','--footer2':'#c89514','--footer-shadow':'rgba(156,110,0,.24)','--thumb-bg1':'#ffe28e','--thumb-bg2':'#ffc66b','--thumb-bg3':'#ffb86f','--thumb-badge1':'#c98d00','--thumb-badge2':'#f0c43f','--thumb-grid':'#fff2be','--thumb-line':'rgba(255,255,255,.45)','--thumb-line-accent':'#fff5c9','--thumb-corner':'rgba(255,255,255,.30)'}},
+      red:{cardBg:'#fff0f1',vars:{'--card-bg1':'#fff0f1','--card-bg2':'#ffffff','--card-bg3':'#ffe1e4','--shape-ring':'rgba(239,68,68,.15)','--shape-stripe1':'rgba(239,68,68,.43)','--shape-stripe2':'rgba(244,63,94,.34)','--dots':'#f7a4af','--pill1':'#9f1d2b','--pill2':'#ea445a','--title-dark':'#7c1622','--title-accent':'#df3f53','--line-accent':'#df3f53','--field-title':'#ab2335','--field-border':'#f8bcc4','--circle1':'#c92a3e','--circle2':'#ea5265','--footer1':'#981b2a','--footer2':'#c52e43','--footer-shadow':'rgba(153,27,27,.22)','--thumb-bg1':'#ffb0b5','--thumb-bg2':'#ff8f94','--thumb-bg3':'#ff8f7d','--thumb-badge1':'#c72a2a','--thumb-badge2':'#ef5757','--thumb-grid':'#ffd2d5','--thumb-line':'rgba(255,255,255,.42)','--thumb-line-accent':'#ffe4e6','--thumb-corner':'rgba(255,255,255,.28)'}}
+    };
+    let currentTheme='green';
+    function updateThemeButtons(){
+      document.querySelectorAll('.colorOption').forEach(label=>{ label.classList.toggle('active', label.querySelector('input').checked); });
+    }
+    function applyTheme(name){
+      currentTheme = themes[name] ? name : 'green';
+      const t = themes[currentTheme];
+      Object.entries(t.vars).forEach(([k,v])=>document.documentElement.style.setProperty(k,v));
+      updateThemeButtons();
+    }
+    const map={badge:'pBadge',title1:'pTitle1',title2:'pTitle2',subtitle:'pSubtitle',period:'pPeriod',standard:'pStandard',item:'pItem',startDate:'pStartDate',calName:'pCalName',calTel:'pCalTel',csName:'pCsName',csTel:'pCsTel'};
+    const thumbMap={title1:'pThumbTitle1',title2:'pThumbTitle2',item:'pThumbItem'};
+    function setStatus(t){const el=document.getElementById('status');el.textContent=t;clearTimeout(window.__s);window.__s=setTimeout(()=>el.textContent='',2600)}
+    function rememberBaseFonts(root=document){
+      root.querySelectorAll('.field-value,.subtitle,.thumb-title1,.thumb-title2,.thumb-item .ko,.thumb-item .en').forEach(el=>{
+        if(!el.dataset.base){ el.dataset.base = parseFloat(getComputedStyle(el).fontSize) || 16; }
+        if(!el.dataset.baseSpacing){ el.dataset.baseSpacing = getComputedStyle(el).letterSpacing; }
+      });
+    }
+    function getMaxWidth(el){
+      if(el.classList.contains('kic-pill')) return Math.min(el.parentElement.clientWidth || 520, 520);
+      if(el.matches('.title-main > span')) return el.parentElement.clientWidth || 0;
+      if(el.classList.contains('subtitle')) return el.parentElement.clientWidth || 0;
+      if(el.classList.contains('field-value')) return el.parentElement ? (el.parentElement.clientWidth - 4) : 0;
+      if(el.closest && el.closest('.thumb-item')) return 500;
+      if(el.classList.contains('thumb-title1') || el.classList.contains('thumb-title2')) return 390;
+      return el.clientWidth || (el.parentElement ? el.parentElement.clientWidth : 0) || el.offsetWidth || 0;
+    }
+    function resetTextFit(el){
+      el.style.fontSize=(Number(el.dataset.base||16))+'px';
+      const ls=el.dataset.baseSpacing;
+      el.style.letterSpacing=(ls && ls!=='normal') ? ls : '';
+      el.style.transform='';
+      el.style.transformOrigin='';
+      el.style.display='';
+    }
+    function fitFontOnly(el,min=12){
+      resetTextFit(el);
+      const base=Number(el.dataset.base || 16);
+      let size=base;
+      const max=getMaxWidth(el)-2;
+      if(max<=0) return;
+      while(el.scrollWidth>max && size>min){ size-=1; el.style.fontSize=size+'px'; }
+    }
+    function fitValueText(el,min=12){
+      resetTextFit(el);
+      const base=Number(el.dataset.base || 16);
+      let size=base;
+      const max=getMaxWidth(el)-2;
+      if(max<=0) return;
+      while(el.scrollWidth>max && size>min){ size-=1; el.style.fontSize=size+'px'; }
+      let ls=0;
+      while(el.scrollWidth>max && ls>-1.2){ ls-=0.05; el.style.letterSpacing=ls.toFixed(2)+'px'; }
+    }
+    function fitAll(root=document){
+      rememberBaseFonts(root);
+      root.querySelectorAll('.field-value').forEach(el=>fitValueText(el,16));
+      root.querySelectorAll('.subtitle').forEach(el=>fitFontOnly(el,16));
+      root.querySelectorAll('.thumb-title1,.thumb-title2').forEach(el=>fitValueText(el,42));
+      root.querySelectorAll('.thumb-item .ko').forEach(el=>fitValueText(el,24));
+      root.querySelectorAll('.thumb-item .en').forEach(el=>fitValueText(el,22));
+    }
+    function render(){
+      Object.entries(map).forEach(([i,o])=>{document.getElementById(o).textContent=document.getElementById(i).value||''});
+      Object.entries(thumbMap).forEach(([i,o])=>{
+        if(i==='item'){
+          const raw=document.getElementById(i).value||'';
+          const m=raw.match(/^(.*?)\s*(\(.+\))\s*$/);
+          const ko=m ? m[1].trim() : raw.trim();
+          const en=m ? m[2].trim() : '';
+          document.getElementById(o).innerHTML='<span class="ko"></span>'+(en?'<span class="en"></span>':'');
+          const koEl=document.querySelector('#'+o+' .ko');
+          const enEl=document.querySelector('#'+o+' .en');
+          if(koEl) koEl.textContent=ko;
+          if(enEl) enEl.textContent=en;
+        }else{
+          document.getElementById(o).textContent=document.getElementById(i).value||'';
+        }
+      });
+      requestAnimationFrame(()=>fitAll(document));
+    }
+    function filenameSafe(t,suffix=''){
+      const base=String(t||'교정_지연_안내').replace(/[\/:*?"<>|]/g,'').replace(/\s+/g,'_').slice(0,80);
+      return base + suffix + '.png';
+    }
+    async function downloadCard(targetId,width,height,bgColor,buttonId,statusText,fileSuffix=''){
+      const btn=document.getElementById(buttonId);
+      const old=btn.textContent;
+      btn.disabled=true;
+      btn.textContent='생성 중...';
+      let holder=null;
+      try{
+        if(document.fonts && document.fonts.ready) await document.fonts.ready;
+        render();
+        await new Promise(r=>setTimeout(r,220));
+        const original=document.getElementById(targetId);
+        const clone=original.cloneNode(true);
+        clone.style.boxShadow='none';
+        clone.style.transform='none';
+        clone.style.width=width+'px';
+        clone.style.height=height+'px';
+        clone.style.margin='0';
+        holder=document.createElement('div');
+        holder.style.position='fixed';
+        holder.style.left='-99999px';
+        holder.style.top='0';
+        holder.style.width=width+'px';
+        holder.style.height=height+'px';
+        holder.style.overflow='hidden';
+        holder.style.background=bgColor;
+        holder.appendChild(clone);
+        document.body.appendChild(holder);
+        rememberBaseFonts(holder);
+        fitAll(holder);
+        await new Promise(r=>setTimeout(r,120));
+        const canvas=await html2canvas(clone,{backgroundColor:bgColor,scale:1,useCORS:true,logging:false,width:width,height:height,windowWidth:width,windowHeight:height,scrollX:0,scrollY:0});
+        const out=document.createElement('canvas');
+        out.width=width;
+        out.height=height;
+        const ctx=out.getContext('2d');
+        ctx.fillStyle=bgColor;
+        ctx.fillRect(0,0,width,height);
+        ctx.drawImage(canvas,0,0,width,height);
+        const a=document.createElement('a');
+        a.download=filenameSafe(document.getElementById('title2').value,fileSuffix);
+        a.href=out.toDataURL('image/png');
+        a.click();
+        setStatus(statusText);
+      }catch(e){
+        alert(statusText+' 중 오류가 발생했습니다.\n'+e.message);
+      }finally{
+        if(holder) holder.remove();
+        btn.disabled=false;
+        btn.textContent=old;
+      }
+    }
+    async function download(){
+      return downloadCard('delayCard',800,1000,themes[currentTheme].cardBg,'btnDownload','PNG 다운로드 완료','');
+    }
+    async function downloadThumb(){
+      return downloadCard('thumbCard',580,360,themes[currentTheme].vars['--thumb-bg1'],'btnThumbDownload','썸네일 다운로드 완료','_thumbnail');
+    }
+    function sample(){
+      document.getElementById('badge').value='KIC';
+      document.getElementById('title1').value='일부 품목';
+      document.getElementById('title2').value='교정 지연 안내';
+      document.getElementById('subtitle').value='보다 정확하고 안정적인 교정을 위해 최선을 다하겠습니다.';
+      document.getElementById('period').value='2026년 06월 15일 ~ 06월 29일';
+      document.getElementById('standard').value='ROGOWSKI CURRENT WAVEFORM TRANSDUCER';
+      document.getElementById('item').value='서지 발생기 (LIGHTING SURGE SIMULATOR)';
+      document.getElementById('startDate').value='2026년 06월 29일 이후 (본 예정일은 변경될 수 있습니다.)';
+      document.getElementById('calName').value='김선구 팀장';
+      document.getElementById('calTel').value='02-6359-1941';
+      document.getElementById('csName').value='최보혜 팀장';
+      document.getElementById('csTel').value='02-863-1903';
+      render();
+    }
+    document.querySelectorAll('input').forEach(el=>el.addEventListener('input',render));
+    document.querySelectorAll('input[name="theme"]').forEach(el=>el.addEventListener('change',()=>applyTheme(el.value)));
+    document.getElementById('btnDownload').addEventListener('click',download);
+    document.getElementById('btnThumbDownload').addEventListener('click',downloadThumb);
+    document.getElementById('btnSample').addEventListener('click',sample);
+    document.addEventListener('DOMContentLoaded',()=>{rememberBaseFonts(); applyTheme(document.querySelector('input[name="theme"]:checked')?.value || 'green'); render();});
+  </script>
+
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('kicLnbCollapsed') === 'Y') {
+          document.body.classList.add('kic-lnb-collapsed');
+        }
+      } catch(e) {}
+    })();
+    function toggleKicLnb(){
+      document.body.classList.toggle('kic-lnb-collapsed');
+      try {
+        localStorage.setItem('kicLnbCollapsed', document.body.classList.contains('kic-lnb-collapsed') ? 'Y' : 'N');
+      } catch(e) {}
+    }
+  </script>
+</body>
+</html>

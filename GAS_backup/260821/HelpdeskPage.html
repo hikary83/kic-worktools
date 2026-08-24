@@ -1,0 +1,2687 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>KIC 업무 도구 · IT 헬프데스크</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@300;400;500;700&display=swap');
+    body { font-family: 'Noto Sans KR', sans-serif; background-color: #f8fafc; color: #1e293b; }
+    .card-shadow { box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+    .loader { border: 4px solid #f3f3f3; border-top: 4px solid #3b82f6; border-radius: 50%; width: 40px; height: 40px; animation: spin 1s linear infinite; margin: 20px auto; }
+    @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+    .no-scrollbar::-webkit-scrollbar { display: none; }
+    .no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    .tab-active { border-bottom: 3px solid #2563eb; color: #2563eb; font-weight: 700; }
+    
+    /* AI 리포트 마크다운 전용 스타일 */
+    #ai-report-result h2 { font-size: 1.125rem; font-weight: 700; color: #4c1d95; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #ede9fe; padding-bottom: 0.5rem; }
+    #ai-report-result h3 { font-size: 1.125rem; font-weight: 700; color: #4c1d95; margin-top: 1.5rem; margin-bottom: 0.75rem; border-bottom: 1px solid #ede9fe; padding-bottom: 0.5rem; }
+    #ai-report-result p { margin-bottom: 1rem; color: #475569; }
+    #ai-report-result ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 1rem; color: #475569; }
+    #ai-report-result li { margin-bottom: 0.5rem; }
+    #ai-report-result strong { color: #1e293b; font-weight: 700; }
+
+    /* AI 채팅창 마크다운 전용 스타일 */
+    .ai-chat-content h3 { font-size: 1rem; font-weight: 700; color: #4c1d95; margin-top: 1rem; margin-bottom: 0.5rem; }
+    .ai-chat-content p { margin-bottom: 0.5rem; }
+    .ai-chat-content ul { list-style-type: disc; padding-left: 1.5rem; margin-bottom: 0.5rem; }
+    .ai-chat-content li { margin-bottom: 0.25rem; }
+    .ai-chat-content strong { color: #1e293b; font-weight: 700; }
+
+    .kanban-column { min-height: 260px; }
+    .kanban-drop-active { outline: 2px dashed #3b82f6; outline-offset: -4px; background-color: #eff6ff; }
+    .kanban-card[draggable="true"] { cursor: grab; }
+    .kanban-card[draggable="true"]:active { cursor: grabbing; }
+    .kanban-done-dropzone { min-height: 58px; }
+    .kanban-done-drop-active { outline: 2px dashed #22c55e; outline-offset: -4px; background-color: #dcfce7; }
+
+    /* 드래그 중에만 노출되는 화면 고정 완료 드롭존 */
+    .kanban-floating-done-dropzone {
+      position: fixed;
+      top: 14px;
+      left: calc(50% + 122px);
+      width: min(520px, calc(100vw - 300px));
+      min-height: 66px;
+      z-index: 100005;
+      opacity: 0;
+      visibility: hidden;
+      pointer-events: none;
+      transform: translate(-50%, -14px);
+      transition: opacity .16s ease, transform .16s ease, background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
+      box-shadow: 0 12px 30px rgba(15,23,42,.18);
+    }
+    .kanban-floating-done-dropzone.show {
+      opacity: 1;
+      visibility: visible;
+      pointer-events: auto;
+      transform: translate(-50%, 0);
+    }
+    .kanban-floating-done-dropzone.kanban-done-drop-active {
+      background-color: #dcfce7 !important;
+      border-color: #22c55e !important;
+      box-shadow: 0 14px 34px rgba(34,197,94,.28);
+    }
+    body.kic-lnb-collapsed .kanban-floating-done-dropzone {
+      left: calc(50% + 38px);
+      width: min(520px, calc(100vw - 125px));
+    }
+    @media(max-width:900px){
+      .kanban-floating-done-dropzone,
+      body.kic-lnb-collapsed .kanban-floating-done-dropzone {
+        left: 50%;
+        width: calc(100vw - 24px);
+      }
+    }
+  </style>
+
+  <style>
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb *{box-sizing:border-box}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
+    .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
+    .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-link:hover{background:#1e293b;color:#fff}
+    .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
+    .kic-tool-offset{min-height:100vh;margin-left:244px;background:#f8fafc}
+
+    .kic-lnb-toggle{margin-left:auto;width:34px;height:34px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(255,255,255,.06);color:#cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
+    .kic-lnb-toggle:hover{background:#1e293b;color:#fff}
+    body.kic-lnb-collapsed .kic-lnb{width:76px}
+    body.kic-lnb-collapsed .kic-tool-offset{margin-left:76px}
+    body.kic-lnb-collapsed .kic-lnb-brand{height:112px;padding:12px 8px;justify-content:flex-start;flex-direction:column;gap:8px}
+    body.kic-lnb-collapsed .kic-lnb-logo{width:40px;height:40px;border-radius:13px;font-size:18px;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
+    body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px}
+    body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
+    body.kic-lnb-collapsed .kic-lnb-link{position:relative}
+    body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
+    @media(max-width:900px){body.kic-lnb-collapsed .kic-lnb{width:auto}.kic-lnb-toggle{display:none}body.kic-lnb-collapsed .kic-tool-offset{margin-left:0}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
+
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto}.kic-lnb-link{flex:0 0 auto}.kic-tool-offset{margin-left:0}}
+  </style>
+
+</head>
+<body class="relative">
+
+  <aside class="kic-lnb">
+    <div class="kic-lnb-brand">
+      <div class="kic-lnb-logo">▣</div>
+      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div><button class="kic-lnb-toggle" type="button" onclick="toggleKicLnb()" title="메뉴 접기/펼치기">☰</button>
+    </div>
+    <nav class="kic-lnb-nav">
+            <a class="kic-lnb-link kic-active" data-title="IT 헬프데스크" href="<?= toolHelpdeskUrl ?>"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
+      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="<?= toolReplyUrl ?>"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
+      <a class="kic-lnb-link" data-title="공지사항 생성" href="<?= toolNoticeUrl ?>"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
+      <a class="kic-lnb-link" data-title="교정 지연 안내" href="<?= toolDelayUrl ?>"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
+      <a class="kic-lnb-link" data-title="필증 출력 확인" href="<?= toolPrintUrl ?>"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
+    </nav>
+  </aside>
+
+  <main class="kic-tool-offset">
+    <div class="p-4 md:p-8 relative">
+  <div id="toast" class="fixed top-5 right-5 z-[9999] hidden px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all duration-300"></div>
+
+  <!-- 카드 드래그 중에만 표시되는 화면 고정 완료 처리 영역 -->
+  <div id="kanban-floating-done-dropzone"
+       class="kanban-floating-done-dropzone flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-green-300 bg-green-50 text-green-700 px-5 py-3"
+       aria-hidden="true"
+       ondragover="allowKanbanDrop(event)"
+       ondragenter="handleKanbanDoneDragEnter(event)"
+       ondragleave="handleKanbanDoneDragLeave(event)"
+       ondrop="handleKanbanDrop(event, '완료')">
+    <div class="w-9 h-9 rounded-full bg-white border border-green-200 flex items-center justify-center shrink-0">
+      <i class="fas fa-check-circle text-green-600"></i>
+    </div>
+    <div class="text-center sm:text-left">
+      <div class="text-sm font-bold">완료 처리</div>
+      <div class="text-[11px] font-medium text-green-600 mt-0.5">카드를 여기에 놓으면 완료 처리됩니다.</div>
+    </div>
+  </div>
+
+  <div class="max-w-7xl mx-auto space-y-6">
+    <!-- 1단: Header & 검색 필터 -->
+    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
+      <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-chart-line text-blue-600"></i> 실시간 IT 헬프데스크</h1>
+      <div class="bg-white p-2.5 rounded-xl border border-slate-200 card-shadow flex flex-wrap items-center gap-3">
+        <div class="flex items-center gap-2 border-r border-slate-100 pr-3">
+          <i class="far fa-calendar-alt text-slate-400 text-sm ml-1"></i>
+          <input type="date" id="startDate" class="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-sm outline-none text-slate-600 cursor-pointer focus:ring-2 focus:ring-blue-100">
+          <span class="text-slate-300">~</span>
+          <input type="date" id="endDate" class="px-2 py-1 bg-slate-50 border border-slate-200 rounded text-sm outline-none text-slate-600 cursor-pointer focus:ring-2 focus:ring-blue-100">
+        </div>
+        <button onclick="loadData()" class="bg-blue-600 text-white px-4 py-1.5 rounded-lg text-sm font-bold hover:bg-blue-700 transition-colors shadow-sm"><i class="fas fa-search"></i> 조회</button>
+        <button onclick="resetFilter()" class="text-slate-400 px-2 py-1.5 rounded-lg text-xs font-medium hover:text-slate-600 transition-colors">전체조회</button>
+        <div class="flex items-center gap-2 ml-auto lg:ml-4 border-l border-slate-100 pl-3">
+          <!-- [UX 업데이트] 설정(톱니바퀴) 버튼을 메인 헤더에 배치 -->
+          <button onclick="openSettingsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-50 text-slate-500 rounded-lg hover:bg-slate-200 hover:text-slate-800 transition-colors" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog"></i></button>
+          <button onclick="openAddModal()" class="w-9 h-9 flex items-center justify-center bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-600 hover:text-white transition-colors" title="새 이슈 등록"><i class="fas fa-plus"></i></button>
+          <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" class="w-9 h-9 flex items-center justify-center bg-green-50 text-green-600 rounded-lg hover:bg-green-600 hover:text-white transition-colors" title="구글 시트 열기"><i class="fas fa-file-excel"></i></a>
+        </div>
+      </div>
+    </div>
+    <!-- 2단: KPI 요약 카드 -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+      <div class="bg-white p-5 rounded-xl border border-slate-200 card-shadow flex justify-between items-center">
+          <div><p class="text-xs font-bold text-slate-400 uppercase tracking-wider mb-1">조회 기간 접수</p><h3 class="text-3xl font-bold text-slate-800" id="kpi-total">0</h3></div>
+          <div class="p-3 bg-slate-50 rounded-xl text-slate-300"><i class="fas fa-inbox text-2xl"></i></div>
+      </div>
+      <div class="bg-white p-5 rounded-xl border border-slate-200 card-shadow flex justify-between items-center border-l-4 border-l-yellow-400">
+          <div><p class="text-xs font-bold text-yellow-500 uppercase tracking-wider mb-1">현재 처리 중</p><h3 class="text-3xl font-bold text-yellow-600" id="kpi-pending">0</h3></div>
+          <div class="p-3 bg-yellow-50 rounded-xl text-yellow-200"><i class="fas fa-spinner text-2xl"></i></div>
+      </div>
+      <div class="bg-white p-5 rounded-xl border border-slate-200 card-shadow flex justify-between items-center border-l-4 border-l-green-500">
+          <div><p class="text-xs font-bold text-green-500 uppercase tracking-wider mb-1">처리 완료</p><h3 class="text-3xl font-bold text-green-600" id="kpi-done">0</h3></div>
+          <div class="p-3 bg-green-50 rounded-xl text-green-200"><i class="fas fa-check-circle text-2xl"></i></div>
+      </div>
+    </div>
+
+    <!-- 3단: 탭 네비게이션 -->
+    <div class="flex border-b border-slate-200 gap-8 px-2">
+      <!-- 탭 이름 이슈 관리로 일원화 -->
+      <button onclick="switchTab('pending')" id="tab-btn-pending" class="pb-3 text-sm font-medium text-slate-400 hover:text-slate-600 transition-all tab-active"><i class="fas fa-tasks mr-2"></i>이슈 관리</button>
+      <button onclick="switchTab('stats')" id="tab-btn-stats" class="pb-3 text-sm font-medium text-slate-400 hover:text-slate-600 transition-all"><i class="fas fa-chart-pie mr-2"></i>통계 리포트</button>
+      <button onclick="switchTab('ai')" id="tab-btn-ai" class="pb-3 text-sm font-medium text-slate-400 hover:text-purple-600 transition-all"><i class="fas fa-robot mr-2"></i>AI 분석 리포트</button>
+    </div>
+
+    <div id="loading" class="text-center py-20 hidden">
+      <div class="loader mx-auto"></div>
+      <p class="text-slate-400 mt-4 font-medium" id="loading-text">데이터를 동기화 중입니다...</p>
+    </div>
+
+    <!-- 4단: 상세 콘텐츠 영역 -->
+    <div id="dashboard-content">
+      
+      <!-- 탭 1: 이슈 관리 (진행중 / 완료 그룹핑) -->
+      <div id="tab-pending-content" class="space-y-10 animate-in fade-in duration-500">
+        
+        <!-- 이슈 관리 전용 검색 -->
+        <div class="bg-white p-4 rounded-xl border border-slate-200 card-shadow">
+          <div class="flex flex-col md:flex-row md:items-center gap-3">
+            <div class="relative flex-1">
+              <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 text-sm"></i>
+              <input type="text" id="globalSearchInput" oninput="handleGlobalSearchInput()"
+                     class="w-full pl-10 pr-10 py-3 bg-slate-50 border border-slate-200 rounded-xl text-sm outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-300"
+                     placeholder="이슈 관리 검색: 제목, 요청자, 담당자, 메뉴, 처리내용, 지라링크 등">
+              <button id="globalSearchClearBtn" onclick="clearGlobalSearch()"
+                      class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full text-slate-300 hover:text-slate-600 hover:bg-slate-200 transition-colors"
+                      title="검색어 지우기"><i class="fas fa-times"></i></button>
+            </div>
+            <div id="globalSearchSummary" class="hidden shrink-0 text-xs font-bold text-blue-700 bg-blue-50 border border-blue-100 px-3 py-2 rounded-lg"></div>
+          </div>
+        </div>
+
+        <!-- 섹션 1: 기간 내 진행 중 -->
+        <div>
+          <h3 class="text-md font-bold text-slate-700 border-l-4 border-yellow-400 pl-3 mb-4 flex items-center gap-2">🚀 조회 기간 내 이슈 - 진행 중 <span class="text-xs bg-yellow-100 text-yellow-700 px-2 py-0.5 rounded-full font-bold" id="count-pending-current">0건</span></h3>
+          <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
+          <div id="pending-current-container"></div>
+        </div>
+
+        <!-- 섹션 2: 기간 내 완료 -->
+        <div>
+          <div class="text-md font-bold text-slate-700 border-l-4 border-green-500 pl-3 mb-4 flex items-center justify-between gap-2">
+            <h3 class="flex items-center gap-2">✅ 조회 기간 내 이슈 - 완료 <span class="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full font-bold" id="count-done-current">0건</span></h3>
+            <button id="btn-toggle-done" onclick="toggleSection('done-current-container', 'btn-toggle-done')" class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full hover:bg-slate-50">펼치기</button>
+          </div>
+          <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
+          <div id="done-current-container" class="hidden"></div>
+        </div>
+
+        <!-- 섹션 3: 과거 누적 -->
+        <div class="pt-6 border-t border-slate-200">
+          <div class="text-md font-bold text-slate-700 border-l-4 border-red-500 pl-3 mb-4 flex items-center justify-between gap-2">
+            <h3 class="flex items-center gap-2">⚠️ 이월된 미처리 건 <span class="text-xs bg-red-100 text-red-700 px-2 py-0.5 rounded-full font-bold" id="count-past">0건</span></h3>
+            <button id="btn-toggle-past" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" class="text-xs font-bold text-slate-500 bg-white border border-slate-200 px-3 py-1 rounded-full hover:bg-slate-50">펼치기</button>
+          </div>
+          <div id="pending-past-container" class="hidden"></div>
+        </div>
+      </div>
+
+      <!-- 탭 2: 통계 요약 -->
+      <div id="tab-stats-content" class="hidden grid grid-cols-1 lg:grid-cols-2 gap-6 pb-10">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 card-shadow"><h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2 text-sm"><i class="far fa-building text-blue-400"></i> 지사별 접수 비율</h4><div class="relative h-64 w-full"><canvas id="branchChart"></canvas></div></div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 card-shadow"><h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-desktop text-purple-400"></i> 시스템별 비중</h4><div class="relative h-64 w-full"><canvas id="systemChart"></canvas></div></div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 card-shadow"><h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-user-tag text-emerald-400"></i> 담당자별 처리 현황</h4><div class="relative h-64 w-full"><canvas id="devChart"></canvas></div></div>
+        <div class="bg-white p-6 rounded-xl border border-slate-200 card-shadow"><h4 class="font-bold text-slate-700 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-tags text-orange-400"></i> 이슈 유형 분포</h4><div class="relative h-64 w-full"><canvas id="typeChart"></canvas></div></div>
+      </div>
+
+      <!-- 탭 3: AI 분석 리포트 -->
+      <div id="tab-ai-content" class="hidden pb-10 mt-6">
+        <div class="bg-white p-6 rounded-xl border border-slate-200 card-shadow flex flex-col min-h-[600px]">
+          <div class="flex justify-between items-center mb-6 border-b border-slate-100 pb-4">
+            <div>
+              <h4 class="font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-magic text-purple-500"></i> Gemini AI 헬프데스크 운영 리포트</h4>
+              <p class="text-xs text-slate-400 mt-1">현재 조회 데이터와 전주 동일 기간을 비교해 보고용 운영 요약과 주요 인사이트를 정리합니다.</p>
+            </div>
+            <div class="flex items-center gap-2">
+              <button id="btn-copy-ai" onclick="copyAIReport()" class="hidden bg-white text-purple-600 border border-purple-200 px-4 py-2.5 rounded-lg text-sm font-bold hover:bg-purple-50 transition-colors shadow-sm flex items-center gap-2" title="AI 리포트 복사">
+                <i class="fas fa-copy"></i> 복사
+              </button>
+              <button id="btn-generate-ai" onclick="generateAIReport()" class="bg-purple-600 text-white px-5 py-2.5 rounded-lg text-sm font-bold hover:bg-purple-700 transition-colors shadow-sm flex items-center gap-2">
+                <i class="fas fa-robot"></i> 분석 리포트 자동 생성
+              </button>
+            </div>
+          </div>
+          
+          <div id="ai-loading" class="hidden py-16 text-center">
+            <div class="loader mx-auto" style="border-top-color: #9333ea;"></div>
+            <p class="text-purple-600 mt-4 font-bold text-sm animate-pulse">AI가 이슈를 분석 중입니다...</p>
+          </div>
+
+          <div id="ai-report-result" class="text-slate-700 leading-relaxed text-sm bg-slate-50 p-6 rounded-lg flex-1">
+            <div class="text-center py-20 text-slate-300">
+              <i class="fas fa-chart-line text-5xl mb-4 opacity-30 block"></i>
+              상단의 '분석 리포트 자동 생성' 버튼을 클릭하시면 AI 리포트가 생성됩니다.
+            </div>
+          </div>
+
+          <!-- 대화형 AI 채팅 섹션 -->
+          <div id="ai-chat-section" class="hidden mt-6 flex-col border border-slate-200 rounded-lg overflow-hidden bg-white shadow-sm">
+            <div id="ai-chat-history" class="p-6 h-72 overflow-y-auto space-y-5 bg-slate-50 border-b border-slate-200 scroll-smooth"></div>
+            <div class="p-3 bg-white flex gap-2 items-center">
+                <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-lg outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white transition-all text-sm text-slate-700" placeholder="리포트 내용에 대해 추가로 지시하거나 질문해보세요...">
+                <button onclick="sendChatMessage()" id="btn-send-chat" class="px-5 py-2.5 bg-purple-600 text-white rounded-lg hover:bg-purple-700 transition-colors font-bold text-sm shadow-sm flex items-center gap-2 whitespace-nowrap">
+                    <i class="fas fa-paper-plane"></i> 전송
+                </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- [모달] 시스템 설정 (담당 개발자 관리) -->
+  <div id="settingsModal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col m-4 transform scale-95 transition-transform duration-300" id="settingsModalContent">
+      <div class="p-5 border-b border-slate-100 flex justify-between items-center bg-slate-50 rounded-t-2xl">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-cog text-slate-500"></i> 시스템 설정 (담당 개발자 관리)</h2>
+        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-200 flex items-center justify-center"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 flex-1 overflow-y-auto no-scrollbar">
+        <p class="text-xs text-slate-500 mb-4 bg-blue-50 text-blue-700 p-3 rounded-lg border border-blue-100">
+          <i class="fas fa-info-circle mr-1"></i> 여기에 등록된 이름이 '이슈 등록'과 '현황 업데이트'의 담당자 목록에 표시됩니다. 이메일을 정확히 입력해야 알림이 발송됩니다.
+        </p>
+        <div class="flex text-xs font-bold text-slate-500 mb-2 px-1">
+            <div class="w-1/3">이름</div>
+            <div class="flex-1">이메일 (알림 수신용)</div>
+            <div class="w-9 text-center">삭제</div>
+        </div>
+        <div id="settings-dev-list" class="space-y-2">
+            <!-- 동적으로 담당자 리스트가 추가됨 -->
+        </div>
+        <button onclick="addDevRow()" class="w-full mt-4 py-2 border-2 border-dashed border-slate-300 text-slate-500 font-bold text-sm rounded-lg hover:border-blue-400 hover:text-blue-500 transition-colors">
+            <i class="fas fa-plus"></i> 담당자 행 추가
+        </button>
+      </div>
+      <div class="p-5 border-t border-slate-100 flex justify-end gap-3 rounded-b-2xl">
+        <button onclick="closeSettingsModal()" class="px-5 py-2 text-slate-600 bg-slate-100 rounded-lg font-bold text-sm">취소</button>
+        <button onclick="saveSettings()" class="px-6 py-2 text-white bg-slate-800 rounded-lg font-bold text-sm">설정 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [모달] 이슈 등록 -->
+  <div id="addModal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar m-4 transform scale-95 transition-transform duration-300" id="addModalContent">
+      <div class="p-6 border-b border-slate-100 flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-plus-circle text-blue-600"></i> 새 이슈 등록 (이관)</h2>
+        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-6 space-y-5">
+        <!-- [v16] 게시판 캡처 자동 이관 -->
+        <div class="rounded-2xl border border-blue-200 bg-blue-50/60 p-4" id="add-capture-panel">
+          <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
+            <div>
+              <div class="flex items-center gap-2 text-sm font-extrabold text-blue-800"><i class="fas fa-camera"></i> 게시판 캡처 자동 이관</div>
+              <p class="mt-1 text-xs text-blue-700 leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. 붙여넣으면 AI가 자동 분석하여 아래 등록 폼을 채웁니다.</p>
+            </div>
+            <span class="shrink-0 text-[11px] font-bold text-blue-700 bg-white border border-blue-200 rounded-full px-2.5 py-1">최대 3장</span>
+          </div>
+
+          <div id="add-capture-zone" tabindex="0" class="min-h-[112px] rounded-xl border-2 border-dashed border-blue-300 bg-white flex items-center justify-center p-3 outline-none focus:ring-4 focus:ring-blue-100 transition-all">
+            <div id="add-capture-empty" class="text-center text-slate-400 py-3">
+              <i class="fas fa-paste text-2xl text-blue-400 mb-2"></i>
+              <div class="text-sm font-bold text-slate-600">여기를 클릭한 뒤 Ctrl+V</div>
+              <div class="text-[11px] mt-1">또는 아래 '이미지 선택' 버튼을 이용하세요.</div>
+            </div>
+            <div id="add-capture-thumbs" class="hidden w-full flex flex-wrap gap-2"></div>
+          </div>
+
+          <input id="add-capture-input" type="file" accept="image/*" multiple class="hidden">
+          <div class="mt-3 flex flex-wrap items-center gap-2">
+            <button type="button" onclick="document.getElementById('add-capture-input').click()" class="px-3 py-2 rounded-lg bg-white border border-blue-200 text-blue-700 text-xs font-bold hover:bg-blue-50"><i class="fas fa-image mr-1"></i>이미지 선택</button>
+            <button type="button" id="add-capture-analyze-btn" onclick="analyzeAddCapture(false)" class="px-3 py-2 rounded-lg bg-blue-600 text-white text-xs font-bold hover:bg-blue-700 disabled:opacity-50"><i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력</button>
+            <button type="button" onclick="clearAddCaptureImages()" class="px-3 py-2 rounded-lg bg-slate-100 text-slate-500 text-xs font-bold hover:bg-slate-200">캡처 초기화</button>
+            <span id="add-capture-status" class="text-xs font-bold text-slate-500 ml-1"></span>
+          </div>
+          <div id="add-capture-warning" class="hidden mt-2 text-[11px] leading-relaxed text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2"></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 p-4 rounded-lg border border-slate-200">
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">접수 일자 (지정) <span class="text-red-500">*</span></label><input type="date" id="add-date" class="w-full border rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white cursor-pointer"></div>
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">지사 <span class="text-red-500">*</span></label><select id="add-branch" class="w-full border rounded-lg px-3 py-2 text-sm bg-white"><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">요청자</label><input type="text" id="add-requester" class="w-full border rounded-lg px-3 py-2 text-sm bg-white"></div>
+          <div><label class="block text-xs font-bold text-slate-600 mb-1">담당 개발자</label><select id="add-dev" class="w-full border rounded-lg px-3 py-2 text-sm bg-white"><option value="">로딩중...</option></select></div>
+        </div>
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">시스템 구분</label><select id="add-system" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">선택</option><option value="CMS">CMS</option><option value="CWIZ">CWIZ</option><option value="인프라">인프라</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">유형</label><select id="add-type" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">선택</option><option value="오류">오류</option><option value="데이터 수정">데이터 수정</option><option value="단순 문의">단순 문의</option><option value="기능 개선">기능 개선</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">긴급도</label><select id="add-priority" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="낮음">낮음</option><option value="보통" selected>보통</option><option value="높음">높음</option><option value="긴급">긴급</option></select></div>
+        </div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">발생 메뉴</label><input type="text" id="add-menu" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="예: 접수관리 > 입고등록"></div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">원문/첨부 링크</label><input type="url" id="add-source-link" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">지라 링크</label><input type="url" id="add-jira-link" class="w-full border border-slate-300 rounded-lg px-3 py-2 text-sm" placeholder="Jira 이슈 URL"></div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">제목 <span class="text-red-500">*</span></label><input type="text" id="add-title" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">상세 내용 <span class="text-red-500">*</span></label><textarea id="add-details" rows="4" class="w-full border rounded-lg px-3 py-2 text-sm"></textarea></div>
+      </div>
+      <div class="p-6 border-t border-slate-100 flex justify-end gap-3 sticky bottom-0 bg-white">
+        <button onclick="closeAddModal()" class="px-5 py-2 text-slate-600 bg-slate-100 rounded-lg font-bold text-sm">취소</button>
+        <button onclick="submitAddForm()" class="px-6 py-2 text-white bg-blue-600 rounded-lg font-bold text-sm shadow-sm">이슈 등록 (이관)</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- [모달] 현황 업데이트 -->
+  <div id="editModal" class="fixed inset-0 bg-slate-900 bg-opacity-50 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+    <div class="bg-white rounded-2xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
+      <div class="p-5 border-b flex justify-between items-center sticky top-0 bg-white z-10">
+        <h2 class="text-lg font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-edit text-green-600"></i> 현황 업데이트</h2>
+        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 w-8 h-8 rounded-full hover:bg-slate-100 flex items-center justify-center"><i class="fas fa-times"></i></button>
+      </div>
+      <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar">
+        <div class="bg-slate-50 p-4 rounded-xl border space-y-2.5">
+            <div class="flex items-center justify-between">
+                <span class="text-[10px] font-bold text-slate-400 bg-white px-2 py-0.5 rounded border border-slate-200" id="edit-id-display"></span>
+                <div class="flex items-center gap-2">
+                    <span class="text-[10px] text-slate-500 font-medium" id="edit-meta-display"></span>
+                    <span class="text-[10px] text-blue-600 font-bold bg-blue-50 px-2 py-0.5 rounded" id="edit-menu-display"></span>
+                </div>
+            </div>
+            <div><label class="block text-[11px] font-bold text-slate-500 mb-1">제목 수정</label><input type="text" id="edit-title" class="w-full border rounded-md px-3 py-2 text-sm font-bold"></div>
+            <div><label class="block text-[11px] font-bold text-slate-500 mb-1">상세 내용 수정</label><textarea id="edit-details" rows="3" class="w-full border rounded-md px-3 py-2 text-xs text-slate-600 resize-none"></textarea></div>
+        </div>
+        <input type="hidden" id="edit-id">
+        <input type="hidden" id="edit-source-type" value="helpdesk">
+        <div class="grid grid-cols-2 gap-4">
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">담당 개발자</label><select id="edit-dev" class="w-full border rounded-lg px-3 py-2 text-sm"><option value="">로딩중...</option></select></div>
+          <div><label class="block text-sm font-bold text-slate-700 mb-1">상태</label><select id="edit-status" class="w-full border rounded-lg px-3 py-2 text-sm font-bold"><option value="접수대기">접수대기</option><option value="검토중" class="text-purple-600">검토중</option><option value="예정" class="text-blue-600">예정</option><option value="처리중">처리중</option><option value="완료" class="text-green-600">완료</option><option value="반려" class="text-red-600">반려</option></select></div>
+        </div>
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-1">
+            <label class="block text-sm font-bold text-slate-700">처리 내용 기록</label>
+            <button type="button" id="edit-ai-reply-btn" onclick="generateEditAiReply()" class="px-3 py-1.5 rounded-lg bg-violet-50 text-violet-700 border border-violet-200 hover:bg-violet-600 hover:text-white transition-colors text-xs font-bold flex items-center gap-1.5">
+              <i class="fas fa-wand-magic-sparkles"></i><span>AI 답변</span>
+            </button>
+          </div>
+          <textarea id="edit-action" rows="3" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="확인 결과, 처리 내용, 개선 방향 등 실제 답변의 핵심 내용을 간단히 입력하세요."></textarea>
+          <p class="mt-1.5 text-[11px] text-slate-400">※ 입력한 처리 내용을 답변 초안으로 사용하며, 별도 답변 메뉴와 동일한 AI 답변 로직을 사용합니다.</p>
+        </div>
+        <div id="edit-ai-reply-panel" class="hidden rounded-xl border border-violet-200 bg-violet-50/40 p-3 space-y-2">
+          <div class="flex items-center justify-between gap-3">
+            <div>
+              <div class="text-xs font-bold text-violet-700 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI 답변 생성 결과</div>
+              <div id="edit-ai-reply-status" class="text-[11px] text-slate-500 mt-0.5">생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.</div>
+            </div>
+            <div class="flex items-center gap-1.5 shrink-0">
+              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-white border border-violet-200 text-violet-700 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
+              <button type="button" onclick="copyEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-violet-600 text-white hover:bg-violet-700 text-[11px] font-bold"><i class="fas fa-copy mr-1"></i>복사</button>
+            </div>
+          </div>
+          <textarea id="edit-ai-reply-result" rows="8" class="w-full border border-violet-200 rounded-lg px-3 py-2 text-sm leading-relaxed bg-white resize-y" placeholder="AI 답변이 여기에 생성됩니다."></textarea>
+        </div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">비고 (내부 메모)</label><input type="text" id="edit-remark" class="w-full border rounded-lg px-3 py-2 text-sm"></div>
+        <div><label class="block text-sm font-bold text-slate-700 mb-1">원문/첨부 링크</label><input type="url" id="edit-source-link" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div>
+          <div class="flex items-center justify-between gap-3 mb-1">
+            <label class="block text-sm font-bold text-slate-700">지라 링크</label>
+            <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 select-none cursor-pointer" title="신규 Jira 일감 등록 또는 기존 Jira 건 매칭 완료 여부">
+              <input type="checkbox" id="edit-jira-linked" class="sr-only peer">
+              <span class="relative w-10 h-5 bg-slate-200 rounded-full transition-colors peer-checked:bg-green-500 after:content-[''] after:absolute after:left-0.5 after:top-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow after:transition-transform peer-checked:after:translate-x-5"></span>
+              <span>Jira 일감 연동 완료</span>
+            </label>
+          </div>
+          <input type="url" id="edit-jira-link" class="w-full border rounded-lg px-3 py-2 text-sm" placeholder="Jira 이슈 URL">
+        </div>
+      </div>
+      <div class="p-5 border-t flex justify-end gap-3 sticky bottom-0 bg-white">
+        <button onclick="closeEditModal()" class="px-5 py-2 text-slate-600 bg-slate-100 rounded-lg font-bold text-sm">취소</button>
+        <button onclick="submitEditForm()" class="px-6 py-2 text-white bg-green-600 rounded-lg font-bold text-sm">저장하기</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /* ==============================================================
+       1. 전역 변수 설정
+       ============================================================== */
+    let chartBranch = null, chartDev = null, chartSystem = null, chartType = null;
+    const colors = ['#3b82f6', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6', '#06b6d4', '#f43f5e']; 
+    window.allIssuesMap = {}; 
+    window.currentStats = null; 
+    window.aiChatHistory = [];
+    window.lastAiReportText = "";
+    window.globalDevList = []; // 담당자 리스트를 저장할 전역 변수
+    window.globalSearchTerm = ''; // 전체 카드 검색어
+
+    function switchTab(tabName) {
+      const tabs = ['pending', 'stats', 'ai'];
+      tabs.forEach(name => {
+        document.getElementById('tab-' + name + '-content').classList.add('hidden');
+        document.getElementById('tab-btn-' + name).classList.remove('tab-active');
+        document.getElementById('tab-btn-' + name).classList.add('text-slate-400');
+        document.getElementById('tab-btn-' + name).classList.remove('text-purple-600');
+      });
+      document.getElementById('tab-' + tabName + '-content').classList.remove('hidden');
+      document.getElementById('tab-btn-' + tabName).classList.add('tab-active');
+      document.getElementById('tab-btn-' + tabName).classList.remove('text-slate-400');
+      if(tabName === 'ai') document.getElementById('tab-btn-' + tabName).classList.add('text-purple-600');
+      if (tabName === 'stats') {
+        [chartBranch, chartSystem, chartDev, chartType].forEach(c => c && c.resize());
+      }
+    }
+
+    async function initDashboard() {
+      const today = new Date();
+      const start = new Date(today);
+      const day = start.getDay(); 
+      start.setDate(start.getDate() - day + (day === 0 ? -6 : 1));
+      document.getElementById('startDate').value = getLocalDateString(start);
+      document.getElementById('endDate').value = getLocalDateString(today);
+      initImeProtection();
+      await ensureKicChartFontReady();
+      
+      // 앱 로딩 시 담당자 리스트를 먼저 가져온 후 데이터를 불러옵니다.
+      document.getElementById('loading').classList.remove('hidden');
+      runServerFunction('getDevelopers').then(devs => {
+          window.globalDevList = devs;
+          populateDevSelects();
+          loadData(); // 데이터 로딩 시작
+      }).catch(e => {
+          console.error("Failed to load developers:", e);
+          loadData();
+      });
+    }
+    document.addEventListener('DOMContentLoaded', initDashboard);
+
+    function populateDevSelects() {
+      const optionsHtml = '<option value="">미배정</option>' + 
+                          window.globalDevList.map(d => `<option value="${escapeHtml(d.name)}">${escapeHtml(d.name)}</option>`).join('');
+      document.getElementById('add-dev').innerHTML = optionsHtml;
+      document.getElementById('edit-dev').innerHTML = optionsHtml;
+    }
+
+    function getLocalDateString(date) {
+      const offset = date.getTimezoneOffset() * 60000;
+      return new Date(date.getTime() - offset).toISOString().split('T')[0];
+    }
+
+    function escapeHtml(value) {
+      return String(value || '')
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#39;');
+    }
+
+    function getSafeLink(value) {
+      const url = String(value || '').trim();
+      if (!url) return '';
+      return /^https?:\/\//i.test(url) ? url : '';
+    }
+
+    function isJiraLinked(item) {
+      if (!item) return false;
+      const raw = item.jiraLinkedFlag ?? item.jiraLinked ?? item.jiraWorkLinked ?? item.jiraDone ?? item.jiraStatus;
+      if (raw === true) return true;
+      const value = String(raw || '').trim().toUpperCase();
+      return ['Y', 'YES', 'TRUE', '1', 'ON', '완료', '등록완료', '연동완료'].includes(value);
+    }
+
+    function getJiraBadgeHtml(item, safeJiraLink) {
+      const linked = isJiraLinked(item);
+      if (!safeJiraLink && !linked) return '';
+
+      let cls = 'text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100';
+      let title = 'Jira 링크 있음 / 일감 연동 확인 필요';
+      if (safeJiraLink && linked) {
+        cls = 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100';
+        title = 'Jira 일감 연동 완료';
+      } else if (!safeJiraLink && linked) {
+        cls = 'text-red-700 bg-red-50 border border-red-200 hover:bg-red-100';
+        title = 'Jira 일감 연동 체크됨 / Jira 링크 누락';
+      }
+
+      const href = safeJiraLink ? `href="${escapeHtml(safeJiraLink)}" target="_blank"` : 'href="javascript:void(0)"';
+      return `<a ${href} onclick="event.stopPropagation()" class="text-[10px] ${cls} px-2 py-0.5 rounded-full font-bold" title="${escapeHtml(title)}"><i class="fas fa-external-link-alt mr-1"></i>Jira</a>`;
+    }
+
+    // 한글 IME 입력 보호: Apps Script iframe/브라우저 조합에서
+    // 입력칸 포커스 이동 시 마지막 조합 글자가 사라지는 현상을 방지합니다.
+    function protectKoreanImeInput(inputId) {
+      const el = document.getElementById(inputId);
+      if (!el || el.dataset.imeProtected === 'Y') return;
+
+      el.dataset.imeProtected = 'Y';
+
+      let lastSafeValue = el.value || '';
+      let bestComposingValue = el.value || '';
+      let isComposing = false;
+      let lastInputType = '';
+      let lastCompositionData = '';
+
+      // 검색 X 버튼처럼 스크립트로 값을 비울 때 IME 보호 로직이
+      // 이전 검색어를 복원하지 않도록 안전값도 함께 초기화합니다.
+      el.__kicSetImeSafeValue = (value) => {
+        value = value || '';
+        lastSafeValue = value;
+        bestComposingValue = value;
+        isComposing = false;
+        lastInputType = 'deleteContentBackward';
+        lastCompositionData = '';
+        el.value = value;
+      };
+
+      const setBestValue = (value) => {
+        value = value || '';
+        if (value.length >= (bestComposingValue || '').length) {
+          bestComposingValue = value;
+        }
+        if (value.length >= (lastSafeValue || '').length) {
+          lastSafeValue = value;
+        }
+      };
+
+      const restoreIfTrimmed = () => {
+        const currentValue = el.value || '';
+        const candidates = [bestComposingValue, lastSafeValue]
+          .filter(Boolean)
+          .sort((a, b) => b.length - a.length);
+
+        for (const candidate of candidates) {
+          const lostFewChars = candidate.length > currentValue.length &&
+                               candidate.indexOf(currentValue) === 0 &&
+                               candidate.length - currentValue.length <= 3;
+          if (lostFewChars && lastInputType.indexOf('delete') !== 0) {
+            el.value = candidate;
+            lastSafeValue = candidate;
+            bestComposingValue = candidate;
+            el.dispatchEvent(new Event('input', { bubbles: true }));
+            return true;
+          }
+        }
+        return false;
+      };
+
+      el.addEventListener('compositionstart', () => {
+        isComposing = true;
+        bestComposingValue = el.value || '';
+        lastCompositionData = '';
+      });
+
+      el.addEventListener('compositionupdate', (event) => {
+        lastCompositionData = event.data || '';
+        setBestValue(el.value || '');
+      });
+
+      el.addEventListener('compositionend', (event) => {
+        isComposing = false;
+        lastCompositionData = event.data || lastCompositionData || '';
+        setBestValue(el.value || '');
+        setTimeout(() => { restoreIfTrimmed(); setBestValue(el.value || ''); }, 0);
+        setTimeout(() => { restoreIfTrimmed(); setBestValue(el.value || ''); }, 60);
+      });
+
+      el.addEventListener('beforeinput', (event) => {
+        lastInputType = event.inputType || '';
+        if (lastInputType.indexOf('delete') === 0) {
+          lastSafeValue = el.value || '';
+          bestComposingValue = el.value || '';
+        }
+      });
+
+      el.addEventListener('input', (event) => {
+        lastInputType = event.inputType || lastInputType || '';
+        const value = el.value || '';
+
+        if (lastInputType.indexOf('delete') === 0) {
+          lastSafeValue = value;
+          bestComposingValue = value;
+          return;
+        }
+
+        if (isComposing) {
+          setBestValue(value);
+        } else if (value.length >= (lastSafeValue || '').length || value.indexOf(lastSafeValue) === 0) {
+          lastSafeValue = value;
+          bestComposingValue = value;
+        } else {
+          setBestValue(value);
+        }
+      });
+
+      // 마우스로 다른 위치를 클릭하면서 조합이 종료되는 경우 blur 이후 값이 뒤늦게 잘리는 케이스가 있어
+      // 여러 타이밍에서 한 번 더 확인합니다.
+      el.addEventListener('blur', () => {
+        setTimeout(restoreIfTrimmed, 0);
+        setTimeout(restoreIfTrimmed, 60);
+        setTimeout(restoreIfTrimmed, 160);
+      });
+
+      el.addEventListener('change', () => {
+        setTimeout(() => {
+          if (!restoreIfTrimmed()) setBestValue(el.value || '');
+        }, 0);
+      });
+    }
+
+    function initImeProtection() {
+      [
+        'add-menu',
+        'add-source-link',
+        'add-title',
+        'add-details',
+        'add-requester',
+        'edit-title',
+        'edit-details',
+        'edit-action',
+        'edit-remark',
+        'edit-source-link',
+        'edit-jira-link',
+        'ai-chat-input',
+        'globalSearchInput'
+      ].forEach(protectKoreanImeInput);
+    }
+
+    function runServerFunction(functionName, ...args) {
+      return new Promise((resolve, reject) => {
+        if (typeof google === 'undefined' || !google.script || !google.script.run) {
+          console.warn('Apps Script 환경이 아닙니다. 더미 데이터를 사용합니다.');
+          if (functionName === 'getDashboardData') {
+             setTimeout(() => resolve({
+               total: 0, done: 0, pending: 0, pendingCurrent: [], completedCurrent: [], pendingPast: [], rejectedPast: [], pastKanbanItems: [],
+               branchData: {}, typeData: {}, systemData: {}, devData: {}, devStatusData: {}
+             }), 500);
+          } else if (functionName === 'getDevelopers') {
+             setTimeout(() => resolve([{name:"테스터", email:"test@test.com"}]), 100);
+          } else {
+             reject(new Error('Apps Script 환경이 아닙니다.'));
+          }
+          return;
+        }
+        google.script.run.withSuccessHandler(resolve).withFailureHandler(reject)[functionName](...args);
+      });
+    }
+
+    function loadData() {
+      document.getElementById('loading').classList.remove('hidden');
+      document.getElementById('dashboard-content').classList.add('hidden');
+      const start = document.getElementById('startDate').value;
+      const end = document.getElementById('endDate').value;
+      runServerFunction('getDashboardData', start, end).then(onSuccess).catch(onFailure);
+    }
+
+    function resetFilter() {
+      document.getElementById('startDate').value = '';
+      document.getElementById('endDate').value = '';
+      loadData();
+    }
+
+    function onFailure(error) {
+      console.error(error);
+      document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${error.message}</p><button onclick='loadData()' class='mt-4 text-blue-600 underline'>다시 시도</button>`;
+    }
+
+    function onSuccess(stats) {
+      document.getElementById('loading').classList.add('hidden');
+      document.getElementById('dashboard-content').classList.remove('hidden');
+      window.currentStats = stats;
+      document.getElementById('kpi-total').innerText = stats.total;
+      document.getElementById('kpi-pending').innerText = stats.pending;
+      document.getElementById('kpi-done').innerText = stats.done;
+
+      renderIssueSections(stats, true);
+      updateCharts(stats);
+    }
+
+    function toggleSection(containerId, buttonId) {
+      const container = document.getElementById(containerId);
+      const button = document.getElementById(buttonId);
+      if (!container || !button) return;
+      const isHidden = container.classList.toggle('hidden');
+      button.innerText = isHidden ? '펼치기' : '접기';
+    }
+
+    function collapseSection(containerId, buttonId) {
+      const container = document.getElementById(containerId);
+      const button = document.getElementById(buttonId);
+      if (!container || !button) return;
+      container.classList.add('hidden');
+      button.innerText = '펼치기';
+    }
+
+    function showToast(message, type = 'success') {
+      const toast = document.getElementById('toast');
+      if (!toast) return alert(message);
+      toast.className = 'fixed top-5 right-5 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all duration-300 ' +
+        (type === 'error' ? 'bg-red-600 text-white' : type === 'info' ? 'bg-slate-800 text-white' : 'bg-green-600 text-white');
+      toast.innerText = message;
+      toast.classList.remove('hidden');
+      clearTimeout(window.__toastTimer);
+      window.__toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+    }
+
+    function normalizeSearchText(value) {
+        return String(value || '').toLowerCase().replace(/\s+/g, ' ').trim();
+    }
+
+    function getIssueSearchText(item) {
+        if (!item) return '';
+        return [
+          item.id,
+          item.sourceLabel,
+          item.sourceType,
+          item.date,
+          item.branch,
+          item.requester,
+          item.system,
+          item.type,
+          item.priority,
+          item.menu,
+          item.title,
+          item.details,
+          item.dev,
+          item.status,
+          item.actionContent,
+          item.remark,
+          item.sourceLink,
+          item.jiraLink
+        ].map(v => String(v || '')).join(' ');
+    }
+
+    function matchesGlobalSearch(item, keyword) {
+        const q = normalizeSearchText(keyword);
+        if (!q) return true;
+        const haystack = normalizeSearchText(getIssueSearchText(item));
+        return q.split(' ').filter(Boolean).every(token => haystack.indexOf(token) !== -1);
+    }
+
+    function filterIssuesByGlobalSearch(items) {
+        const q = window.globalSearchTerm || '';
+        if (!q.trim()) return (items || []).slice();
+        return (items || []).filter(item => matchesGlobalSearch(item, q));
+    }
+
+    function renderIssueSections(stats, shouldCollapseFoldableSections) {
+        if (!stats) return;
+        const pendingCurrent = filterIssuesByGlobalSearch(stats.pendingCurrent || []);
+        const completedCurrent = filterIssuesByGlobalSearch(stats.completedCurrent || []);
+        const pastBoardItemsOriginal = stats.pastKanbanItems || stats.pendingPast || [];
+        const pastBoardItems = filterIssuesByGlobalSearch(pastBoardItemsOriginal);
+        const isSearching = Boolean((window.globalSearchTerm || '').trim());
+        const resultCount = pendingCurrent.length + completedCurrent.length + pastBoardItems.length;
+        const originalCount = (stats.pendingCurrent || []).length + (stats.completedCurrent || []).length + pastBoardItemsOriginal.length;
+
+        document.getElementById('count-pending-current').innerText = `${pendingCurrent.length}건`;
+        document.getElementById('count-done-current').innerText = `${completedCurrent.length}건`;
+        document.getElementById('count-past').innerText = `${pastBoardItems.length}건`;
+
+        renderCardsGroupedByType('pending-current-container', pendingCurrent, isSearching ? '검색 결과가 없습니다.' : '진행 중 이슈 없음');
+        renderCardsGroupedByType('done-current-container', completedCurrent, isSearching ? '검색 결과가 없습니다.' : '완료 이슈 없음');
+        renderKanbanBoard('pending-past-container', pastBoardItems, isSearching ? '검색 결과가 없습니다.' : '이월/불가 관리 대상 없음');
+
+        updateGlobalSearchUi(resultCount, originalCount);
+
+        if (shouldCollapseFoldableSections && !isSearching) {
+          collapseSection('done-current-container', 'btn-toggle-done');
+          collapseSection('pending-past-container', 'btn-toggle-past');
+        } else if (isSearching) {
+          expandSection('done-current-container', 'btn-toggle-done');
+          expandSection('pending-past-container', 'btn-toggle-past');
+        }
+    }
+
+    function handleGlobalSearchInput() {
+        const input = document.getElementById('globalSearchInput');
+        window.globalSearchTerm = input ? input.value.trim() : '';
+        if (window.currentStats) renderIssueSections(window.currentStats, false);
+    }
+
+    function clearGlobalSearch() {
+        const input = document.getElementById('globalSearchInput');
+        if (input) {
+          if (typeof input.__kicSetImeSafeValue === 'function') input.__kicSetImeSafeValue('');
+          else input.value = '';
+          input.dispatchEvent(new Event('input', { bubbles: true }));
+        }
+        window.globalSearchTerm = '';
+        if (window.currentStats) renderIssueSections(window.currentStats, true);
+        if (input) {
+          input.focus();
+          setTimeout(() => {
+            if (input.value) {
+              if (typeof input.__kicSetImeSafeValue === 'function') input.__kicSetImeSafeValue('');
+              else input.value = '';
+              window.globalSearchTerm = '';
+              if (window.currentStats) renderIssueSections(window.currentStats, true);
+            }
+          }, 80);
+        }
+    }
+
+    function updateGlobalSearchUi(resultCount, originalCount) {
+        const input = document.getElementById('globalSearchInput');
+        const clearBtn = document.getElementById('globalSearchClearBtn');
+        const summary = document.getElementById('globalSearchSummary');
+        const q = (window.globalSearchTerm || '').trim();
+        if (input && input.value.trim() !== q) input.value = q;
+        if (clearBtn) clearBtn.classList.toggle('hidden', !q);
+        if (!summary) return;
+        if (q) {
+          summary.innerText = `검색 결과 ${resultCount}건 / 전체 ${originalCount}건`;
+          summary.classList.remove('hidden');
+        } else {
+          summary.innerText = '';
+          summary.classList.add('hidden');
+        }
+    }
+
+
+    function parseIssueDateValue(value) {
+        if (!value) return null;
+        const text = String(value).trim();
+        const d = new Date(text.replace(' ', 'T'));
+        return isNaN(d.getTime()) ? null : d;
+    }
+
+    function getCurrentDateFilterRange() {
+        const startValue = document.getElementById('startDate')?.value || '';
+        const endValue = document.getElementById('endDate')?.value || '';
+        const start = startValue ? new Date(startValue + 'T00:00:00') : null;
+        const end = endValue ? new Date(endValue + 'T23:59:59') : null;
+        return { start, end };
+    }
+
+    function isIssueInCurrentRange(issue) {
+        const { start, end } = getCurrentDateFilterRange();
+        const d = parseIssueDateValue(issue && issue.date);
+        if (!d) return true;
+        if (start && d < start) return false;
+        if (end && d > end) return false;
+        return true;
+    }
+
+    function isIssuePastForCurrentRange(issue) {
+        const { start } = getCurrentDateFilterRange();
+        const d = parseIssueDateValue(issue && issue.date);
+        return Boolean(start && d && d < start);
+    }
+
+    function isPendingIssueStatus(status) {
+        return status !== '완료' && status !== '반려';
+    }
+
+    function removeIssueFromStatsCollections(issueId, sourceType) {
+        if (!window.currentStats || !issueId) return;
+        const lists = ['pendingCurrent', 'completedCurrent', 'pendingPast', 'rejectedPast', 'quarterRequestItems', 'pastKanbanItems'];
+        lists.forEach(key => {
+            window.currentStats[key] = (window.currentStats[key] || []).filter(item => {
+                if (String(item.id) !== String(issueId)) return true;
+                if (sourceType && String(item.sourceType || 'helpdesk') !== String(sourceType || 'helpdesk')) return true;
+                return false;
+            });
+        });
+    }
+
+    function rebuildPastKanbanItems() {
+        if (!window.currentStats) return;
+        window.currentStats.pastKanbanItems = [
+            ...(window.currentStats.quarterRequestItems || []),
+            ...(window.currentStats.pendingPast || []),
+            ...(window.currentStats.rejectedPast || [])
+        ];
+    }
+
+    function routeIssueToStatsCollections(issue) {
+        if (!window.currentStats || !issue || !issue.id) return;
+        const sourceType = issue.sourceType || 'helpdesk';
+        removeIssueFromStatsCollections(issue.id, sourceType);
+
+        if (sourceType === 'quarter') {
+            if (issue.status !== '완료') window.currentStats.quarterRequestItems.push(issue);
+            rebuildPastKanbanItems();
+            return;
+        }
+
+        const inRange = isIssueInCurrentRange(issue);
+        const isPast = isIssuePastForCurrentRange(issue);
+        const isPending = isPendingIssueStatus(issue.status);
+
+        if (inRange) {
+            if (isPending) window.currentStats.pendingCurrent.push(issue);
+            else window.currentStats.completedCurrent.push(issue);
+        } else if (isPast) {
+            if (isPending) window.currentStats.pendingPast.push(issue);
+            else if (issue.status === '반려') window.currentStats.rejectedPast.push(issue);
+        }
+        rebuildPastKanbanItems();
+    }
+
+    function recomputeDashboardStatsFromCollections() {
+        if (!window.currentStats) return;
+        const inRangeItems = [
+            ...(window.currentStats.pendingCurrent || []),
+            ...(window.currentStats.completedCurrent || [])
+        ];
+        window.currentStats.total = inRangeItems.length;
+        window.currentStats.done = (window.currentStats.completedCurrent || []).length;
+        window.currentStats.pending = (window.currentStats.pendingCurrent || []).length;
+        window.currentStats.statusData = {};
+        window.currentStats.branchData = {};
+        window.currentStats.devData = {};
+        window.currentStats.devStatusData = {};
+        window.currentStats.systemData = {};
+        window.currentStats.typeData = {};
+
+        inRangeItems.forEach(issue => {
+            const status = issue.status || '';
+            if (status) window.currentStats.statusData[status] = (window.currentStats.statusData[status] || 0) + 1;
+            if (issue.branch) window.currentStats.branchData[issue.branch] = (window.currentStats.branchData[issue.branch] || 0) + 1;
+            if (issue.system) window.currentStats.systemData[issue.system] = (window.currentStats.systemData[issue.system] || 0) + 1;
+            if (issue.type) window.currentStats.typeData[issue.type] = (window.currentStats.typeData[issue.type] || 0) + 1;
+            const devKey = issue.dev || '미배정';
+            window.currentStats.devData[devKey] = (window.currentStats.devData[devKey] || 0) + 1;
+            if (!window.currentStats.devStatusData[devKey]) window.currentStats.devStatusData[devKey] = {pending: 0, done: 0, rejected: 0, total: 0};
+            window.currentStats.devStatusData[devKey].total++;
+            if (status === '완료') window.currentStats.devStatusData[devKey].done++;
+            else if (status === '반려') window.currentStats.devStatusData[devKey].rejected++;
+            else window.currentStats.devStatusData[devKey].pending++;
+        });
+
+        document.getElementById('kpi-total').innerText = window.currentStats.total;
+        document.getElementById('kpi-pending').innerText = window.currentStats.pending;
+        document.getElementById('kpi-done').innerText = window.currentStats.done;
+    }
+
+    function rerenderDashboardAfterLocalChange() {
+        if (!window.currentStats) return;
+        recomputeDashboardStatsFromCollections();
+        renderIssueSections(window.currentStats, false);
+        updateCharts(window.currentStats);
+    }
+
+    function applyLocalIssueUpdate(updatedIssue) {
+        if (!updatedIssue || !updatedIssue.id) return;
+        window.allIssuesMap[updatedIssue.id] = updatedIssue;
+        routeIssueToStatsCollections(updatedIssue);
+        rerenderDashboardAfterLocalChange();
+    }
+
+    function buildLocalIssueFromAddData(data, result) {
+        const issueId = (result && result.id) ? result.id : '';
+        const dateText = (result && result.date) ? result.date : ((data.receiptDate || getLocalDateString(new Date())) + ' 09:00');
+        return {
+            id: issueId,
+            sourceType: 'helpdesk',
+            sourceLabel: '헬프',
+            date: dateText,
+            branch: data.branch || '-',
+            requester: data.requester || '',
+            system: data.system || '-',
+            type: data.type || '-',
+            priority: data.priority || '보통',
+            menu: data.menu || '',
+            title: data.title || '',
+            details: data.details || '',
+            dev: data.dev || '',
+            status: '접수대기',
+            actionContent: '',
+            remark: '',
+            sourceLink: data.sourceLink || '',
+            jiraLink: data.jiraLink || '',
+            hiddenFlag: '',
+            isHidden: false,
+            jiraLinkedFlag: data.jiraLinkedFlag === 'Y' || data.jiraLinked === 'Y' ? 'Y' : '',
+            jiraLinked: data.jiraLinkedFlag === 'Y' || data.jiraLinked === 'Y' ? 'Y' : ''
+        };
+    }
+
+    function setButtonSaving(button, isSaving, savingText) {
+        if (!button) return;
+        if (isSaving) {
+            button.dataset.originalHtml = button.innerHTML;
+            button.disabled = true;
+            button.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>${savingText || '저장중...'}`;
+        } else {
+            button.disabled = false;
+            if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
+        }
+    }
+
+    function expandSection(containerId, buttonId) {
+      const container = document.getElementById(containerId);
+      const button = document.getElementById(buttonId);
+      if (!container || !button) return;
+      container.classList.remove('hidden');
+      button.innerText = '접기';
+    }
+
+    function getIssueType(item) {
+        return String((item && item.type) || '기타').trim() || '기타';
+    }
+
+    function getTypeColorKey(type) {
+        const t = String(type || '').replace(/\s/g, '');
+        if (t.indexOf('오류') !== -1 || t.indexOf('버그') !== -1 || t.indexOf('장애') !== -1) return 'red';
+        if (t.indexOf('기능개선') !== -1 || t.indexOf('개선') !== -1) return 'purple';
+        if (t.indexOf('데이터수정') !== -1 || t.indexOf('수정') !== -1) return 'orange';
+        if (t.indexOf('단순문의') !== -1 || t.indexOf('문의') !== -1) return 'blue';
+        if (t.indexOf('신규기능') !== -1 || t.indexOf('신규') !== -1) return 'green';
+        return 'slate';
+    }
+
+    function getTypeBadgeClass(type) {
+        const key = getTypeColorKey(type);
+        const map = {
+          red: 'text-red-700 bg-red-50 border border-red-200',
+          purple: 'text-purple-700 bg-purple-50 border border-purple-200',
+          orange: 'text-orange-700 bg-orange-50 border border-orange-200',
+          blue: 'text-blue-700 bg-blue-50 border border-blue-200',
+          green: 'text-green-700 bg-green-50 border border-green-200',
+          slate: 'text-slate-600 bg-slate-100 border border-slate-200'
+        };
+        return map[key] || map.slate;
+    }
+
+    function getTypeIconClass(type) {
+        const key = getTypeColorKey(type);
+        const map = {
+          red: 'text-red-500',
+          purple: 'text-purple-500',
+          orange: 'text-orange-500',
+          blue: 'text-blue-500',
+          green: 'text-green-500',
+          slate: 'text-slate-400'
+        };
+        return map[key] || map.slate;
+    }
+
+    function getTypeFilterClass(type, active) {
+        const base = 'px-3 py-1 text-xs font-bold rounded-full shadow-sm border transition-colors ';
+        const key = type === '__all__' ? 'slate' : getTypeColorKey(type);
+        const map = {
+          red: active ? 'bg-red-600 text-white border-red-600' : 'bg-white text-red-700 border-red-200 hover:bg-red-50',
+          purple: active ? 'bg-purple-600 text-white border-purple-600' : 'bg-white text-purple-700 border-purple-200 hover:bg-purple-50',
+          orange: active ? 'bg-orange-500 text-white border-orange-500' : 'bg-white text-orange-700 border-orange-200 hover:bg-orange-50',
+          blue: active ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-blue-700 border-blue-200 hover:bg-blue-50',
+          green: active ? 'bg-green-600 text-white border-green-600' : 'bg-white text-green-700 border-green-200 hover:bg-green-50',
+          slate: active ? 'bg-slate-700 text-white border-slate-700' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'
+        };
+        return base + (map[key] || map.slate);
+    }
+
+    function getTypeChartColor(type) {
+        const key = getTypeColorKey(type);
+        const map = { red: '#ef4444', purple: '#8b5cf6', orange: '#f97316', blue: '#3b82f6', green: '#10b981', slate: '#64748b' };
+        return map[key] || map.slate;
+    }
+
+    function getSortTime(item) {
+        if (!item || !item.date) return 0;
+        const parsed = new Date(String(item.date).replace(' ', 'T')).getTime();
+        return isNaN(parsed) ? 0 : parsed;
+    }
+
+    function latestFirst(a, b) {
+        const diff = getSortTime(b) - getSortTime(a);
+        if (diff !== 0) return diff;
+        return String(b.id || '').localeCompare(String(a.id || ''));
+    }
+
+    function getTypeCounts(dataArray) {
+        const counts = {};
+        (dataArray || []).forEach(item => {
+            const type = getIssueType(item);
+            counts[type] = (counts[type] || 0) + 1;
+        });
+        return counts;
+    }
+
+    function getSortedTypesFromCounts(counts) {
+        return Object.keys(counts || {}).sort((a, b) => (counts[b] || 0) - (counts[a] || 0) || a.localeCompare(b));
+    }
+
+    function isSelectedType(selectedTypes, type) {
+        return !selectedTypes || selectedTypes.size === 0 || selectedTypes.has(type);
+    }
+
+    function filterBySelectedTypes(dataArray, selectedTypes) {
+        if (!selectedTypes || selectedTypes.size === 0) return (dataArray || []).slice();
+        return (dataArray || []).filter(item => selectedTypes.has(getIssueType(item)));
+    }
+
+    function renderMultiTypeFilter(filterWrap, dataArray, selectedTypes, onChange) {
+        filterWrap.innerHTML = '';
+        filterWrap.className = 'flex flex-wrap gap-2 mb-6';
+
+        const counts = getTypeCounts(dataArray);
+        const sortedTypes = getSortedTypesFromCounts(counts);
+        const redraw = () => {
+            filterWrap.querySelectorAll('button[data-filter-type]').forEach(btn => {
+                const type = btn.dataset.filterType;
+                const isAll = type === '__all__';
+                const active = isAll ? selectedTypes.size === 0 : selectedTypes.has(type);
+                btn.className = getTypeFilterClass(type, active);
+            });
+        };
+
+        const createBtn = (label, count, type) => {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.dataset.filterType = type;
+            btn.innerHTML = `${escapeHtml(label)} <span class='opacity-70 ml-0.5'>${count}</span>`;
+            btn.onclick = () => {
+                if (type === '__all__') {
+                    selectedTypes.clear();
+                } else {
+                    if (selectedTypes.has(type)) selectedTypes.delete(type);
+                    else selectedTypes.add(type);
+                    if (selectedTypes.size === sortedTypes.length) selectedTypes.clear();
+                }
+                redraw();
+                onChange(filterBySelectedTypes(dataArray, selectedTypes));
+            };
+            filterWrap.appendChild(btn);
+        };
+
+        createBtn('전체', (dataArray || []).length, '__all__');
+        sortedTypes.forEach(type => createBtn(type, counts[type], type));
+        redraw();
+    }
+
+    function renderCardsGroupedByType(containerId, dataArray, emptyMsg) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (!dataArray || dataArray.length === 0) {
+            container.innerHTML = `<div class='text-center py-10 text-slate-300'>${emptyMsg}</div>`;
+            return;
+        }
+
+        const selectedTypes = new Set(); // 기본값: 전체
+        const filterWrap = document.createElement('div');
+        const listWrap = document.createElement('div');
+        container.appendChild(filterWrap);
+        container.appendChild(listWrap);
+
+        const renderList = (items) => {
+            listWrap.innerHTML = '';
+            if (!items || items.length === 0) {
+                listWrap.innerHTML = `<div class='text-center py-10 text-slate-300'>선택한 유형의 이슈가 없습니다.</div>`;
+                return;
+            }
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4';
+            items.slice().sort(latestFirst).forEach(item => grid.appendChild(createCardElement(item)));
+            listWrap.appendChild(grid);
+        };
+
+        renderMultiTypeFilter(filterWrap, dataArray, selectedTypes, renderList);
+        renderList(dataArray);
+    }
+
+    function renderKanbanBoard(containerId, dataArray, emptyMsg) {
+        const container = document.getElementById(containerId);
+        container.innerHTML = '';
+        if (!dataArray || dataArray.length === 0) {
+            container.innerHTML = `<div class='text-center py-10 text-slate-300'>${emptyMsg}</div>`;
+            return;
+        }
+
+        const columns = [
+            { key: 'quarter', title: '분기', status: '접수대기', sourceType: 'quarter', icon: 'fa-calendar-check', iconClass: 'text-indigo-500', headerClass: 'bg-indigo-50 border-indigo-200', match: item => item.sourceType === 'quarter' && (!item.status || item.status === '접수대기') },
+            { key: 'helpdesk', title: '헬프', status: '접수대기', sourceType: 'helpdesk', icon: 'fa-inbox', iconClass: 'text-slate-500', headerClass: 'bg-slate-50 border-slate-200', match: item => item.sourceType !== 'quarter' && (!item.status || item.status === '접수대기') },
+            { key: 'blocked', title: '불가', status: '반려', icon: 'fa-ban', iconClass: 'text-red-500', headerClass: 'bg-red-50 border-red-200', match: item => item.status === '반려' },
+            { key: 'todo', title: '해야할 일', status: '예정', icon: 'fa-list-check', iconClass: 'text-blue-500', headerClass: 'bg-blue-50 border-blue-200', match: item => item.status === '예정' || item.status === '검토중' },
+            { key: 'doing', title: '진행 중', status: '처리중', icon: 'fa-spinner', iconClass: 'text-yellow-500', headerClass: 'bg-yellow-50 border-yellow-200', match: item => item.status === '처리중' }
+        ];
+
+        // 칸반 유형 필터는 상태 변경 후에도 유지합니다.
+        if (!window.kanbanSelectedTypes) window.kanbanSelectedTypes = new Set();
+        const selectedTypes = window.kanbanSelectedTypes; // 기본값: 전체
+        let showHiddenRejected = localStorage.getItem('kicShowHiddenRejected') === 'Y';
+
+        const filterWrap = document.createElement('div');
+        const hiddenToggleWrap = document.createElement('div');
+        const boardWrap = document.createElement('div');
+        container.appendChild(filterWrap);
+        container.appendChild(hiddenToggleWrap);
+        container.appendChild(boardWrap);
+
+        const isHiddenRejected = (item) => item && item.status === '반려' && (item.isHidden === true || item.hiddenFlag === 'Y');
+        const getVisibleItems = () => (dataArray || []).filter(item => showHiddenRejected || !isHiddenRejected(item));
+
+        const renderHiddenToggle = () => {
+            const hiddenCount = (dataArray || []).filter(isHiddenRejected).length;
+            hiddenToggleWrap.className = 'flex justify-end -mt-2 mb-4';
+            hiddenToggleWrap.innerHTML = `
+              <button type="button" id="btn-toggle-hidden-rejected" class="text-xs font-bold rounded-full border px-3 py-1 transition-colors ${showHiddenRejected ? 'bg-red-50 text-red-600 border-red-200' : 'bg-white text-slate-500 border-slate-200 hover:bg-slate-50'}">
+                <i class="fas ${showHiddenRejected ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>${showHiddenRejected ? '숨긴 불가 숨기기' : '숨긴 불가 보기'} <span class="opacity-70 ml-0.5">${hiddenCount}</span>
+              </button>
+            `;
+            const btn = hiddenToggleWrap.querySelector('#btn-toggle-hidden-rejected');
+            if (hiddenCount === 0) {
+              btn.disabled = true;
+              btn.className = 'text-xs font-bold rounded-full border px-3 py-1 bg-white text-slate-300 border-slate-100 cursor-not-allowed';
+            }
+            btn.onclick = () => {
+              showHiddenRejected = !showHiddenRejected;
+              localStorage.setItem('kicShowHiddenRejected', showHiddenRejected ? 'Y' : 'N');
+              redrawAll();
+            };
+        };
+
+        const renderBoard = (itemsForBoard) => {
+            boardWrap.innerHTML = '';
+
+            const guideWrap = document.createElement('div');
+            guideWrap.className = 'mb-4 flex flex-col lg:flex-row gap-3 items-stretch';
+            guideWrap.innerHTML = `
+              <div class="flex-1 text-xs text-slate-500 bg-red-50 border border-red-100 rounded-lg px-4 py-3">
+                <i class="fas fa-info-circle text-red-400 mr-1"></i> 이월된 미처리 건은 칸반 보드에서 카드 드래그로 상태를 변경할 수 있습니다. 불가 카드의 <b>숨김</b> 버튼으로 정리 완료된 불가건만 숨길 수 있습니다.
+              </div>
+              <div id="kanban-done-dropzone" class="kanban-done-dropzone w-full lg:w-72 shrink-0 flex flex-col items-center justify-center rounded-lg border-2 border-dashed border-green-300 bg-green-50 text-green-700 text-xs font-bold transition-colors px-4 py-3">
+                <div><i class="fas fa-check-circle mr-1"></i> 완료 처리</div>
+                <div class="text-[10px] font-medium text-green-600 mt-1">카드를 이곳으로 드래그</div>
+              </div>
+            `;
+            const doneDropzone = guideWrap.querySelector('#kanban-done-dropzone');
+            doneDropzone.ondragover = allowKanbanDrop;
+            doneDropzone.ondragenter = handleKanbanDoneDragEnter;
+            doneDropzone.ondragleave = handleKanbanDoneDragLeave;
+            doneDropzone.ondrop = (event) => handleKanbanDrop(event, '완료');
+            boardWrap.appendChild(guideWrap);
+
+            const grid = document.createElement('div');
+            grid.className = 'grid grid-cols-1 md:grid-cols-2 xl:grid-cols-5 gap-4';
+
+            columns.forEach(col => {
+                const items = (itemsForBoard || []).filter(item => col.match(item));
+                const column = document.createElement('div');
+                column.className = 'kanban-column border rounded-xl p-3 transition-colors ' + col.headerClass;
+                column.dataset.status = col.status;
+                column.dataset.sourceType = col.sourceType || '';
+                column.ondragover = allowKanbanDrop;
+                column.ondragenter = handleKanbanDragEnter;
+                column.ondragleave = handleKanbanDragLeave;
+                column.ondrop = (event) => handleKanbanDrop(event, col.status);
+                column.innerHTML = `
+                  <div class="flex items-center justify-between mb-3">
+                    <h4 class="text-sm font-bold text-slate-700 flex items-center gap-2">
+                      <i class="fas ${col.icon} ${col.iconClass}"></i>${col.title}
+                    </h4>
+                    <span class="text-xs font-bold bg-white border border-slate-200 text-slate-500 px-2 py-0.5 rounded-full">${items.length}</span>
+                  </div>
+                  <div class="kanban-card-list space-y-3" data-status="${col.status}"></div>
+                `;
+                const list = column.querySelector('.kanban-card-list');
+                if (items.length === 0) {
+                  list.innerHTML = `<div class="text-center text-xs text-slate-300 py-8 border border-dashed border-slate-200 rounded-lg bg-white/50">카드를 이곳으로 이동</div>`;
+                } else {
+                  items.slice().sort(latestFirst).forEach(item => list.appendChild(createKanbanCardElement(item)));
+                }
+                grid.appendChild(column);
+            });
+
+            boardWrap.appendChild(grid);
+        };
+
+        const redrawAll = () => {
+            const visibleItems = getVisibleItems();
+            renderHiddenToggle();
+            renderMultiTypeFilter(filterWrap, visibleItems, selectedTypes, renderBoard);
+            renderBoard(filterBySelectedTypes(visibleItems, selectedTypes));
+        };
+
+        redrawAll();
+    }
+
+    function createKanbanCardElement(item) {
+        window.allIssuesMap[item.id] = item;
+        const card = document.createElement('div');
+        card.className = 'kanban-card bg-white border border-slate-200 rounded-xl p-4 shadow-sm hover:shadow-md transition-all';
+        card.draggable = true;
+        card.dataset.issueId = item.id;
+        card.dataset.sourceType = item.sourceType || 'helpdesk';
+        card.ondragstart = handleKanbanDragStart;
+        card.ondragend = handleKanbanDragEnd;
+
+        const metaText = `${item.branch || '-'} / ${item.requester || '요청자 미상'}`;
+        const safeSourceLink = getSafeLink(item.sourceLink);
+        const safeJiraLink = getSafeLink(item.jiraLink);
+        const sourceLinkHtml = safeSourceLink
+          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold hover:bg-blue-100"><i class="fas fa-link mr-1"></i>원문</a>`
+          : '';
+        const jiraLinkHtml = getJiraBadgeHtml(item, safeJiraLink);
+        const sourceBadgeHtml = item.sourceType === 'quarter'
+          ? `<span class="ml-1 text-[10px] text-indigo-700 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold whitespace-nowrap" title="분기요청 시트 항목"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
+          : '';
+        const typeLabel = item.type || '기타';
+        const typeBadgeClass = getTypeBadgeClass(typeLabel);
+        const typeIconClass = getTypeIconClass(typeLabel);
+        const editButtonHtml = `<button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-300 hover:text-blue-600 rounded-full transition-colors shrink-0" title="수정하기"><i class="fas fa-pen text-[10px]"></i></button>`;
+        const isHiddenRejected = item.status === '반려' && (item.isHidden === true || item.hiddenFlag === 'Y');
+        const hiddenToggleHtml = item.status === '반려'
+          ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="text-[10px] ${isHiddenRejected ? 'text-slate-600 bg-slate-100 hover:bg-slate-200' : 'text-red-600 bg-red-50 hover:bg-red-100'} px-2 py-0.5 rounded-full font-bold" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>${isHiddenRejected ? '숨김 해제' : '숨김'}</button>`
+          : '';
+
+        card.innerHTML = `
+          <div class="flex items-start justify-between gap-2 mb-2">
+            <div class="min-w-0">
+              <div class="text-[10px] font-bold text-slate-400 mb-1 flex items-center gap-1">
+                <span>${escapeHtml(item.id)}</span>${sourceBadgeHtml}
+              </div>
+              <div class="text-[10px] font-bold text-slate-400 truncate" title="${escapeHtml(metaText)}">${escapeHtml(metaText)}</div>
+            </div>
+            ${editButtonHtml}
+          </div>
+          <div class="font-bold text-sm text-slate-800 leading-snug mb-3">${escapeHtml(item.title)}</div>
+          <div class="flex flex-wrap items-center gap-2 mb-3">
+            <span class="text-[10px] ${typeBadgeClass} px-2 py-0.5 rounded-full font-bold"><i class="fas fa-tag mr-1 ${typeIconClass}"></i>${escapeHtml(typeLabel)}</span>
+            ${sourceLinkHtml}${jiraLinkHtml}
+          </div>
+          <div class="flex justify-between items-center pt-3 border-t border-slate-50 text-xs font-bold">
+            <span class="text-slate-700">${escapeHtml(item.dev || '미배정')}</span>
+            <div class="flex items-center gap-1">${hiddenToggleHtml}<span class="text-slate-500 bg-slate-100 px-2 py-0.5 rounded">${escapeHtml(item.status || '접수대기')}</span></div>
+          </div>
+        `;
+        return card;
+    }
+
+    function allowKanbanDrop(event) {
+      event.preventDefault();
+    }
+
+    function showKanbanFloatingDoneDropzone() {
+      const zone = document.getElementById('kanban-floating-done-dropzone');
+      if (!zone) return;
+      zone.classList.add('show');
+      zone.setAttribute('aria-hidden', 'false');
+      document.body.classList.add('kanban-is-dragging');
+    }
+
+    function hideKanbanFloatingDoneDropzone() {
+      const zone = document.getElementById('kanban-floating-done-dropzone');
+      if (zone) {
+        zone.classList.remove('show', 'kanban-done-drop-active');
+        zone.setAttribute('aria-hidden', 'true');
+      }
+      document.body.classList.remove('kanban-is-dragging');
+    }
+
+    function handleKanbanAutoScroll(event) {
+      if (!document.body.classList.contains('kanban-is-dragging')) return;
+      if (event.target && event.target.closest && event.target.closest('#kanban-floating-done-dropzone')) return;
+
+      const y = Number(event.clientY || 0);
+      const viewportHeight = window.innerHeight || document.documentElement.clientHeight || 0;
+      const edge = 90;
+      let delta = 0;
+
+      if (y > 0 && y < edge) {
+        delta = -Math.max(6, Math.round((edge - y) / 5));
+      } else if (viewportHeight && y > viewportHeight - edge) {
+        delta = Math.max(6, Math.round((y - (viewportHeight - edge)) / 5));
+      }
+
+      if (delta) window.scrollBy(0, delta);
+    }
+
+    document.addEventListener('dragover', handleKanbanAutoScroll, true);
+
+    function handleKanbanDragStart(event) {
+      const payload = { id: event.currentTarget.dataset.issueId, sourceType: event.currentTarget.dataset.sourceType || 'helpdesk' };
+      event.dataTransfer.setData('text/plain', JSON.stringify(payload));
+      event.dataTransfer.effectAllowed = 'move';
+      showKanbanFloatingDoneDropzone();
+      setTimeout(() => event.currentTarget.classList.add('opacity-50'), 0);
+    }
+
+    function handleKanbanDragEnd(event) {
+      event.currentTarget.classList.remove('opacity-50');
+      document.querySelectorAll('.kanban-column').forEach(col => col.classList.remove('kanban-drop-active'));
+      document.querySelectorAll('.kanban-done-dropzone').forEach(zone => zone.classList.remove('kanban-done-drop-active'));
+      hideKanbanFloatingDoneDropzone();
+    }
+
+    function handleKanbanDragEnter(event) {
+      event.preventDefault();
+      event.currentTarget.classList.add('kanban-drop-active');
+    }
+
+    function handleKanbanDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        event.currentTarget.classList.remove('kanban-drop-active');
+      }
+    }
+
+    function handleKanbanDoneDragEnter(event) {
+      event.preventDefault();
+      event.currentTarget.classList.add('kanban-done-drop-active');
+    }
+
+    function handleKanbanDoneDragLeave(event) {
+      if (!event.currentTarget.contains(event.relatedTarget)) {
+        event.currentTarget.classList.remove('kanban-done-drop-active');
+      }
+    }
+
+    function rerenderIssueBoardWithoutReload() {
+      if (!window.currentStats) return;
+      renderIssueSections(window.currentStats, false);
+      expandSection('pending-past-container', 'btn-toggle-past');
+    }
+
+    function updateIssueInLocalLists(issueId, updater) {
+      if (!window.currentStats || !issueId || typeof updater !== 'function') return;
+      const listKeys = ['pendingCurrent', 'completedCurrent', 'pendingPast', 'rejectedPast', 'pastKanbanItems'];
+      listKeys.forEach(key => {
+        const list = window.currentStats[key];
+        if (!Array.isArray(list)) return;
+        list.forEach(item => {
+          if (item && item.id === issueId) updater(item, key);
+        });
+      });
+      if (window.allIssuesMap && window.allIssuesMap[issueId]) updater(window.allIssuesMap[issueId], 'allIssuesMap');
+    }
+
+    function applyLocalKanbanStatusChange(issueId, newStatus, sourceType) {
+      if (!window.currentStats || !issueId) return;
+      updateIssueInLocalLists(issueId, (item) => {
+        item.status = newStatus;
+        item.sourceType = sourceType || item.sourceType || 'helpdesk';
+        if (newStatus !== '반려') {
+          item.isHidden = false;
+          item.hiddenFlag = '';
+        }
+      });
+
+      // 완료 처리된 이월 건은 서버 재조회 없이도 이월 칸반에서 즉시 제외합니다.
+      if (newStatus === '완료') {
+        ['pendingPast', 'rejectedPast', 'pastKanbanItems'].forEach(key => {
+          if (Array.isArray(window.currentStats[key])) {
+            window.currentStats[key] = window.currentStats[key].filter(item => item && item.id !== issueId);
+          }
+        });
+      }
+
+      rerenderIssueBoardWithoutReload();
+    }
+
+    function applyLocalIssueHiddenChange(issueId, hideFlag) {
+      updateIssueInLocalLists(issueId, (item) => {
+        item.isHidden = !!hideFlag;
+        item.hiddenFlag = hideFlag ? 'Y' : '';
+      });
+      rerenderIssueBoardWithoutReload();
+    }
+
+    function handleKanbanDrop(event, newStatus) {
+      event.preventDefault();
+      const column = event.currentTarget;
+      column.classList.remove('kanban-drop-active');
+      column.classList.remove('kanban-done-drop-active');
+      let dragPayload = {};
+      try { dragPayload = JSON.parse(event.dataTransfer.getData('text/plain') || '{}'); } catch(e) { dragPayload = { id: event.dataTransfer.getData('text/plain') }; }
+      const issueId = dragPayload.id;
+      const sourceType = dragPayload.sourceType || 'helpdesk';
+      if (!issueId) return;
+      hideKanbanFloatingDoneDropzone();
+      const item = window.allIssuesMap[issueId];
+      if (item && item.status === newStatus) return;
+
+      const doneMessage = newStatus === '완료' ? '완료 처리 중...' : `상태를 '${newStatus}'로 변경 중...`;
+      showToast(`${issueId} ${doneMessage}`, 'info');
+      runServerFunction('updateIssueStatusFromDashboard', issueId, newStatus, sourceType).then(() => {
+        showToast(newStatus === '완료' ? `${issueId} 완료 처리되었습니다. 이월 목록에서 제외됩니다.` : `${issueId} 상태가 '${newStatus}'로 변경되었습니다.`);
+        applyLocalKanbanStatusChange(issueId, newStatus, sourceType);
+      }).catch(e => {
+        showToast('상태 변경 실패: ' + e.message, 'error');
+      });
+    }
+
+
+    function handleIssueHiddenToggle(event, issueId, sourceType, hideFlag) {
+      if (event) event.stopPropagation();
+      if (!issueId) return;
+      const actionText = hideFlag ? '숨김 처리' : '숨김 해제';
+      showToast(`${issueId} ${actionText} 중...`, 'info');
+      runServerFunction('updateIssueHiddenFromDashboard', issueId, hideFlag ? 'Y' : '', sourceType || 'helpdesk').then(() => {
+        showToast(`${issueId} ${actionText}되었습니다.`);
+        applyLocalIssueHiddenChange(issueId, hideFlag);
+      }).catch(e => {
+        showToast(`${actionText} 실패: ` + e.message, 'error');
+      });
+    }
+
+    function createCardElement(item) {
+        window.allIssuesMap[item.id] = item;
+        const div = document.createElement('div');
+        div.className = 'bg-white p-5 rounded-xl border border-slate-200 card-shadow hover:shadow-lg transition-all relative flex flex-col justify-between h-full group';
+        
+        const getStatusStyles = (s) => {
+          if (s === '접수대기') return 'bg-slate-100 text-slate-400';
+          if (s === '검토중') return 'bg-purple-100 text-purple-700';
+          if (s === '예정') return 'bg-blue-100 text-blue-700';
+          if (s === '완료') return 'bg-green-100 text-green-700';
+          if (s === '반려') return 'bg-red-100 text-red-700';
+          return 'bg-yellow-100 text-yellow-700';
+        };
+
+        const metaText = `${item.branch || '-'} / ${item.requester || '요청자 미상'}`;
+        const safeSourceLink = getSafeLink(item.sourceLink);
+        const safeJiraLink = getSafeLink(item.jiraLink);
+        const typeLabel = item.type || '기타';
+        const typeBadgeClass = getTypeBadgeClass(typeLabel);
+        const typeIconClass = getTypeIconClass(typeLabel);
+        const typeBadgeHtml = `<span class="text-[10px] ${typeBadgeClass} px-2 py-0.5 rounded-full font-bold" title="접수 유형"><i class="fas fa-tag mr-1 ${typeIconClass}"></i>${escapeHtml(typeLabel)}</span>`;
+        const sourceLinkHtml = safeSourceLink
+          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="text-[10px] text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full font-bold hover:bg-blue-100" title="원문/첨부 링크 열기"><i class="fas fa-link mr-1"></i>원문</a>`
+          : '';
+        const jiraLinkHtml = getJiraBadgeHtml(item, safeJiraLink);
+        const linkHtml = [typeBadgeHtml, sourceLinkHtml, jiraLinkHtml].filter(Boolean).join('');
+
+        div.innerHTML = `
+            <button onclick="openEditById('${escapeHtml(item.id)}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 hover:bg-blue-50 text-slate-300 hover:text-blue-600 rounded-full transition-colors z-10">
+                <i class="fas fa-pen text-[10px]"></i>
+            </button>
+            <div class='mb-3 pr-12'>
+                <div class='flex justify-between text-[10px] text-slate-400 font-bold mb-2 gap-2'>
+                    <span>${escapeHtml(item.id)}</span>
+                    <span class='truncate ml-2 text-right max-w-[150px]' title='${escapeHtml(metaText)}'>${escapeHtml(metaText)}</span>
+                </div>
+                <h4 class='font-bold text-sm line-clamp-2 leading-snug'>${escapeHtml(item.title)}</h4>
+                <div class="mt-2 flex flex-wrap items-center gap-2 min-h-[18px]">${linkHtml}</div>
+            </div>
+            <div class='flex justify-between items-center pt-3 border-t border-slate-50 text-xs font-bold'>
+                <span class='text-slate-700'>${escapeHtml(item.dev || '미배정')}</span>
+                <span class='px-2 py-0.5 rounded ${getStatusStyles(item.status)}'>${escapeHtml(item.status)}</span>
+            </div>
+        `;
+        return div;
+    }
+
+    // [v16.4] Chart.js 캔버스 글꼴은 화면 UI와 동일한 폰트 스택을 사용합니다.
+    // Noto Sans KR이 로드되지 않는 환경에서도 본문과 동일하게 Malgun Gothic/Arial로 폴백합니다.
+    const KIC_CHART_FONT_FAMILY = "'Noto Sans KR', 'Malgun Gothic', Arial, sans-serif";
+    let kicChartFontReadyPromise = null;
+
+    function ensureKicChartFontReady() {
+      if (kicChartFontReadyPromise) return kicChartFontReadyPromise;
+
+      kicChartFontReadyPromise = (async function() {
+        try {
+          if (document.fonts && document.fonts.load) {
+            await Promise.all([
+              document.fonts.load('400 12px "Noto Sans KR"'),
+              document.fonts.load('500 12px "Noto Sans KR"'),
+              document.fonts.load('700 12px "Noto Sans KR"')
+            ]);
+            await document.fonts.ready;
+          }
+        } catch (e) {
+          console.warn('Noto Sans KR font preload skipped:', e);
+        }
+
+        if (window.Chart && Chart.defaults && Chart.defaults.font) {
+          Chart.defaults.font.family = KIC_CHART_FONT_FAMILY;
+          Chart.defaults.font.size = 11;
+          Chart.defaults.color = '#64748b';
+        }
+        return true;
+      })();
+
+      return kicChartFontReadyPromise;
+    }
+
+    // 통계 차트 기본 건수 라벨 표시용 플러그인
+    // - 도넛/파이: 2건 이상만 차트 내부에 표시
+    // - 막대: 1건 이상이면 건수 표시
+    const chartCountLabelPlugin = {
+      id: 'chartCountLabelPlugin',
+      afterDatasetsDraw(chart, args, pluginOptions) {
+        const ctx = chart.ctx;
+        const chartType = chart.config.type;
+        const isCircular = chartType === 'doughnut' || chartType === 'pie';
+        const isHorizontal = chart.options.indexAxis === 'y';
+        const minCircularCount = Number(pluginOptions && pluginOptions.minCircularCount) || 2;
+
+        chart.data.datasets.forEach((dataset, datasetIndex) => {
+          const meta = chart.getDatasetMeta(datasetIndex);
+          if (meta.hidden) return;
+
+          meta.data.forEach((element, index) => {
+            const value = Number(dataset.data[index] || 0);
+            if (value <= 0) return;
+            if (isCircular && value < minCircularCount) return;
+
+            ctx.save();
+            ctx.font = '700 12px ' + KIC_CHART_FONT_FAMILY;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+
+            const text = value + '건';
+
+            if (isCircular) {
+              const point = element.getCenterPoint();
+              ctx.lineWidth = 3;
+              ctx.strokeStyle = 'rgba(15, 23, 42, 0.35)';
+              ctx.fillStyle = '#ffffff';
+              ctx.strokeText(text, point.x, point.y);
+              ctx.fillText(text, point.x, point.y);
+            } else if (isHorizontal) {
+              // [v16.4] 이슈 유형 분포도 다른 차트와 동일하게
+              // 흰색 굵은 글자 + 외곽선 스타일로 막대 안쪽에 표시합니다.
+              const barWidth = Math.abs(element.x - element.base);
+              if (barWidth >= 34) {
+                ctx.textAlign = 'right';
+                ctx.lineWidth = 3;
+                ctx.strokeStyle = 'rgba(15, 23, 42, 0.30)';
+                ctx.fillStyle = '#ffffff';
+                const x = Math.max(element.base + 26, element.x - 8);
+                ctx.strokeText(text, x, element.y);
+                ctx.fillText(text, x, element.y);
+              } else {
+                // 막대가 글자보다 짧은 극소값만 바깥에 표시합니다.
+                ctx.textAlign = 'left';
+                ctx.fillStyle = '#334155';
+                const x = Math.min(element.x + 8, chart.chartArea.right - 28);
+                ctx.fillText(text, x, element.y);
+              }
+            } else {
+              // 세로/누적 막대는 각 구간 중앙에 표시
+              const center = element.getCenterPoint();
+              ctx.lineWidth = 3;
+              ctx.strokeStyle = 'rgba(15, 23, 42, 0.30)';
+              ctx.fillStyle = '#ffffff';
+              ctx.strokeText(text, center.x, center.y);
+              ctx.fillText(text, center.x, center.y);
+            }
+            ctx.restore();
+          });
+        });
+      }
+    };
+
+    function getChartPercent(value, total) {
+      const v = Number(value || 0);
+      const t = Number(total || 0);
+      if (!t) return 0;
+      return Math.round((v / t) * 100);
+    }
+
+    async function updateCharts(stats) {
+      await ensureKicChartFontReady();
+
+      const chartFont = { family: KIC_CHART_FONT_FAMILY, size: 11, weight: '400' };
+      const legendFont = { family: KIC_CHART_FONT_FAMILY, size: 10, weight: '400' };
+
+      const makeCircularOptions = () => ({
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { position: 'bottom', labels: { boxWidth: 10, font: legendFont } },
+          chartCountLabelPlugin: { minCircularCount: 2 },
+          tooltip: {
+            callbacks: {
+              label: function(context) {
+                const value = Number(context.raw || 0);
+                const total = context.dataset.data.reduce((sum, v) => sum + Number(v || 0), 0);
+                return `${context.label}: ${value}건 (${getChartPercent(value, total)}%)`;
+              }
+            }
+          }
+        }
+      });
+
+      const ctx1 = document.getElementById('branchChart').getContext('2d');
+      if(chartBranch) chartBranch.destroy();
+      chartBranch = new Chart(ctx1, {
+        type: 'doughnut',
+        data: {
+          labels: Object.keys(stats.branchData),
+          datasets: [{ data: Object.values(stats.branchData), backgroundColor: colors }]
+        },
+        options: makeCircularOptions(),
+        plugins: [chartCountLabelPlugin]
+      });
+
+      const ctx2 = document.getElementById('systemChart').getContext('2d');
+      if(chartSystem) chartSystem.destroy();
+      chartSystem = new Chart(ctx2, {
+        type: 'pie',
+        data: {
+          labels: Object.keys(stats.systemData),
+          datasets: [{ data: Object.values(stats.systemData), backgroundColor: colors.slice().reverse() }]
+        },
+        options: makeCircularOptions(),
+        plugins: [chartCountLabelPlugin]
+      });
+
+      const ctx3 = document.getElementById('devChart').getContext('2d');
+      if(chartDev) chartDev.destroy();
+      const devStatusData = stats.devStatusData || {};
+      const devLabels = Object.keys(devStatusData).sort((a, b) => (devStatusData[b].total || 0) - (devStatusData[a].total || 0));
+      chartDev = new Chart(ctx3, {
+        type: 'bar',
+        data: {
+          labels: devLabels,
+          datasets: [
+            { label: '완료', data: devLabels.map(d => devStatusData[d].done || 0), backgroundColor: '#10b981', borderRadius: 4 },
+            { label: '진행/대기', data: devLabels.map(d => devStatusData[d].pending || 0), backgroundColor: '#f59e0b', borderRadius: 4 },
+            { label: '반려', data: devLabels.map(d => devStatusData[d].rejected || 0), backgroundColor: '#ef4444', borderRadius: 4 }
+          ]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          plugins: {
+            legend: { position: 'bottom', labels: { boxWidth: 10, font: legendFont } },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = Number(context.raw || 0);
+                  const index = context.dataIndex;
+                  const total = context.chart.data.datasets.reduce((sum, ds) => sum + Number(ds.data[index] || 0), 0);
+                  return `${context.dataset.label}: ${value}건 (${getChartPercent(value, total)}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { stacked: true, ticks: { font: chartFont } },
+            y: { stacked: true, beginAtZero: true, ticks: { precision: 0, font: chartFont } }
+          }
+        },
+        plugins: [chartCountLabelPlugin]
+      });
+
+      const ctx4 = document.getElementById('typeChart').getContext('2d');
+      if(chartType) chartType.destroy();
+      const typeLabels = Object.keys(stats.typeData);
+      const typeValues = Object.values(stats.typeData);
+      chartType = new Chart(ctx4, {
+        type: 'bar',
+        data: {
+          labels: typeLabels,
+          datasets: [{ data: typeValues, backgroundColor: typeLabels.map(getTypeChartColor), borderRadius: 4 }]
+        },
+        options: {
+          responsive: true,
+          maintainAspectRatio: false,
+          indexAxis: 'y',
+          layout: { padding: { right: 22 } },
+          plugins: {
+            legend: { display: false },
+            tooltip: {
+              callbacks: {
+                label: function(context) {
+                  const value = Number(context.raw || 0);
+                  const total = context.dataset.data.reduce((sum, v) => sum + Number(v || 0), 0);
+                  return `${value}건 (${getChartPercent(value, total)}%)`;
+                }
+              }
+            }
+          },
+          scales: {
+            x: { beginAtZero: true, ticks: { precision: 0, font: chartFont } },
+            y: { ticks: { font: chartFont } }
+          }
+        },
+        plugins: [chartCountLabelPlugin]
+      });
+    }
+
+    /* ==============================================================
+       AI 분석 리포트
+       ============================================================== */
+    function normalizeAIReportOutput(rawText) {
+        let text = String(rawText || '').trim();
+        const reportTitles = [
+            '## 📊 주간 헬프데스크 운영 리포트',
+            '## 📊 주간 헬프데스크 이슈 요약'
+        ];
+        let titleIndex = -1;
+        let matchedTitle = '';
+
+        reportTitles.forEach(title => {
+            const idx = text.indexOf(title);
+            if (idx >= 0 && (titleIndex < 0 || idx < titleIndex)) {
+                titleIndex = idx;
+                matchedTitle = title;
+            }
+        });
+
+        if (titleIndex > 0) text = text.slice(titleIndex).trim();
+        if (matchedTitle) {
+            const escaped = matchedTitle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+            text = text.replace(new RegExp('^[-_*`\\s]+(?=' + escaped + ')'), '').trim();
+        }
+
+        if (!reportTitles.some(title => text.startsWith(title))) {
+            text = text
+                .split('\n')
+                .filter(line => {
+                    const l = line.trim();
+                    if (!l) return true;
+                    return !(
+                        /^so no judgment/i.test(l) ||
+                        /^no judgment/i.test(l) ||
+                        /^for ticket\s*\d+/i.test(l) ||
+                        /^let[’']?s format/i.test(l) ||
+                        /^no extra text/i.test(l) ||
+                        /everything is directly from the data/i.test(l) ||
+                        /final output exactly as requested/i.test(l) ||
+                        /is in the data/i.test(l)
+                    );
+                })
+                .join('\n')
+                .trim();
+        }
+        return text;
+    }
+
+    function signedNumber(value, suffix) {
+        const n = Number(value || 0);
+        if (n > 0) return `+${n}${suffix || ''}`;
+        if (n < 0) return `${n}${suffix || ''}`;
+        return `0${suffix || ''}`;
+    }
+
+    function buildAIReportMetricCards(stats, completedCount, waitingProgressCount, rejectedCount, completionRate) {
+        const metrics = [
+            { label: '접수', value: Number(stats.total || 0), unit: '건', tone: 'text-slate-800' },
+            { label: '완료', value: completedCount, unit: '건', tone: 'text-emerald-600' },
+            { label: '대기/진행', value: waitingProgressCount, unit: '건', tone: 'text-amber-600' },
+            { label: '반려', value: rejectedCount, unit: '건', tone: 'text-red-500' },
+            { label: '완료율', value: completionRate, unit: '%', tone: 'text-purple-700' }
+        ];
+        const cards = metrics.map(m => `
+            <div class="bg-white border border-slate-200 rounded-xl px-4 py-3">
+              <div class="text-[11px] font-bold text-slate-400 mb-1">${m.label}</div>
+              <div class="text-2xl font-bold ${m.tone}">${m.value}<span class="text-xs ml-0.5 font-bold text-slate-400">${m.unit}</span></div>
+            </div>`).join('');
+
+        const prev = stats.previousWeek || {};
+        let compareHtml = '';
+        if (prev.enabled) {
+            const totalDelta = Number(stats.total || 0) - Number(prev.total || 0);
+            const rateDelta = completionRate - Number(prev.completionRate || 0);
+            compareHtml = `
+              <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs bg-purple-50 border border-purple-100 text-purple-800 rounded-lg px-3 py-2">
+                <span class="font-bold"><i class="fas fa-chart-line mr-1"></i>전주 동일 기간 대비</span>
+                <span>접수 <b>${signedNumber(totalDelta, '건')}</b></span>
+                <span>완료율 <b>${signedNumber(rateDelta, '%p')}</b></span>
+                <span class="text-purple-500">(${prev.startDate || '-'} ~ ${prev.endDate || '-'})</span>
+              </div>`;
+        }
+        return `<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-1">${cards}</div>${compareHtml}`;
+    }
+
+    async function generateAIReport() {
+        const aiResultContainer = document.getElementById('ai-report-result');
+        const aiLoading = document.getElementById('ai-loading');
+        const btn = document.getElementById('btn-generate-ai');
+        const chatSection = document.getElementById('ai-chat-section');
+
+        if(!window.currentStats) return alert('데이터 로딩이 완료되지 않았습니다.');
+        aiResultContainer.innerHTML = '';
+        window.lastAiReportText = '';
+        const copyBtn = document.getElementById('btn-copy-ai');
+        if (copyBtn) copyBtn.classList.add('hidden');
+        chatSection.classList.add('hidden');
+        aiLoading.classList.remove('hidden');
+        btn.disabled = true;
+
+        const stats = window.currentStats;
+        const getCount = (obj, key) => Number((obj && obj[key]) || 0);
+        const totalCount = Number(stats.total || 0);
+        const completedCount = getCount(stats.statusData, '완료');
+        const rejectedCount = getCount(stats.statusData, '반려');
+        const waitingProgressCount = Math.max(0, totalCount - completedCount - rejectedCount);
+        const completionRate = totalCount > 0 ? Math.round((completedCount / totalCount) * 100) : 0;
+
+        const formatShortDate = (value) => {
+            if (!value) return '';
+            const date = new Date(value + 'T00:00:00');
+            if (isNaN(date.getTime())) return String(value).replace(/-/g, '.').slice(2);
+            const yy = String(date.getFullYear()).slice(2);
+            const mm = String(date.getMonth() + 1).padStart(2, '0');
+            const dd = String(date.getDate()).padStart(2, '0');
+            return `${yy}.${mm}.${dd}`;
+        };
+        const startDateValue = document.getElementById('startDate').value;
+        const endDateValue = document.getElementById('endDate').value;
+        const reportPeriod = startDateValue || endDateValue
+            ? `${formatShortDate(startDateValue) || '시작일 미지정'} ~ ${formatShortDate(endDateValue) || '종료일 미지정'}`
+            : '전체 기간';
+
+        const sortEntries = (obj) => Object.entries(obj || {})
+            .map(([name, count]) => ({ name, count: Number(count || 0) }))
+            .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+        const topSystem = sortEntries(stats.systemData)[0] || { name: '해당 없음', count: 0 };
+        const topSystemRate = totalCount > 0 ? Math.round((topSystem.count / totalCount) * 100) : 0;
+        const topBranch = sortEntries(stats.branchData)[0] || { name: '해당 없음', count: 0 };
+        const topTypes = sortEntries(stats.typeData).slice(0, 3);
+        const topTypeText = topTypes.length > 0 ? topTypes.map(t => `${t.name} ${t.count}건`).join(', ') : '해당 없음';
+
+        const prev = stats.previousWeek || {};
+        const hasPrev = !!prev.enabled;
+        const prevPeriod = hasPrev ? `${formatShortDate(prev.startDate)} ~ ${formatShortDate(prev.endDate)}` : '';
+        const totalDelta = hasPrev ? totalCount - Number(prev.total || 0) : 0;
+        const completionRateDelta = hasPrev ? completionRate - Number(prev.completionRate || 0) : 0;
+        const prevTopSystemCount = hasPrev ? Number((prev.systemData || {})[topSystem.name] || 0) : 0;
+        const prevTopSystemRate = hasPrev && Number(prev.total || 0) > 0
+            ? Math.round((prevTopSystemCount / Number(prev.total || 0)) * 100)
+            : 0;
+        const topSystemRateDelta = hasPrev ? topSystemRate - prevTopSystemRate : 0;
+
+        // 핵심 지표는 AI 생성 여부와 관계없이 먼저 확정값으로 노출합니다.
+        aiResultContainer.innerHTML = buildAIReportMetricCards(
+            stats, completedCount, waitingProgressCount, rejectedCount, completionRate
+        );
+
+        const currentItems = [...(stats.pendingCurrent || []), ...(stats.completedCurrent || [])];
+        const details = currentItems.map((item, i) => {
+            return `${i + 1}. [${item.type || '-'}] ${item.title || '(제목 없음)'}\n` +
+                   `- 시스템: ${item.system || '-'}\n` +
+                   `- 상태: ${item.status || '-'}\n` +
+                   `- 긴급도: ${item.priority || '보통'}\n` +
+                   `- 메뉴: ${item.menu || '-'}\n` +
+                   `- 지사/요청자: ${item.branch || '-'} / ${item.requester || '요청자 미상'}\n` +
+                   `- 담당자: ${item.dev || '미배정'}\n` +
+                   `- 접수내용: ${item.details || '상세 내용 없음'}\n` +
+                   `- 처리내용: ${item.actionContent || '처리 내용 미기재'}\n` +
+                   `- 비고: ${item.remark || '-'}`;
+        }).join('\n\n');
+
+        const previousComparisonText = hasPrev
+            ? `- 전주 동일 기간: ${prevPeriod}\n` +
+              `- 전주 접수: ${Number(prev.total || 0)}건 / 완료: ${Number(prev.completed || 0)}건 / 대기·진행: ${Number(prev.pending || 0)}건 / 반려: ${Number(prev.rejected || 0)}건 / 완료율: ${Number(prev.completionRate || 0)}%\n` +
+              `- 전주 대비 접수 증감: ${signedNumber(totalDelta, '건')}\n` +
+              `- 전주 대비 완료율 증감: ${signedNumber(completionRateDelta, '%p')}\n` +
+              `- 금주 최다 시스템(${topSystem.name}) 비중 변화: ${signedNumber(topSystemRateDelta, '%p')}`
+            : '- 전주 비교 데이터: 조회 기간이 7일 이내로 지정되지 않아 비교하지 않음';
+
+        const prompt = `[역할]\n` +
+        `당신은 IT 헬프데스크 운영 데이터를 경영진/팀장 보고용으로 정리하는 IT 운영 리포트 작성 전문가입니다.\n\n` +
+        `[목적]\n` +
+        `단순 이슈 목록이 아니라, 이번 기간의 운영 상태·주요 성과·관리 필요 이슈·반복 경향·다음 조치가 한눈에 보이는 보고서를 작성합니다.\n\n` +
+        `[중요 원칙]\n` +
+        `1. 모든 사실·수치·상태는 제공된 데이터만 사용합니다.\n` +
+        `2. 제공되지 않은 원인, 일정, 담당자 판단, 완료 예정일을 만들지 않습니다.\n` +
+        `3. 데이터에서 직접 확인되는 패턴을 해석할 수는 있으나, 추정은 반드시 "점검 필요", "확인 필요"처럼 표현합니다.\n` +
+        `4. 완료율과 비율은 소수점 없이 반올림한 정수 %로 표기합니다.\n` +
+        `5. 상태 기준: 완료=완료 / 반려=반려 / 대기·진행=그 외 상태입니다.\n` +
+        `6. 주요 처리 성과는 유사한 업무끼리 묶어 3~5개 이내로 요약합니다. 단순 완료 목록을 그대로 나열하지 않습니다.\n` +
+        `7. 대기·관리 필요 이슈는 진행/대기/반려 항목 중 업무 영향도, 긴급도, 후속 조치 필요성이 높은 순서로 최대 5개만 작성합니다.\n` +
+        `8. "운영 인사이트"는 시스템/유형/지사 편중, 반복 요청, 완료율, 대기 건을 근거로 2~3개만 작성합니다. 근거 없는 원인 분석은 금지합니다.\n` +
+        `9. "다음 주 중점사항"은 현재 남은 이슈나 반복 패턴에서 직접 도출 가능한 실행 항목 2~3개만 작성합니다.\n` +
+        `10. 데이터가 없어 쓸 수 없는 항목은 억지로 채우지 말고 "특이사항 없음" 또는 "추가 확인 필요"로 작성합니다.\n` +
+        `11. 표는 사용하지 않습니다. 한 문단을 길게 쓰지 말고 짧은 문장과 글머리 기호를 사용합니다.\n` +
+        `12. 최종 답변에는 지정된 Markdown 보고서만 출력합니다. 분석 과정·영어 메타 문장·중간 판단은 출력하지 않습니다.\n` +
+        `13. 답변은 반드시 "## 📊 주간 헬프데스크 운영 리포트"로 시작합니다.\n\n` +
+        `[출력 형식]\n` +
+        `## 📊 주간 헬프데스크 운영 리포트 (${reportPeriod})\n\n` +
+        `### 📈 금주 운영 요약\n` +
+        `**접수 ${totalCount}건 · 완료 ${completedCount}건 · 대기/진행 ${waitingProgressCount}건 · 반려 ${rejectedCount}건 · 완료율 ${completionRate}%**\n\n` +
+        `${hasPrev ? `전주 동일 기간 대비 접수 ${signedNumber(totalDelta, '건')}, 완료율 ${signedNumber(completionRateDelta, '%p')}입니다.` : '전주 비교는 제외합니다.'}\n` +
+        `금주 운영 상태를 2~3문장으로 요약하세요. 단순 수치 반복보다는 어떤 업무가 집중되었고 운영상 무엇이 눈에 띄는지 설명하세요.\n\n` +
+        `### 🎯 주요 운영 포인트\n` +
+        `- [가장 중요한 운영 포인트]\n` +
+        `- [두 번째 운영 포인트]\n` +
+        `- [필요 시 세 번째 운영 포인트]\n\n` +
+        `### ✅ 주요 처리 성과\n` +
+        `- **[업무 그룹명]**: [처리한 주요 내용과 결과]\n` +
+        `- **[업무 그룹명]**: [처리한 주요 내용과 결과]\n\n` +
+        `### ⚠️ 대기·관리 필요 이슈\n` +
+        `- **[이슈명] ([시스템])**: [현재 상태 / 확인된 사유 또는 후속 조치 필요 내용]\n` +
+        `- 대기·반려가 없으면 "특이사항 없음"으로 작성\n\n` +
+        `### 🔎 운영 인사이트\n` +
+        `- [수치와 이슈 내역을 근거로 한 운영 관점 인사이트]\n` +
+        `- [반복/편중/관리 필요성에 대한 인사이트]\n\n` +
+        `### 📌 다음 주 중점사항\n` +
+        `- [현재 남은 이슈 또는 반복 패턴 기반 실행 항목]\n` +
+        `- [현재 남은 이슈 또는 반복 패턴 기반 실행 항목]\n\n` +
+        `[금주 확정 통계]\n` +
+        `- 조회 기간: ${reportPeriod}\n` +
+        `- 총 접수: ${totalCount}건\n` +
+        `- 완료: ${completedCount}건\n` +
+        `- 대기/진행: ${waitingProgressCount}건\n` +
+        `- 반려: ${rejectedCount}건\n` +
+        `- 완료율: ${completionRate}%\n` +
+        `- 최다 시스템: ${topSystem.name} ${topSystem.count}건(${topSystemRate}%)\n` +
+        `- 최다 지사: ${topBranch.name} ${topBranch.count}건\n` +
+        `- 주요 유형: ${topTypeText}\n` +
+        `- 시스템별: ${JSON.stringify(stats.systemData || {})}\n` +
+        `- 유형별: ${JSON.stringify(stats.typeData || {})}\n` +
+        `- 지사별: ${JSON.stringify(stats.branchData || {})}\n` +
+        `- 상태별: ${JSON.stringify(stats.statusData || {})}\n\n` +
+        `[전주 비교 통계]\n${previousComparisonText}\n\n` +
+        `[이슈 상세 데이터]\n${details || '상세 내역 없음'}`;
+
+        try {
+            const rawText = await runServerFunction('generateGeminiReport', prompt);
+            const text = normalizeAIReportOutput(rawText);
+            const metricHtml = buildAIReportMetricCards(
+                stats, completedCount, waitingProgressCount, rejectedCount, completionRate
+            );
+            aiResultContainer.innerHTML = metricHtml + `<div class="mt-5">${marked.parse(text)}</div>`;
+            window.lastAiReportText = text;
+            if (copyBtn) copyBtn.classList.remove('hidden');
+            window.aiChatHistory = [{ role: "user", parts: [{ text: prompt }] }, { role: "model", parts: [{ text: text }] }];
+            chatSection.classList.remove('hidden');
+            chatSection.classList.add('flex');
+        } catch (error) {
+            aiResultContainer.innerHTML = `<div class='text-red-500 font-bold'>⚠️ 실패: ${error.message}</div>`;
+        } finally {
+            aiLoading.classList.add('hidden');
+            btn.disabled = false;
+        }
+    }
+
+    async function copyAIReport() {
+        const text = window.lastAiReportText || document.getElementById('ai-report-result')?.innerText || '';
+        if (!text.trim()) return showToast('복사할 AI 리포트가 없습니다.', 'error');
+        try {
+            if (navigator.clipboard && navigator.clipboard.writeText) {
+                await navigator.clipboard.writeText(text);
+            } else {
+                const temp = document.createElement('textarea');
+                temp.value = text;
+                document.body.appendChild(temp);
+                temp.select();
+                document.execCommand('copy');
+                document.body.removeChild(temp);
+            }
+            showToast('AI 리포트를 복사했습니다.');
+        } catch (e) {
+            showToast('복사에 실패했습니다. 브라우저 권한을 확인해주세요.', 'error');
+        }
+    }
+
+    async function sendChatMessage() {
+        const input = document.getElementById('ai-chat-input');
+        const msg = input.value.trim();
+        if (!msg) return;
+        const hist = document.getElementById('ai-chat-history');
+        hist.innerHTML += `<div class='flex justify-end'><div class='bg-purple-600 text-white px-4 py-2 rounded-lg text-sm'>${msg}</div></div>`;
+        input.value = '';
+        window.aiChatHistory.push({ role: "user", parts: [{ text: msg }] });
+        try {
+            const reply = await runServerFunction('chatWithGemini', window.aiChatHistory);
+            window.aiChatHistory.push({ role: "model", parts: [{ text: reply }] });
+            hist.innerHTML += `<div class='flex justify-start'><div class='bg-white border p-3 rounded-lg text-sm ai-chat-content'>${marked.parse(reply)}</div></div>`;
+        } catch (e) {
+            hist.innerHTML += `<div class='text-red-500 text-xs'>오류: ${e.message}</div>`;
+        }
+        hist.scrollTop = hist.scrollHeight;
+    }
+
+    /* ==============================================================
+       담당 개발자 설정 모달 로직
+       ============================================================== */
+    function openSettingsModal() {
+        renderSettingsList();
+        const modal = document.getElementById('settingsModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('settingsModalContent').classList.remove('scale-95'); }, 10);
+    }
+
+    function closeSettingsModal() { 
+        document.getElementById('settingsModal').classList.add('opacity-0'); 
+        document.getElementById('settingsModalContent').classList.add('scale-95'); 
+        setTimeout(() => document.getElementById('settingsModal').classList.add('hidden'), 300); 
+    }
+
+    function renderSettingsList() {
+        const container = document.getElementById('settings-dev-list');
+        container.innerHTML = '';
+        window.globalDevList.forEach((dev) => {
+            container.innerHTML += createDevRowHTML(dev.name, dev.email);
+        });
+    }
+
+    function createDevRowHTML(name, email) {
+        return `
+        <div class="flex gap-2 dev-row items-center animate-in fade-in slide-in-from-top-2 duration-200">
+            <input type="text" class="dev-name border rounded-lg px-3 py-2 w-1/3 text-sm outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHtml(name)}" placeholder="이름 (예: 홍길동)">
+            <input type="text" class="dev-email border rounded-lg px-3 py-2 flex-1 text-sm outline-none focus:ring-2 focus:ring-blue-500" value="${escapeHtml(email)}" placeholder="이메일 (예: hong@kic21.co.kr)">
+            <button onclick="this.closest('.dev-row').remove()" class="w-9 h-9 bg-red-50 text-red-500 rounded-lg flex items-center justify-center hover:bg-red-500 hover:text-white transition-colors" title="삭제"><i class="fas fa-trash-alt"></i></button>
+        </div>`;
+    }
+
+    function addDevRow() {
+        const container = document.getElementById('settings-dev-list');
+        container.insertAdjacentHTML('beforeend', createDevRowHTML('', ''));
+    }
+
+    function saveSettings() {
+        const rows = document.querySelectorAll('.dev-row');
+        const newDevs = [];
+        
+        rows.forEach(row => {
+            const name = row.querySelector('.dev-name').value.trim();
+            const email = row.querySelector('.dev-email').value.trim();
+            if (name) newDevs.push({ name, email });
+        });
+
+        const btn = event.currentTarget;
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 저장중...';
+        btn.disabled = true;
+
+        runServerFunction('saveDevelopers', newDevs).then(() => {
+            window.globalDevList = newDevs;
+            populateDevSelects(); // 셀렉트 박스 즉시 갱신
+            closeSettingsModal();
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        }).catch(e => {
+            alert('설정 저장 실패: ' + e.message);
+            btn.innerHTML = originalText;
+            btn.disabled = false;
+        });
+    }
+
+    /* ==============================================================
+       이슈 등록/수정 모달 관리
+       ============================================================== */
+    function openEditById(id) {
+        const item = window.allIssuesMap[id];
+        if (!item) return;
+        document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-source-type').value = item.sourceType || 'helpdesk';
+        document.getElementById('edit-id-display').innerHTML = item.sourceType === 'quarter'
+          ? `${escapeHtml(item.id)} <span class="ml-1 text-[10px] text-indigo-700 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
+          : escapeHtml(item.id);
+        document.getElementById('edit-meta-display').innerText = `${item.branch} / ${item.requester || '요청자 미상'}`;
+        document.getElementById('edit-menu-display').innerText = item.menu || '메뉴 정보 없음';
+        document.getElementById('edit-title').value = item.title || '';
+        document.getElementById('edit-details').value = item.details || '';
+        document.getElementById('edit-dev').value = item.dev || '';
+        document.getElementById('edit-status').value = item.status || '접수대기';
+        document.getElementById('edit-action').value = item.actionContent || '';
+        document.getElementById('edit-remark').value = item.remark || '';
+        document.getElementById('edit-source-link').value = item.sourceLink || '';
+        document.getElementById('edit-jira-link').value = item.jiraLink || '';
+        document.getElementById('edit-jira-linked').checked = isJiraLinked(item);
+        resetEditAiReply();
+        
+        const modal = document.getElementById('editModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('editModalContent').classList.remove('scale-95'); }, 10);
+    }
+    function closeEditModal() { document.getElementById('editModal').classList.add('opacity-0'); document.getElementById('editModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('editModal').classList.add('hidden'), 300); }
+
+    // [v16.9] 현황 업데이트 모달 AI 답변
+    // 별도 'IT 헬프데스크 답변' 화면과 동일하게 서버의 generateHelpdeskReply()를 호출합니다.
+    // 따라서 답변 프롬프트/로직 수정은 Code.gs의 generateHelpdeskReply() 한 곳만 수정하면 두 화면에 동시에 반영됩니다.
+    function resetEditAiReply() {
+        const panel = document.getElementById('edit-ai-reply-panel');
+        const result = document.getElementById('edit-ai-reply-result');
+        const status = document.getElementById('edit-ai-reply-status');
+        const btn = document.getElementById('edit-ai-reply-btn');
+        const regen = document.getElementById('edit-ai-regenerate-btn');
+        if (panel) panel.classList.add('hidden');
+        if (result) result.value = '';
+        if (status) {
+            status.textContent = '생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.';
+            status.className = 'text-[11px] text-slate-500 mt-0.5';
+        }
+        [btn, regen].forEach(el => {
+            if (!el) return;
+            el.disabled = false;
+            el.classList.remove('opacity-60', 'cursor-not-allowed');
+        });
+        if (btn) btn.querySelector('span').textContent = 'AI 답변';
+        if (regen) regen.textContent = '다시 생성';
+    }
+
+    function setEditAiReplyLoading(isLoading) {
+        const btn = document.getElementById('edit-ai-reply-btn');
+        const regen = document.getElementById('edit-ai-regenerate-btn');
+        [btn, regen].forEach(el => {
+            if (!el) return;
+            el.disabled = isLoading;
+            el.classList.toggle('opacity-60', isLoading);
+            el.classList.toggle('cursor-not-allowed', isLoading);
+        });
+        if (btn) btn.querySelector('span').textContent = isLoading ? '생성 중...' : 'AI 답변';
+        if (regen) regen.textContent = isLoading ? '생성 중...' : '다시 생성';
+    }
+
+    function buildEditAiRequestText() {
+        const id = document.getElementById('edit-id').value;
+        const item = window.allIssuesMap[id] || {};
+        const title = document.getElementById('edit-title').value.trim();
+        const details = document.getElementById('edit-details').value.trim();
+        const lines = [];
+        if (title) lines.push('문의 제목: ' + title);
+        if (item.system) lines.push('시스템: ' + item.system);
+        if (item.type) lines.push('이슈 유형: ' + item.type);
+        if (item.menu) lines.push('발생 메뉴: ' + item.menu);
+        if (details) lines.push('문의 상세 내용: ' + details);
+        return lines.join('\n');
+    }
+
+    function generateEditAiReply() {
+        const draftAnswer = document.getElementById('edit-action').value.trim();
+        if (!draftAnswer) {
+            alert('먼저 처리 내용 기록에 실제 답변의 핵심 내용을 입력해 주세요.');
+            document.getElementById('edit-action').focus();
+            return;
+        }
+
+        const requestText = buildEditAiRequestText();
+        if (!requestText) {
+            alert('제목 또는 상세 내용이 있어야 AI 답변을 생성할 수 있습니다.');
+            return;
+        }
+
+        const panel = document.getElementById('edit-ai-reply-panel');
+        const result = document.getElementById('edit-ai-reply-result');
+        const status = document.getElementById('edit-ai-reply-status');
+        panel.classList.remove('hidden');
+        result.value = '';
+        status.textContent = '답변을 생성하고 있습니다...';
+        status.className = 'text-[11px] text-violet-600 mt-0.5 font-bold';
+        setEditAiReplyLoading(true);
+
+        google.script.run
+          .withSuccessHandler(res => {
+              setEditAiReplyLoading(false);
+              const text = String((res && res.text) || res || '').replace(/\*\*/g, '').trim();
+              result.value = text;
+              status.textContent = text ? '답변이 생성되었습니다. 필요하면 직접 수정한 뒤 복사하세요.' : '생성된 답변이 비어 있습니다.';
+              status.className = text ? 'text-[11px] text-emerald-600 mt-0.5 font-bold' : 'text-[11px] text-red-600 mt-0.5 font-bold';
+          })
+          .withFailureHandler(err => {
+              setEditAiReplyLoading(false);
+              status.textContent = '답변 생성 실패: ' + ((err && err.message) || String(err));
+              status.className = 'text-[11px] text-red-600 mt-0.5 font-bold';
+          })
+          .generateHelpdeskReply({ requestText, draftAnswer, images: [] });
+    }
+
+    async function copyEditAiReply() {
+        const result = document.getElementById('edit-ai-reply-result');
+        const status = document.getElementById('edit-ai-reply-status');
+        const text = String(result.value || '').replace(/\*\*/g, '').trim();
+        if (!text) {
+            status.textContent = '복사할 AI 답변이 없습니다.';
+            status.className = 'text-[11px] text-red-600 mt-0.5 font-bold';
+            return;
+        }
+        try {
+            await navigator.clipboard.writeText(text);
+        } catch (e) {
+            result.focus();
+            result.select();
+            document.execCommand('copy');
+        }
+        result.value = text;
+        status.textContent = '답변이 복사되었습니다.';
+        status.className = 'text-[11px] text-emerald-600 mt-0.5 font-bold';
+    }
+
+    function submitEditForm() {
+        const saveButton = (typeof event !== 'undefined' && event.currentTarget) ? event.currentTarget : null;
+        const jiraLinkedFlag = document.getElementById('edit-jira-linked').checked ? 'Y' : '';
+        const data = { id: document.getElementById('edit-id').value, sourceType: document.getElementById('edit-source-type').value || 'helpdesk', title: document.getElementById('edit-title').value, details: document.getElementById('edit-details').value, dev: document.getElementById('edit-dev').value, status: document.getElementById('edit-status').value, actionContent: document.getElementById('edit-action').value, remark: document.getElementById('edit-remark').value, sourceLink: document.getElementById('edit-source-link').value, jiraLink: document.getElementById('edit-jira-link').value, jiraLinkedFlag, jiraLinked: jiraLinkedFlag };
+        const existing = window.allIssuesMap[data.id] || { id: data.id, sourceType: data.sourceType, sourceLabel: data.sourceType === 'quarter' ? '분기' : '헬프', date: getLocalDateString(new Date()) + ' 09:00' };
+        const updatedIssue = {
+            ...existing,
+            ...data,
+            sourceType: data.sourceType,
+            sourceLabel: data.sourceType === 'quarter' ? '분기' : '헬프',
+            hiddenFlag: data.status === '반려' ? (existing.hiddenFlag || '') : '',
+            isHidden: data.status === '반려' ? Boolean(existing.isHidden) : false
+        };
+        closeEditModal();
+        showToast(`${data.id} 저장 중...`, 'info');
+        setButtonSaving(saveButton, true, '저장중...');
+        runServerFunction('updateIssueFromDashboard', data).then(() => {
+            showToast(`${data.id} 저장되었습니다.`);
+            applyLocalIssueUpdate(updatedIssue);
+            setButtonSaving(saveButton, false);
+        }).catch(e => {
+            setButtonSaving(saveButton, false);
+            showToast('저장 실패: ' + e.message, 'error');
+        });
+    }
+    
+    // [v16.10.1] 게시판 캡처 자동 이관 (자동/수동 분석 중복 호출 방지)
+    const addCaptureImages = [];
+    let addCaptureAnalyzeTimer = null;
+    let addCaptureAnalyzeInFlight = false;
+    let addCaptureAnalyzeQueued = false;
+
+    function isAddModalOpen() {
+        const modal = document.getElementById('addModal');
+        return modal && !modal.classList.contains('hidden');
+    }
+
+    function setAddCaptureStatus(message, type) {
+        const el = document.getElementById('add-capture-status');
+        if (!el) return;
+        el.textContent = message || '';
+        el.className = 'text-xs font-bold ml-1 ' + (type === 'ok' ? 'text-emerald-600' : type === 'err' ? 'text-red-600' : type === 'work' ? 'text-blue-600' : 'text-slate-500');
+    }
+
+    function setAddCaptureWarnings(warnings) {
+        const box = document.getElementById('add-capture-warning');
+        if (!box) return;
+        const list = Array.isArray(warnings) ? warnings.filter(Boolean) : [];
+        if (!list.length) {
+            box.classList.add('hidden');
+            box.textContent = '';
+            return;
+        }
+        box.classList.remove('hidden');
+        box.textContent = '확인 필요: ' + list.join(' / ');
+    }
+
+    function readCaptureImage(file) {
+        return new Promise((resolve, reject) => {
+            if (!file || !String(file.type || '').startsWith('image/')) return reject(new Error('이미지 파일만 사용할 수 있습니다.'));
+            const reader = new FileReader();
+            reader.onerror = () => reject(new Error('이미지를 읽지 못했습니다.'));
+            reader.onload = () => {
+                const original = reader.result;
+                const img = new Image();
+                img.onerror = () => resolve({ data: original, mimeType: file.type || 'image/png' });
+                img.onload = () => {
+                    const MAX_EDGE = 1600;
+                    const maxEdge = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height);
+                    const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 700 * 1024;
+                    if (!shouldOptimize) {
+                        resolve({ data: original, mimeType: file.type || 'image/png' });
+                        return;
+                    }
+                    const scale = Math.min(1, MAX_EDGE / maxEdge);
+                    const canvas = document.createElement('canvas');
+                    canvas.width = Math.max(1, Math.round((img.naturalWidth || img.width) * scale));
+                    canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+                    resolve({ data: canvas.toDataURL('image/jpeg', 0.86), mimeType: 'image/jpeg' });
+                };
+                img.src = original;
+            };
+            reader.readAsDataURL(file);
+        });
+    }
+
+    function renderAddCaptureImages() {
+        const thumbs = document.getElementById('add-capture-thumbs');
+        const empty = document.getElementById('add-capture-empty');
+        if (!thumbs || !empty) return;
+        thumbs.innerHTML = '';
+        if (!addCaptureImages.length) {
+            thumbs.classList.add('hidden');
+            empty.classList.remove('hidden');
+            return;
+        }
+        empty.classList.add('hidden');
+        thumbs.classList.remove('hidden');
+        addCaptureImages.forEach((img, index) => {
+            const item = document.createElement('div');
+            item.className = 'relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm';
+            item.innerHTML = `<img src="${img.data}" class="w-full h-full object-cover" alt="게시판 캡처 ${index + 1}"><button type="button" class="absolute right-1 top-1 w-6 h-6 rounded-full bg-slate-900/75 text-white text-xs flex items-center justify-center" title="삭제">×</button><span class="absolute left-1 bottom-1 bg-slate-900/70 text-white rounded px-1.5 py-0.5 text-[10px] font-bold">${index + 1}</span>`;
+            item.querySelector('button').onclick = (e) => {
+                e.stopPropagation();
+                addCaptureImages.splice(index, 1);
+                renderAddCaptureImages();
+                setAddCaptureWarnings([]);
+                setAddCaptureStatus(addCaptureImages.length ? `${addCaptureImages.length}장 준비됨` : '');
+            };
+            thumbs.appendChild(item);
+        });
+    }
+
+    async function addCaptureFiles(files, autoAnalyze) {
+        const imageFiles = Array.from(files || []).filter(f => String(f.type || '').startsWith('image/'));
+        if (!imageFiles.length) return;
+        const remaining = Math.max(0, 3 - addCaptureImages.length);
+        if (!remaining) {
+            setAddCaptureStatus('캡처 이미지는 최대 3장까지 가능합니다.', 'err');
+            return;
+        }
+        setAddCaptureStatus('이미지 준비 중...', 'work');
+        for (const file of imageFiles.slice(0, remaining)) {
+            try {
+                const optimized = await readCaptureImage(file);
+                addCaptureImages.push(optimized);
+            } catch (e) {
+                setAddCaptureStatus(e.message || String(e), 'err');
+            }
+        }
+        renderAddCaptureImages();
+        setAddCaptureStatus(`${addCaptureImages.length}장 준비됨`, 'ok');
+        setAddCaptureWarnings([]);
+        if (autoAnalyze && addCaptureImages.length) scheduleAddCaptureAutoAnalyze();
+    }
+
+    function clearAddCaptureImages() {
+        addCaptureImages.splice(0, addCaptureImages.length);
+        if (addCaptureAnalyzeTimer) clearTimeout(addCaptureAnalyzeTimer);
+        addCaptureAnalyzeTimer = null;
+        addCaptureAnalyzeQueued = false;
+        renderAddCaptureImages();
+        setAddCaptureStatus('');
+        setAddCaptureWarnings([]);
+        const input = document.getElementById('add-capture-input');
+        if (input) input.value = '';
+    }
+
+    function scheduleAddCaptureAutoAnalyze() {
+        if (addCaptureAnalyzeTimer) clearTimeout(addCaptureAnalyzeTimer);
+        addCaptureAnalyzeTimer = setTimeout(() => analyzeAddCapture(true), 450);
+    }
+
+    function setSelectValueIfExists(id, value) {
+        if (!value) return false;
+        const el = document.getElementById(id);
+        if (!el) return false;
+        const exists = Array.from(el.options || []).some(opt => opt.value === value);
+        if (!exists) return false;
+        el.value = value;
+        return true;
+    }
+
+    function flashImportedField(id) {
+        const el = document.getElementById(id);
+        if (!el) return;
+        el.classList.add('ring-2', 'ring-emerald-300', 'bg-emerald-50');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-300', 'bg-emerald-50'), 1700);
+    }
+
+    function applyAddCaptureAnalysis(data) {
+        data = data || {};
+        const filled = [];
+
+        if (data.receiptDate) { document.getElementById('add-date').value = data.receiptDate; filled.push('add-date'); }
+        if (data.branch && setSelectValueIfExists('add-branch', data.branch)) filled.push('add-branch');
+        if (data.requester) { document.getElementById('add-requester').value = data.requester; filled.push('add-requester'); }
+        if (data.system && setSelectValueIfExists('add-system', data.system)) filled.push('add-system');
+        if (data.type && setSelectValueIfExists('add-type', data.type)) filled.push('add-type');
+        if (data.priority && setSelectValueIfExists('add-priority', data.priority)) filled.push('add-priority');
+        if (data.menu) { document.getElementById('add-menu').value = data.menu; filled.push('add-menu'); }
+        if (data.title) { document.getElementById('add-title').value = data.title; filled.push('add-title'); }
+        if (data.details) { document.getElementById('add-details').value = data.details; filled.push('add-details'); }
+
+        filled.forEach(flashImportedField);
+        setAddCaptureWarnings(data.warnings || []);
+        const missingRequired = [];
+        if (!document.getElementById('add-branch').value) missingRequired.push('지사');
+        if (!document.getElementById('add-title').value) missingRequired.push('제목');
+        if (!document.getElementById('add-details').value) missingRequired.push('상세내용');
+        const suffix = missingRequired.length ? ` · ${missingRequired.join(', ')} 확인 필요` : ' · 내용 확인 후 바로 등록할 수 있습니다.';
+        setAddCaptureStatus(`자동 입력 완료${suffix}`, missingRequired.length ? '' : 'ok');
+    }
+
+    async function analyzeAddCapture(isAuto) {
+        if (!addCaptureImages.length) {
+            setAddCaptureStatus('먼저 게시판 캡처 이미지를 붙여넣어 주세요.', 'err');
+            return;
+        }
+
+        // 수동 분석을 먼저 시작한 경우, 아직 대기 중인 자동 분석 예약을 취소한다.
+        // 새 이미지가 분석 도중 추가되어 호출된 자동 분석만 1회 재실행한다.
+        if (addCaptureAnalyzeTimer) {
+            clearTimeout(addCaptureAnalyzeTimer);
+            addCaptureAnalyzeTimer = null;
+        }
+        if (addCaptureAnalyzeInFlight) {
+            if (isAuto) addCaptureAnalyzeQueued = true;
+            return;
+        }
+
+        addCaptureAnalyzeInFlight = true;
+        const btn = document.getElementById('add-capture-analyze-btn');
+        if (btn) {
+            btn.disabled = true;
+            btn.dataset.originalHtml = btn.dataset.originalHtml || btn.innerHTML;
+            btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>캡처 분석 중...';
+        }
+        setAddCaptureStatus(isAuto ? '캡처를 자동 분석 중...' : '캡처 분석 중...', 'work');
+        setAddCaptureWarnings([]);
+
+        try {
+            const result = await runServerFunction('analyzeHelpdeskCapture', { images: addCaptureImages });
+            applyAddCaptureAnalysis((result && result.data) || result || {});
+        } catch (e) {
+            setAddCaptureStatus('분석 실패: ' + (e && e.message ? e.message : String(e)), 'err');
+        } finally {
+            addCaptureAnalyzeInFlight = false;
+            if (btn) {
+                btn.disabled = false;
+                btn.innerHTML = btn.dataset.originalHtml || '<i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력';
+            }
+            if (addCaptureAnalyzeQueued) {
+                addCaptureAnalyzeQueued = false;
+                scheduleAddCaptureAutoAnalyze();
+            }
+        }
+    }
+
+    function initAddCaptureHandlers() {
+        const input = document.getElementById('add-capture-input');
+        const zone = document.getElementById('add-capture-zone');
+        if (input && !input.dataset.captureBound) {
+            input.dataset.captureBound = 'Y';
+            input.addEventListener('change', async e => {
+                await addCaptureFiles(e.target.files, true);
+                e.target.value = '';
+            });
+        }
+        if (zone && !zone.dataset.captureBound) {
+            zone.dataset.captureBound = 'Y';
+            zone.addEventListener('click', () => zone.focus());
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-blue-500', 'bg-blue-50'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('border-blue-500', 'bg-blue-50'));
+            zone.addEventListener('drop', async e => {
+                e.preventDefault();
+                zone.classList.remove('border-blue-500', 'bg-blue-50');
+                await addCaptureFiles(e.dataTransfer && e.dataTransfer.files, true);
+            });
+        }
+    }
+
+    document.addEventListener('paste', async e => {
+        if (!isAddModalOpen()) return;
+        const items = Array.from((e.clipboardData && e.clipboardData.items) || []);
+        const imageItems = items.filter(item => item.type && item.type.indexOf('image/') === 0);
+        if (!imageItems.length) return;
+        e.preventDefault();
+        const files = imageItems.map(item => item.getAsFile()).filter(Boolean);
+        await addCaptureFiles(files, true);
+    });
+
+    function openAddModal() {
+        ['add-branch', 'add-requester', 'add-dev', 'add-system', 'add-type', 'add-menu', 'add-source-link', 'add-jira-link', 'add-title', 'add-details'].forEach(id => {
+            const el = document.getElementById(id);
+            if(el) el.value = '';
+        });
+        document.getElementById('add-priority').value = '보통';
+        document.getElementById('add-date').value = getLocalDateString(new Date());
+        clearAddCaptureImages();
+        initAddCaptureHandlers();
+        initImeProtection();
+
+        const modal = document.getElementById('addModal');
+        modal.classList.remove('hidden');
+        setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('addModalContent').classList.remove('scale-95'); }, 10);
+    }
+    
+    function closeAddModal() { document.getElementById('addModal').classList.add('opacity-0'); document.getElementById('addModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('addModal').classList.add('hidden'), 300); }
+    function submitAddForm() {
+        const saveButton = (typeof event !== 'undefined' && event.currentTarget) ? event.currentTarget : null;
+        const date = document.getElementById('add-date').value;
+        const branch = document.getElementById('add-branch').value;
+        const title = document.getElementById('add-title').value;
+        const details = document.getElementById('add-details').value;
+        if(!date || !branch || !title || !details) return alert('필수 항목(*)을 입력하세요.');
+        const menu = document.getElementById('add-menu').value;
+        const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details };
+        closeAddModal();
+        showToast('신규 이슈 등록 중...', 'info');
+        setButtonSaving(saveButton, true, '등록중...');
+        runServerFunction('addIssueFromDashboard', data).then(result => {
+            const newId = result && result.id ? result.id : '';
+            showToast(newId ? `등록 완료: ${newId}` : '등록 완료');
+            if (window.currentStats && newId) {
+                const newIssue = buildLocalIssueFromAddData(data, result);
+                applyLocalIssueUpdate(newIssue);
+            } else {
+                loadData();
+            }
+            setButtonSaving(saveButton, false);
+        }).catch(e => {
+            setButtonSaving(saveButton, false);
+            showToast('등록 실패: ' + e.message, 'error');
+        });
+    }
+  </script>
+    </div>
+  </main>
+
+  <script>
+    (function(){
+      try {
+        if (localStorage.getItem('kicLnbCollapsed') === 'Y') {
+          document.body.classList.add('kic-lnb-collapsed');
+        }
+      } catch(e) {}
+    })();
+    function toggleKicLnb(){
+      document.body.classList.toggle('kic-lnb-collapsed');
+      try {
+        localStorage.setItem('kicLnbCollapsed', document.body.classList.contains('kic-lnb-collapsed') ? 'Y' : 'N');
+      } catch(e) {}
+    }
+  </script>
+
+</body>
+</html>
