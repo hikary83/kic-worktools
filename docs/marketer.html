@@ -270,7 +270,11 @@
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">포스팅 초안</span>
                 <span id="draft-category-badge" class="text-xs font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
                   <i data-lucide="folder" class="w-3.5 h-3.5 text-blue-500"></i>
-                  <span id="draft-category-text">카테고리: 01. 이론: 측정 이론 및 기초</span>
+                  <span id="draft-category-text">카테고리: 미지정</span>
+                </span>
+                <span id="draft-date-badge" class="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm hidden">
+                  <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
+                  <span id="draft-date-text">일자: 미지정</span>
                 </span>
               </div>
               <button onclick="copyPlainBlogText()" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-bold">
@@ -309,9 +313,19 @@
       <!-- 📋 STEP 4: 마케팅 에셋 화면 -->
       <section id="panel-assets" class="hidden space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
-          <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> 포스팅 편집으로 돌아가기
-          </button>
+          <div class="flex items-center gap-3 flex-wrap">
+            <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> 포스팅 편집으로 돌아가기
+            </button>
+            <span id="assets-category-badge" class="text-xs font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
+              <i data-lucide="folder" class="w-3.5 h-3.5 text-blue-500"></i>
+              <span id="assets-category-text">카테고리: 미지정</span>
+            </span>
+            <span id="assets-date-badge" class="text-xs font-extrabold text-indigo-700 bg-indigo-50 border border-indigo-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm hidden">
+              <i data-lucide="calendar" class="w-3.5 h-3.5 text-indigo-500"></i>
+              <span id="assets-date-text">일자: 미지정</span>
+            </span>
+          </div>
           <div class="flex flex-wrap items-center gap-2">
             <button id="btn-mark-posted-step4" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
               <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> 완료(○) 저장
@@ -323,7 +337,45 @@
         </div>
 
         <div class="space-y-6">
-          <!-- 해시태그 -->
+          <!-- 🔗 교정/견적 문의 바로가기 섹션 -->
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
+            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
+              <div class="p-1.5 bg-blue-600 text-white rounded-lg">
+                <i data-lucide="file-text" class="w-4 h-4"></i>
+              </div>
+              <h2 class="text-sm font-extrabold text-slate-800">교정 문의 바로가기 (고정 에셋)</h2>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <!-- 견적 문의 URL -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">문의 페이지 URL</label>
+                  <button onclick="copyQuoteField('https://www.kic21.co.kr/contents/write?mode=write&boardIdx=145&bUrl=%2Fcontents%2Flist%3FboardIdx%3D145', 'badge-quote-url')" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> URL 복사 <span id="badge-quote-url" class="hidden ml-1 text-[10px] text-emerald-600 font-extrabold">완료</span>
+                  </button>
+                </div>
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono text-slate-700 break-all select-all font-semibold">
+                  https://www.kic21.co.kr/contents/write?mode=write&boardIdx=145&bUrl=%2Fcontents%2Flist%3FboardIdx%3D145
+                </div>
+              </div>
+
+              <!-- 이미지 하단 안내 캡션 -->
+              <div class="space-y-1.5">
+                <div class="flex items-center justify-between">
+                  <label class="text-[11px] font-bold uppercase tracking-wider text-slate-400">이미지 하단 삽입 캡션 문구</label>
+                  <button onclick="copyQuoteField('▲ 위 이미지를 클릭하시면 간편 견적 문의 페이지로 이동합니다.', 'badge-quote-caption')" class="text-xs font-bold text-slate-500 hover:text-slate-800 flex items-center gap-1">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> 캡션 복사 <span id="badge-quote-caption" class="hidden ml-1 text-[10px] text-emerald-600 font-extrabold">완료</span>
+                  </button>
+                </div>
+                <div class="p-3 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-700 break-all select-all">
+                  ▲ 위 이미지를 클릭하시면 간편 견적 문의 페이지로 이동합니다.
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- 추천 해시태그 -->
           <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
             <div class="flex justify-between items-center border-b border-slate-100 pb-3">
               <h2 class="text-sm font-extrabold text-slate-800 flex items-center gap-1.5"><i data-lucide="hash" class="w-4 h-4 text-blue-500"></i> 추천 해시태그</h2>
@@ -669,7 +721,8 @@
         bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
       }
 
-      // 4. 캘린더 선택 하이라이트 재렌더링
+      // 4. 캘린더 선택 하이라이트 재렌더링 및 뱃지 동기화
+      updateCategoryAndDateBadges();
       renderCalendar();
 
       // 5. 폼으로 부드럽게 스크롤
@@ -880,6 +933,38 @@
       throw new Error('Unsupported server function: ' + functionName);
     }
 
+    function copyQuoteField(text, badgeId) {
+      navigator.clipboard.writeText(text).then(() => {
+        const badge = $(badgeId);
+        if (badge) {
+          badge.classList.remove('hidden');
+          setTimeout(() => badge.classList.add('hidden'), 2000);
+        }
+      });
+    }
+
+    function updateCategoryAndDateBadges() {
+      const category = $('select-category').value || (selectedPlan && selectedPlan.category) || '미지정';
+      
+      if ($('draft-category-text')) $('draft-category-text').textContent = `카테고리: ${category}`;
+      if ($('assets-category-text')) $('assets-category-text').textContent = `카테고리: ${category}`;
+
+      const dateStr = (selectedPlan && (selectedPlan.fullDate || selectedPlan.date)) || '';
+      const draftDateBadge = $('draft-date-badge');
+      const assetsDateBadge = $('assets-date-badge');
+
+      if (dateStr) {
+        if ($('draft-date-text')) $('draft-date-text').textContent = `포스팅 일자: ${dateStr}`;
+        if ($('assets-date-text')) $('assets-date-text').textContent = `포스팅 일자: ${dateStr}`;
+        if (draftDateBadge) draftDateBadge.classList.remove('hidden');
+        if (assetsDateBadge) assetsDateBadge.classList.remove('hidden');
+      } else {
+        if (draftDateBadge) draftDateBadge.classList.add('hidden');
+        if (assetsDateBadge) assetsDateBadge.classList.add('hidden');
+      }
+      lucide.createIcons();
+    }
+
     async function generateBlogPost() {
       const category = $('select-category').value;
       const topic = $('textarea-topic').value.trim();
@@ -891,9 +976,8 @@
         return;
       }
       errorDiv.classList.add('hidden');
-      if ($('draft-category-text')) {
-        $('draft-category-text').textContent = `카테고리: ${category}`;
-      }
+      imageAssets = []; // 새 초안 생성 시 기존 에셋 캐시 초기화
+      updateCategoryAndDateBadges();
       updateStepBadges(2);
 
       const spinner = $('blog-spinner');
@@ -924,6 +1008,7 @@
       
       if (!feedback) return;
       errorDiv.classList.add('hidden');
+      imageAssets = []; // 초안 피드백 수정 시 에셋 캐시 초기화
 
       const spinner = $('blog-spinner');
       const rendered = $('rendered-markdown');
@@ -950,7 +1035,15 @@
       }
     }
 
-    async function generateAssets() {
+    async function generateAssets(forceRegenerate = false) {
+      updateCategoryAndDateBadges();
+
+      // 이미 생성된 에셋이 있고 강제 재생성이 아니면 API 호출 없이 바로 에셋 화면으로 이동
+      if (!forceRegenerate && imageAssets && imageAssets.length > 0) {
+        updateStepBadges(4);
+        return;
+      }
+
       updateStepBadges(4);
       const spinner = $('assets-spinner');
       const list = $('assets-list');
