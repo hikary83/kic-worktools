@@ -1,7 +1,7 @@
 const CONFIG = {
   // 배포된 Google Apps Script 웹앱 URL을 이곳에 입력하세요.
   // 예: "https://script.google.com/macros/s/AKfycb.../exec"
-  API_URL: "https://script.google.com/macros/s/AKfycbwrpOAHN-MQMerCDD-t7dY4nWvygPvG3Cr0hMCVDV5S8obtp9N3dVIZkmjqBZWmIXt8Fw/exec",
+  API_URL: "https://script.google.com/macros/s/AKfycbyjbf1M5XTqdW203XQWUdwO1Y9qgu1rG_WqiWX0LVgJNEEldw4gMOf6_tGfXGxc6ABQnA/exec",
 
   // 추후 비밀번호 로그인이 필요할 경우 true로 변경하고 비밀번호를 설정하세요.
   USE_PASSWORD_PROTECTION: false,
