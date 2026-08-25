@@ -2331,20 +2331,19 @@
         status.className = 'text-[11px] text-violet-600 mt-0.5 font-bold';
         setEditAiReplyLoading(true);
 
-        google.script.run
-          .withSuccessHandler(res => {
+        runServerFunction('generateHelpdeskReply', { requestText, draftAnswer, images: [] })
+          .then(res => {
               setEditAiReplyLoading(false);
               const text = String((res && res.text) || res || '').replace(/\*\*/g, '').trim();
               result.value = text;
               status.textContent = text ? '답변이 생성되었습니다. 필요하면 직접 수정한 뒤 복사하세요.' : '생성된 답변이 비어 있습니다.';
               status.className = text ? 'text-[11px] text-emerald-600 mt-0.5 font-bold' : 'text-[11px] text-red-600 mt-0.5 font-bold';
           })
-          .withFailureHandler(err => {
+          .catch(err => {
               setEditAiReplyLoading(false);
               status.textContent = '답변 생성 실패: ' + ((err && err.message) || String(err));
               status.className = 'text-[11px] text-red-600 mt-0.5 font-bold';
-          })
-          .generateHelpdeskReply({ requestText, draftAnswer, images: [] });
+          });
     }
 
     async function copyEditAiReply() {
