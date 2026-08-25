@@ -553,15 +553,15 @@
           const isSelected = selectedPlan && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
-          let cardStyle = 'bg-blue-50/80 border-blue-200 text-blue-900 hover:bg-blue-100/70';
-          let badgeHtml = '<span class="text-[9px] font-extrabold text-blue-700 bg-blue-100 px-1 py-0.2 rounded">예정</span>';
+          let cardStyle = 'bg-blue-50/70 border-blue-200 text-blue-900 hover:bg-blue-100/70';
+          let badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" title="작성 예정"></span>';
 
           if (plan.status === '○') {
-            cardStyle = 'bg-emerald-50/80 border-emerald-200 text-emerald-900 hover:bg-emerald-100/70';
-            badgeHtml = '<span class="text-[9px] font-extrabold text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded">🟢 완료</span>';
+            cardStyle = 'bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:bg-emerald-100/70';
+            badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 shadow-sm" title="포스팅 완료(○)"></span>';
           } else if (plan.status === '△') {
-            cardStyle = 'bg-amber-50/80 border-amber-200 text-amber-900 hover:bg-amber-100/70';
-            badgeHtml = '<span class="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1 py-0.2 rounded">🟡 예약</span>';
+            cardStyle = 'bg-amber-50/70 border-amber-200 text-amber-900 hover:bg-amber-100/70';
+            badgeHtml = '<span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0 shadow-sm" title="예약 발행(△)"></span>';
           }
 
           if (isSelected) {
