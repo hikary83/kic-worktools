@@ -272,9 +272,16 @@
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <!-- 포스팅 본문 뷰어 (좌측) -->
           <div class="lg:col-span-2 bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
-            <div class="border-b border-slate-100 pb-3 flex flex-wrap justify-between items-center gap-2">
-              <div class="flex items-center gap-2 flex-wrap">
+            <div class="border-b border-slate-100 pb-3 space-y-2.5">
+              <!-- 1행: 좌측 포스팅 초안 / 우측 마크다운 복사 -->
+              <div class="flex justify-between items-center">
                 <span class="text-xs font-bold text-slate-400 uppercase tracking-wider">포스팅 초안</span>
+                <button onclick="copyPlainBlogText()" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1.5 font-bold px-2.5 py-1 rounded-lg hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                  <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 마크다운 복사 <span id="badge-copied-plain" class="hidden ml-1 text-[10px] text-emerald-600 font-extrabold">완료</span>
+                </button>
+              </div>
+              <!-- 2행: 뱃지 2개 나란히 배치 -->
+              <div class="flex items-center gap-2 flex-wrap">
                 <span id="draft-category-badge" class="text-xs font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
                   <i data-lucide="folder" class="w-3.5 h-3.5 text-blue-500"></i>
                   <span id="draft-category-text">카테고리: 미지정</span>
@@ -284,9 +291,6 @@
                   <span id="draft-date-text">일자: 미지정</span>
                 </span>
               </div>
-              <button onclick="copyPlainBlogText()" class="text-xs text-slate-500 hover:text-slate-800 flex items-center gap-1 font-bold">
-                <i data-lucide="file-text" class="w-3.5 h-3.5"></i> 마크다운 복사 <span id="badge-copied-plain" class="hidden ml-1 text-[10px] text-emerald-600 font-extrabold">완료</span>
-              </button>
             </div>
             
             <!-- 🚀 초안 작성 실시간 프로그레스 바 -->
