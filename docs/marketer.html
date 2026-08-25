@@ -259,6 +259,9 @@
             <button onclick="generateAssets()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-extrabold hover:bg-blue-700 transition-all shadow-sm flex items-center gap-1.5">
               <i data-lucide="image" class="w-3.5 h-3.5"></i> 에셋 및 해시태그 생성
             </button>
+            <button onclick="startNewPost()" class="px-3.5 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5" title="첫 화면으로 이동하여 새 포스팅 작성">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 글 작성
+            </button>
           </div>
         </div>
 
@@ -332,6 +335,9 @@
             </button>
             <button id="btn-mark-reserved-step4" onclick="savePlanStatus('△')" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
               <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> 예약(△) 저장
+            </button>
+            <button onclick="startNewPost()" class="px-3.5 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5" title="첫 화면으로 이동하여 새 포스팅 작성">
+              <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 글 작성
             </button>
           </div>
         </div>
@@ -948,6 +954,26 @@
 
     function goBackToDraft() {
       updateStepBadges(2);
+    }
+
+    function startNewPost() {
+      // 1. 입력 폼 초기화
+      $('textarea-topic').value = '';
+      $('textarea-feedback').value = '';
+      removeAttachedFile();
+      selectedPlan = null;
+      blogPostText = '';
+      imageAssets = [];
+
+      // 2. 알림 바 숨기기
+      const banner = $('selected-plan-banner');
+      if (banner) banner.classList.add('hidden');
+
+      // 3. 1단계 입력 화면으로 전환
+      updateStepBadges(1);
+
+      // 4. 시트 최신 플랜 재로드하여 캘린더 동기화
+      loadBlogPostPlans();
     }
 
     async function runServerFunction(functionName, ...args) {
