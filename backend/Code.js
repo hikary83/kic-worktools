@@ -105,11 +105,24 @@ function ensureLinkColumns(sheet) {
   if (changed) headerRange.setValues([headers]);
 }
 
+const SPREADSHEET_ID = "1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ";
+
+function getSpreadsheet() {
+  try {
+    if (SPREADSHEET_ID) {
+      return SpreadsheetApp.openById(SPREADSHEET_ID);
+    }
+  } catch (e) {
+    Logger.log("openById failed: " + e);
+  }
+  return SpreadsheetApp.getActiveSpreadsheet();
+}
+
 /*
  * [핵심 해결 포인트] 진짜 데이터가 있는 시트 탭을 자동 탐지합니다.
  */
 function getMainSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   const targetNames = ["이슈사항", "시트1", "데이터"];
   for (let name of targetNames) {
     let sheet = ss.getSheetByName(name);
@@ -123,7 +136,7 @@ function getMainSheet() {
 }
 
 function getQuarterRequestSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   return ss.getSheetByName(QUARTER_REQUEST_SHEET_NAME);
 }
 
@@ -1418,7 +1431,7 @@ ${blogPost}
 }
 
 function getBlogPostingSheet() {
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = getSpreadsheet();
   let sheet = ss.getSheetByName("블로그포스팅");
   if (!sheet) {
     const sheets = ss.getSheets();
