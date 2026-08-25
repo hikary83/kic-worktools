@@ -1387,39 +1387,55 @@ function generateBlogAssets(payload) {
   const blogPost = payload.blogPost || '';
   const systemInstruction = getBlogSystemInstruction();
   
-  const imagePrompt = `다음 블로그 포스팅 내용을 깊이 있게 분석하여, 본문의 특정 문맥이나 상황(예: 측정 현장, 장비 클로즈업, 분석 화면 등)이 잘 드러나는 완전히 각기 다른 구도의 고해상도 이미지 프롬프트 3개를 작성해줘. 
-비슷한 이미지가 생성되지 않도록, 3장의 이미지가 담는 정보와 시각적 포커스(Wide, Close-up, Persona 중심 등)를 확연히 다르게 구성해줘.
-(중요: 인물이 등장할 경우 반드시 한국인(Korean people, Korean engineers, etc.)으로 묘사되도록 작성할 것.)
+  const unifiedPrompt = `다음 블로그 포스팅 내용을 깊이 있게 분석하여, (1) 고해상도 이미지 프롬프트 3개와 (2) 최적화된 해시태그 리스트를 한 번에 신속하게 작성해줘.
+
+[1. 이미지 프롬프트 작성 가이드]
+- 본문의 특정 문맥이나 상황(예: 측정 현장, 장비 클로즈업, 분석 화면 등)이 잘 드러나는 완전히 각기 다른 구도의 고해상도 이미지 프롬프트 3개를 작성할 것.
+- 3장의 이미지가 담는 정보와 시각적 포커스(Wide, Close-up, Persona 중심 등)를 확연히 다르게 구성할 것.
+- 인물이 등장할 경우 반드시 한국인(Korean people, Korean engineers, etc.)으로 묘사할 것.
+
+[2. 해시태그 가이드]
+- 필수 포함 해시태그: #검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC
+- 포스팅 주제에 맞는 추가 태그 5~10개를 더 생성하여 전체 해시태그 리스트 구성.
 
 포스팅 내용:
 ${blogPost}
 
-반드시 아래 양식을 엄격히 지켜서 출력해줘:
+반드시 아래 출력 구분자 형식을 엄격히 지켜서 출력해줘:
+
+---IMAGES_START---
 [이미지 1]
-* 프롬프트(EN): (영문 이미지 생성 프롬프트 - 구체적인 피사체, 조명, 구도 포함)
-* 파일명: (영문파일명만 작성, .png 등 확장자 절대 제외)
+* 프롬프트(EN): (영문 이미지 생성 프롬프트)
+* 파일명: (영문파일명만 작성, 확장자 제외)
 * Alt 태그: (이미지 본문 역할 설명)
 * 캡션: (이미지 하단에 표시될 한글 캡션)
 
 [이미지 2]
-... (동일하게 3개까지)`;
+[이미지 3]
+---IMAGES_END---
 
-  const imgContents = [{ role: 'user', parts: [{ text: imagePrompt }] }];
-  const imagesText = callGeminiWithSystemInstruction(imgContents, systemInstruction);
+---HASHTAGS_START---
+#검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC #추가태그1 #추가태그2 ...
+---HASHTAGS_END---`;
 
-  const hashtagPrompt = `다음 블로그 포스팅 내용에 어울리는 해시태그를 생성해줘.
+  const contents = [{ role: 'user', parts: [{ text: unifiedPrompt }] }];
+  const rawText = callGeminiWithSystemInstruction(contents, systemInstruction);
 
-[필수 포함 해시태그]
-#검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC
+  let imagesText = '';
+  let hashtagsText = '';
 
-위의 필수 해시태그를 반드시 포함하고, 추가로 포스팅 주제에 맞는 태그 5~10개를 더 생성해서 전체 해시태그 리스트를 출력해줘.
-다른 설명이나 인사말 없이 오직 해시태그(#...)만 나열해줘.
+  if (rawText.includes('---IMAGES_START---') && rawText.includes('---IMAGES_END---')) {
+    imagesText = rawText.split('---IMAGES_START---')[1].split('---IMAGES_END---')[0].trim();
+  } else {
+    imagesText = rawText;
+  }
 
-포스팅 내용:
-${blogPost}`;
-
-  const hashContents = [{ role: 'user', parts: [{ text: hashtagPrompt }] }];
-  const hashtagsText = callGeminiWithSystemInstruction(hashContents, systemInstruction);
+  if (rawText.includes('---HASHTAGS_START---') && rawText.includes('---HASHTAGS_END---')) {
+    hashtagsText = rawText.split('---HASHTAGS_START---')[1].split('---HASHTAGS_END---')[0].trim();
+  } else {
+    const tagMatches = rawText.match(/#[\w가-힣]+/g);
+    hashtagsText = tagMatches ? tagMatches.join(' ') : '#검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC';
+  }
 
   return {
     imagesText: imagesText,
