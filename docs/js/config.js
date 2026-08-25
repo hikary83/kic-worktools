@@ -29,30 +29,18 @@ async function callGASApi(action, data = {}) {
     }
   }
 
+  // CORS 프리플라이트를 피하기 위해 text/plain 타입의 POST Simple Request로 전송합니다.
+  const payload = { action: action, data: data };
+  
   try {
-    let response;
-    // 조회의 성격을 가진 액션은 GET 방식으로 호출하여 CORS 차단을 원천 방지합니다.
-    if (action === 'getDashboardData' || action === 'getDevelopers') {
-      const params = new URLSearchParams();
-      params.set('action', action);
-      if (action === 'getDashboardData') {
-        params.set('startDate', data.startDate || '');
-        params.set('endDate', data.endDate || '');
-      }
-      const targetUrl = CONFIG.API_URL + '?' + params.toString();
-      response = await fetch(targetUrl, {
-        method: "GET",
-        redirect: "follow"
-      });
-    } else {
-      // 쓰기 및 AI 가공 연션(POST)은 리다이렉션을 추적하도록 옵션을 지정합니다.
-      const payload = { action: action, data: data };
-      response = await fetch(CONFIG.API_URL, {
-        method: "POST",
-        redirect: "follow",
-        body: JSON.stringify(payload)
-      });
-    }
+    const response = await fetch(CONFIG.API_URL, {
+      method: "POST",
+      mode: "cors",
+      headers: {
+        "Content-Type": "text/plain"
+      },
+      body: JSON.stringify(payload)
+    });
 
     if (!response.ok) {
       throw new Error(`HTTP Error Status: ${response.status}`);
