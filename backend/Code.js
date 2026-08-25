@@ -375,6 +375,13 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.TEXT);
     }
 
+    if (action === 'generateBlogImage') {
+      const prompt = e.parameter.prompt || (e.parameter.data ? JSON.parse(e.parameter.data).prompt : '');
+      const res = generateBlogImage({ prompt: prompt });
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: res }))
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
     if (action === 'migrateBlogPostingSheet') {
       const res = migrateBlogPostingSheet();
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: res }))
