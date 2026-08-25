@@ -156,8 +156,8 @@
               <button onclick="changeCalMonth(1)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-slate-600 font-bold text-xs flex items-center gap-1">
                 다음달 <i data-lucide="chevron-right" class="w-4 h-4"></i>
               </button>
-              <button onclick="loadBlogPostPlans(true)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-blue-600" title="시트 실시간 새로고침">
-                <i data-lucide="refresh-cw" id="icon-plan-refresh" class="w-4 h-4"></i>
+              <button id="btn-plan-refresh" onclick="loadBlogPostPlans(true)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-blue-600" title="시트 실시간 새로고침">
+                <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
@@ -436,8 +436,9 @@
 
     // 📅 구글 시트 연간 플랜 로드
     async function loadBlogPostPlans(isManualRefresh = false) {
-      const refreshIcon = $('icon-plan-refresh');
-      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+      const btn = $('btn-plan-refresh');
+      const startIcon = btn ? btn.querySelector('svg, i') : null;
+      if (startIcon) startIcon.classList.add('animate-spin');
 
       try {
         const res = await runServerFunction('getBlogPostPlans');
@@ -447,7 +448,10 @@
         console.error('Failed to load blog plans:', e);
         alert('시트 일정 불러오기 실패: ' + (e.message || String(e)));
       } finally {
-        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+        if (btn) {
+          const endIcon = btn.querySelector('svg, i');
+          if (endIcon) endIcon.classList.remove('animate-spin');
+        }
       }
     }
 
