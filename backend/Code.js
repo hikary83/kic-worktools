@@ -1480,15 +1480,12 @@ function getBlogPostPlans() {
       if (yearVal) currentYear = yearVal;
       if (monthVal) currentMonth = monthVal;
 
-      // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 자동으로 '○'(완료)로 승격!
+      // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 화면상 '○'(완료)로 표시
       if (status === '△') {
-        try {
-          const planDate = parsePlanDate(currentYear, dateVal);
-          if (planDate && planDate <= now) {
-            status = '○';
-            sheet.getRange(rowNumber, 9).setValue('○');
-          }
-        } catch (e) {}
+        const planDate = parsePlanDate(currentYear, dateVal);
+        if (planDate && planDate <= now) {
+          status = '○';
+        }
       }
 
       if (topic || dateVal || category) {
