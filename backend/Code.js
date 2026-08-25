@@ -375,6 +375,12 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.TEXT);
     }
 
+    if (action === 'migrateBlogPostingSheet') {
+      const res = migrateBlogPostingSheet();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: res }))
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ 
       success: false, 
       message: 'KIC API Server is running. Please use GitHub Pages frontend to access UI.' 
@@ -441,6 +447,9 @@ function doPost(e) {
       result = { success: true, data: stats };
     } else if (action === 'updateBlogPostStatus') {
       const stats = updateBlogPostStatus(data);
+      result = { success: true, data: stats };
+    } else if (action === 'migrateBlogPostingSheet') {
+      const stats = migrateBlogPostingSheet();
       result = { success: true, data: stats };
     } else if (action === 'getDevelopers') {
       const devs = getDevelopers();
@@ -1459,6 +1468,105 @@ function parsePlanDate(yearStr, dateStr) {
   }
 }
 
+function migrateBlogPostingSheet() {
+  const ss = getSpreadsheet();
+  const sheet = ss.getSheetByName("블로그포스팅");
+  if (!sheet) throw new Error("'블로그포스팅' 시트를 찾을 수 없습니다.");
+
+  // 1. 기존 데이터 백업 (블로그포스팅_백업 탭 생성 또는 덮어쓰기)
+  let backupSheet = ss.getSheetByName("블로그포스팅_백업");
+  if (backupSheet) {
+    ss.deleteSheet(backupSheet);
+  }
+  backupSheet = sheet.copyTo(ss);
+  backupSheet.setName("블로그포스팅_백업");
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return { success: true, message: "변환할 데이터가 없습니다." };
+
+  const lastCol = sheet.getLastColumn();
+  const rawValues = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+  const headers = rawValues[0].map(h => String(h || '').trim());
+
+  // 만약 이미 '포스팅 일자' 컬럼으로 통합되어 있다면 중복 변환 방지
+  if (headers.includes("포스팅 일자") || headers.includes("포스팅일자")) {
+    return { success: true, message: "이미 포스팅 일자가 단일 컬럼으로 통합되어 있습니다." };
+  }
+
+  const newRows = [];
+  // 새 헤더: No, 포스팅 일자, 카테고리, 주제, 핵심 키워드, 비고, 포스팅 여부
+  newRows.push(["No", "포스팅 일자", "카테고리", "주제", "핵심 키워드", "비고", "포스팅 여부"]);
+
+  let currentYear = "2026";
+  let currentMonth = "1";
+
+  for (let i = 1; i < rawValues.length; i++) {
+    const row = rawValues[i];
+    const no = row[0] || i;
+    const yearVal = row[1] ? String(row[1]).trim() : "";
+    const monthVal = row[2] ? String(row[2]).trim() : "";
+    const dateVal = row[3] ? String(row[3]).trim() : "";
+    const category = row[4] ? String(row[4]).trim() : "";
+    const topic = row[5] ? String(row[5]).trim() : "";
+    const keywords = row[6] ? String(row[6]).trim() : "";
+    const note = row[7] ? String(row[7]).trim() : "";
+    const status = row[8] ? String(row[8]).trim() : "";
+
+    if (yearVal) {
+      const ym = yearVal.match(/\d{4}/);
+      if (ym) currentYear = ym[0];
+    }
+    if (monthVal) {
+      const mm = monthVal.match(/\d{1,2}/);
+      if (mm) currentMonth = mm[0];
+    }
+
+    if (!topic && !dateVal && !category) continue;
+
+    // 통합 날짜 문자열 생성 (예: "2026-01-06 (화)")
+    let fullDateStr = "";
+    if (dateVal) {
+      const dateMatch = dateVal.match(/(\d{1,2})\.(\d{1,2})/);
+      const dayOfWeekMatch = dateVal.match(/\((.*?)\)/);
+      if (dateMatch) {
+        const m = String(parseInt(dateMatch[1], 10)).padStart(2, '0');
+        const d = String(parseInt(dateMatch[2], 10)).padStart(2, '0');
+        const dow = dayOfWeekMatch ? ` (${dayOfWeekMatch[1]})` : "";
+        fullDateStr = `${currentYear}-${m}-${d}${dow}`;
+      } else {
+        fullDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-${dateVal}`;
+      }
+    } else {
+      fullDateStr = `${currentYear}-${String(currentMonth).padStart(2, '0')}-01`;
+    }
+
+    newRows.push([no, fullDateStr, category, topic, keywords, note, status]);
+  }
+
+  // 시트 초기화 및 새 데이터 작성
+  sheet.clear();
+  sheet.getRange(1, 1, newRows.length, 7).setValues(newRows);
+
+  // 헤더 스타일링
+  const headerRange = sheet.getRange(1, 1, 1, 7);
+  headerRange.setBackground("#f1f5f9");
+  headerRange.setFontWeight("bold");
+  headerRange.setHorizontalAlignment("center");
+
+  // 데이터 정렬
+  sheet.getRange(2, 1, newRows.length - 1, 1).setHorizontalAlignment("center");
+  sheet.getRange(2, 2, newRows.length - 1, 1).setHorizontalAlignment("center");
+  sheet.getRange(2, 3, newRows.length - 1, 1).setHorizontalAlignment("center");
+  sheet.getRange(2, 7, newRows.length - 1, 1).setHorizontalAlignment("center");
+
+  // 열 너비 자동 조정
+  for (let c = 1; c <= 7; c++) {
+    sheet.autoResizeColumn(c);
+  }
+
+  return { success: true, count: newRows.length - 1, message: "성공적으로 '포스팅 일자' 단일 컬럼으로 통합 변환되었습니다!" };
+}
+
 function getBlogPostPlans() {
   try {
     const sheet = getBlogPostingSheet();
@@ -1467,53 +1575,117 @@ function getBlogPostPlans() {
     const lastRow = sheet.getLastRow();
     if (lastRow < 2) return [];
 
-    const maxCols = Math.min(Math.max(sheet.getLastColumn(), 1), 9);
-    const values = sheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
+    const lastCol = sheet.getLastColumn();
+    const values = sheet.getRange(1, 1, lastRow, lastCol).getValues();
+    const headers = values[0].map(h => String(h || '').trim());
+    
+    // 컬럼 인덱스 스마트 탐지 (단일 컬럼 vs 구버전 9열 분리 컬럼)
+    const isSingleDateCol = headers.includes("포스팅 일자") || headers.includes("포스팅일자") || headers.includes("일자");
     const plans = [];
-
-    let currentYear = "";
-    let currentMonth = "";
     const now = new Date();
 
-    for (let i = 0; i < values.length; i++) {
-      const row = values[i];
-      const rowNumber = i + 2;
+    if (isSingleDateCol) {
+      let dateColIdx = headers.findIndex(h => h.includes("일자") || h.includes("날짜"));
+      if (dateColIdx === -1) dateColIdx = 1;
+      let catColIdx = headers.findIndex(h => h.includes("카테고리"));
+      if (catColIdx === -1) catColIdx = 2;
+      let topicColIdx = headers.findIndex(h => h.includes("주제") || h.includes("제목"));
+      if (topicColIdx === -1) topicColIdx = 3;
+      let kwColIdx = headers.findIndex(h => h.includes("키워드") || h.includes("자료"));
+      if (kwColIdx === -1) kwColIdx = 4;
+      let noteColIdx = headers.findIndex(h => h.includes("비고") || h.includes("메모"));
+      if (noteColIdx === -1) noteColIdx = 5;
+      let statusColIdx = headers.findIndex(h => h.includes("여부") || h.includes("상태"));
+      if (statusColIdx === -1) statusColIdx = 6;
 
-      const no = row[0] !== undefined ? row[0] : "";
-      const yearVal = row[1] !== undefined ? String(row[1]).trim() : "";
-      const monthVal = row[2] !== undefined ? String(row[2]).trim() : "";
-      const dateVal = row[3] !== undefined ? String(row[3]).trim() : "";
-      const category = row[4] !== undefined ? String(row[4]).trim() : "";
-      const topic = row[5] !== undefined ? String(row[5]).trim() : "";
-      const keywords = row[6] !== undefined ? String(row[6]).trim() : "";
-      const note = row[7] !== undefined ? String(row[7]).trim() : "";
-      let status = row[8] !== undefined ? String(row[8]).trim() : "";
+      for (let i = 1; i < values.length; i++) {
+        const row = values[i];
+        const rowNumber = i + 1;
+        const no = row[0] || i;
+        const fullDate = String(row[dateColIdx] || '').trim();
+        const category = String(row[catColIdx] || '').trim();
+        const topic = String(row[topicColIdx] || '').trim();
+        const keywords = String(row[kwColIdx] || '').trim();
+        const note = String(row[noteColIdx] || '').trim();
+        let status = String(row[statusColIdx] || '').trim();
 
-      // 년도, 월이 셀 병합 등으로 비어있는 경우 이전 값 상속
-      if (yearVal) currentYear = yearVal;
-      if (monthVal) currentMonth = monthVal;
+        if (!topic && !fullDate && !category) continue;
 
-      // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 화면상 '○'(완료)로 표시
-      if (status === '△') {
-        const planDate = parsePlanDate(currentYear, dateVal);
-        if (planDate && planDate <= now) {
-          status = '○';
+        // 년, 월, 일 파싱 (예: "2026-01-06 (화)")
+        const yearMatch = fullDate.match(/\d{4}/);
+        const year = yearMatch ? yearMatch[0] : "2026";
+        const dateMatch = fullDate.match(/(\d{1,2})[-.](\d{1,2})/);
+        let monthStr = "1월";
+        let dateStr = fullDate;
+        if (dateMatch) {
+          monthStr = `${parseInt(dateMatch[1], 10)}월`;
+          dateStr = `${String(parseInt(dateMatch[1], 10)).padStart(2, '0')}.${String(parseInt(dateMatch[2], 10)).padStart(2, '0')}`;
+          const dowMatch = fullDate.match(/\((.*?)\)/);
+          if (dowMatch) dateStr += ` (${dowMatch[1]})`;
         }
-      }
 
-      if (topic || dateVal || category) {
+        if (status === '△') {
+          const planDate = parsePlanDate(year, dateStr);
+          if (planDate && planDate <= now) {
+            status = '○';
+          }
+        }
+
         plans.push({
           row: rowNumber,
-          no: no || (i + 1),
-          year: currentYear,
-          month: currentMonth,
-          date: dateVal,
+          no: no,
+          year: `${year}년`,
+          month: monthStr,
+          date: dateStr,
+          fullDate: fullDate,
           category: category,
           topic: topic,
           keywords: keywords,
           note: note,
-          status: status // '○', '△', ''
+          status: status
         });
+      }
+    } else {
+      let currentYear = "";
+      let currentMonth = "";
+
+      for (let i = 1; i < values.length; i++) {
+        const row = values[i];
+        const rowNumber = i + 1;
+        const no = row[0] !== undefined ? row[0] : "";
+        const yearVal = row[1] !== undefined ? String(row[1]).trim() : "";
+        const monthVal = row[2] !== undefined ? String(row[2]).trim() : "";
+        const dateVal = row[3] !== undefined ? String(row[3]).trim() : "";
+        const category = row[4] !== undefined ? String(row[4]).trim() : "";
+        const topic = row[5] !== undefined ? String(row[5]).trim() : "";
+        const keywords = row[6] !== undefined ? String(row[6]).trim() : "";
+        const note = row[7] !== undefined ? String(row[7]).trim() : "";
+        let status = row[8] !== undefined ? String(row[8]).trim() : "";
+
+        if (yearVal) currentYear = yearVal;
+        if (monthVal) currentMonth = monthVal;
+
+        if (status === '△') {
+          const planDate = parsePlanDate(currentYear, dateVal);
+          if (planDate && planDate <= now) {
+            status = '○';
+          }
+        }
+
+        if (topic || dateVal || category) {
+          plans.push({
+            row: rowNumber,
+            no: no || i,
+            year: currentYear,
+            month: currentMonth,
+            date: dateVal,
+            category: category,
+            topic: topic,
+            keywords: keywords,
+            note: note,
+            status: status
+          });
+        }
       }
     }
 
@@ -1534,8 +1706,16 @@ function updateBlogPostStatus(data) {
   }
 
   const newStatus = data.status || "○";
-  // I열은 9번째 열
-  sheet.getRange(rowNumber, 9).setValue(newStatus);
+  
+  // 헤더에서 '포스팅 여부' 열 찾기 (단일 날짜 구조는 7열, 구버전은 9열)
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
+  let statusCol = headers.findIndex(h => h.includes("여부") || h.includes("상태")) + 1;
+  if (statusCol <= 0) {
+    statusCol = (headers.includes("포스팅 일자") || headers.includes("포스팅일자")) ? 7 : 9;
+  }
+
+  sheet.getRange(rowNumber, statusCol).setValue(newStatus);
 
   return {
     success: true,
