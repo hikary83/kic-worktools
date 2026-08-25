@@ -10,10 +10,10 @@ const NUMBER_FORMAT_DT = "yyyy-mm-dd hh:mm:ss";
 const GEMINI_API_KEY_PROPERTY = "GEMINI_API_KEY";
 const GEMINI_API_VERSION = "v1beta";
 const GEMINI_MODELS = [
-  "gemini-3.5-flash",
-  "gemini-3.5-flash-lite",
   "gemini-2.5-flash",
-  "gemini-2.5-flash-lite"
+  "gemini-2.5-flash-lite",
+  "gemini-3.5-flash",
+  "gemini-3.5-flash-lite"
 ];
 const GEMINI_MAX_CONTINUATION_COUNT = 2;
 
@@ -1322,7 +1322,7 @@ function callGeminiWithSystemInstruction(contents, systemInstructionText) {
     const model = GEMINI_MODELS[modelIndex];
     const endpoint = GEMINI_API_VERSION + '/models/' + model;
     const url = 'https://generativelanguage.googleapis.com/' + endpoint + ':generateContent?key=' + encodeURIComponent(apiKey);
-    const delays = [0, 1500, 3500];
+    const delays = [0, 800];
 
     for (let attempt = 0; attempt < delays.length; attempt++) {
       if (delays[attempt] > 0) Utilities.sleep(delays[attempt]);
