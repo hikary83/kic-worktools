@@ -289,9 +289,19 @@
               </button>
             </div>
             
-            <div id="blog-spinner" class="py-12 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin text-blue-500"></i>
-              <p class="text-xs font-bold text-slate-500">KIC 블로그 포스팅 초안 작성 중...</p>
+            <!-- 🚀 초안 작성 실시간 프로그레스 바 -->
+            <div id="blog-progress-box" class="py-14 px-6 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
+              <div class="w-full flex justify-between items-center text-xs font-extrabold text-slate-700">
+                <span id="blog-progress-status" class="flex items-center gap-1.5 text-blue-600">
+                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-blue-500"></i>
+                  <span id="blog-progress-status-text">KIC 블로그 포스팅 초안 작성 중...</span>
+                </span>
+                <span id="blog-progress-percent" class="font-mono text-blue-700 font-black text-sm">15%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200 shadow-inner">
+                <div id="blog-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-300 ease-out shadow-sm" style="width: 15%"></div>
+              </div>
+              <p id="blog-progress-desc" class="text-[11px] text-slate-400 font-semibold text-center leading-relaxed">장비 사양과 교정 원리를 분석하여 전문적인 엔지니어 초안을 구성하고 있습니다.</p>
             </div>
             
             <div id="rendered-markdown" class="markdown-body text-sm text-slate-800 min-h-[450px]"></div>
@@ -440,9 +450,19 @@
               </button>
             </div>
             
-            <div id="assets-spinner" class="py-12 flex flex-col items-center justify-center text-slate-400 gap-3">
-              <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin text-blue-500"></i>
-              <p class="text-xs font-bold text-slate-500">AI 이미지 프롬프트 및 에셋 추출 중...</p>
+            <!-- 🚀 에셋 추출 실시간 프로그레스 바 -->
+            <div id="assets-progress-box" class="py-14 px-6 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
+              <div class="w-full flex justify-between items-center text-xs font-extrabold text-slate-700">
+                <span id="assets-progress-status" class="flex items-center gap-1.5 text-blue-600">
+                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-blue-500"></i>
+                  <span id="assets-progress-status-text">AI 이미지 프롬프트 및 해시태그 추출 중...</span>
+                </span>
+                <span id="assets-progress-percent" class="font-mono text-blue-700 font-black text-sm">20%</span>
+              </div>
+              <div class="w-full bg-slate-100 rounded-full h-3 overflow-hidden p-0.5 border border-slate-200 shadow-inner">
+                <div id="assets-progress-bar" class="bg-gradient-to-r from-blue-500 to-indigo-600 h-full rounded-full transition-all duration-300 ease-out shadow-sm" style="width: 20%"></div>
+              </div>
+              <p id="assets-progress-desc" class="text-[11px] text-slate-400 font-semibold text-center leading-relaxed">본문 구도와 현장 상황에 맞춘 최적의 미드저니 프롬프트를 구성하고 있습니다.</p>
             </div>
 
             <div id="assets-error" class="hidden flex items-center gap-2 text-rose-600 text-sm bg-rose-50 p-3 rounded-lg border border-rose-100 font-semibold">
@@ -1165,6 +1185,49 @@
       lucide.createIcons();
     }
 
+    let progressInterval = null;
+
+    function startProgressBar(prefix, steps) {
+      clearInterval(progressInterval);
+      const box = $(`${prefix}-progress-box`);
+      const bar = $(`${prefix}-progress-bar`);
+      const pct = $(`${prefix}-progress-percent`);
+      const desc = $(`${prefix}-progress-desc`);
+
+      if (box) box.classList.remove('hidden');
+      if (bar) bar.style.width = '12%';
+      if (pct) pct.textContent = '12%';
+
+      let currentPct = 12;
+      progressInterval = setInterval(() => {
+        if (currentPct < 92) {
+          const stepAdd = Math.floor(Math.random() * 8) + 4;
+          currentPct = Math.min(92, currentPct + stepAdd);
+          if (bar) bar.style.width = `${currentPct}%`;
+          if (pct) pct.textContent = `${currentPct}%`;
+
+          if (steps && steps.length > 0 && desc) {
+            const stepIdx = Math.min(steps.length - 1, Math.floor((currentPct / 100) * steps.length));
+            desc.textContent = steps[stepIdx];
+          }
+        }
+      }, 300);
+    }
+
+    function stopProgressBar(prefix) {
+      clearInterval(progressInterval);
+      const box = $(`${prefix}-progress-box`);
+      const bar = $(`${prefix}-progress-bar`);
+      const pct = $(`${prefix}-progress-percent`);
+
+      if (bar) bar.style.width = '100%';
+      if (pct) pct.textContent = '100%';
+
+      setTimeout(() => {
+        if (box) box.classList.add('hidden');
+      }, 250);
+    }
+
     async function generateBlogPost() {
       const category = $('select-category').value;
       const topic = $('textarea-topic').value.trim();
@@ -1180,22 +1243,28 @@
       updateCategoryAndDateBadges();
       updateStepBadges(2);
 
-      const spinner = $('blog-spinner');
       const rendered = $('rendered-markdown');
       const btnGen = $('btn-generate');
       
-      spinner.classList.remove('hidden');
       rendered.innerHTML = '';
       btnGen.disabled = true;
+
+      const draftSteps = [
+        "장비 사양과 교정 원리를 분석하여 엔지니어 전문 구조를 설계하고 있습니다...",
+        "반도체·제약·발전소 현장 사례 및 비교 표(Table)를 작성하고 있습니다...",
+        "KIC 차별화 솔루션과 가독성 높은 H3 소제목을 배치하고 있습니다...",
+        "모바일 최적화 및 마크다운 포스팅 서식을 완성하고 있습니다..."
+      ];
+      startProgressBar('blog', draftSteps);
 
       try {
         const payload = { category, topic, attachedFile };
         const result = await runServerFunction('generateBlogContent', payload);
         blogPostText = result.text || result || '';
+        stopProgressBar('blog');
         rendered.innerHTML = marked.parse(blogPostText);
-        spinner.classList.add('hidden');
       } catch (e) {
-        spinner.classList.add('hidden');
+        stopProgressBar('blog');
         rendered.innerHTML = `<div class="text-rose-600 font-bold p-4 bg-rose-50 rounded-xl border border-rose-100">초안 작성 실패: ${e.message || String(e)}</div>`;
       } finally {
         btnGen.disabled = false;
@@ -1210,25 +1279,31 @@
       errorDiv.classList.add('hidden');
       imageAssets = []; // 초안 피드백 수정 시 에셋 캐시 초기화
 
-      const spinner = $('blog-spinner');
       const rendered = $('rendered-markdown');
       const btnRefine = $('btn-refine');
 
-      spinner.classList.remove('hidden');
       btnRefine.disabled = true;
       btnRefine.textContent = '수정본 작성 중...';
+
+      const refineSteps = [
+        "사용자 피드백을 분석하여 보완할 항목을 파악하고 있습니다...",
+        "소제목 순차 번호 및 전문 표 데이터를 재구성하고 있습니다...",
+        "피드백이 완벽히 반영된 새 포스팅 초안을 완성하고 있습니다..."
+      ];
+      startProgressBar('blog', refineSteps);
 
       try {
         const payload = { contents: `현재 포스팅 내용:\n${blogPostText}\n\n사용자 피드백: ${feedback}\n\n피드백을 반영하여 포스팅을 수정해줘. 모든 소제목(섹션 제목)은 반드시 ### 1., ### 2., ### 3. 과 같이 순차적으로 번호를 매겨서 작성해야 함을 잊지 마세요. 절대 모든 번호를 1로 고정하지 마세요.` };
         const result = await runServerFunction('generateBlogContent', payload);
         blogPostText = result.text || result || '';
+        stopProgressBar('blog');
         rendered.innerHTML = marked.parse(blogPostText);
         $('textarea-feedback').value = '';
       } catch (e) {
+        stopProgressBar('blog');
         $('refine-error-msg').textContent = '수정 실패: ' + (e.message || String(e));
         errorDiv.classList.remove('hidden');
       } finally {
-        spinner.classList.add('hidden');
         btnRefine.disabled = false;
         btnRefine.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 피드백 반영하여 수정';
         lucide.createIcons();
@@ -1245,18 +1320,24 @@
       }
 
       updateStepBadges(4);
-      const spinner = $('assets-spinner');
       const list = $('assets-list');
       const errorDiv = $('assets-error');
       const btnMore = $('btn-more-assets');
 
-      spinner.classList.remove('hidden');
       list.classList.add('hidden');
       errorDiv.classList.add('hidden');
       btnMore.disabled = true;
 
+      const assetSteps = [
+        "포스팅 본문의 핵심 키워드와 기술 맥락을 분석하고 있습니다...",
+        "서로 다른 3가지 시각적 구도(현장, 클로즈업, 엔지니어)를 도출하고 있습니다...",
+        "최적화된 미드저니 영문 프롬프트와 캡션, 해시태그 세트를 일괄 추출하고 있습니다..."
+      ];
+      startProgressBar('assets', assetSteps);
+
       try {
         const result = await runServerFunction('generateBlogAssets', { blogPost: blogPostText });
+        stopProgressBar('assets');
         
         // 해시태그 렌더링
         const essentialHashtags = "#검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC";
@@ -1294,10 +1375,9 @@
         });
 
         renderImageAssetsList();
-        spinner.classList.add('hidden');
         list.classList.remove('hidden');
       } catch (e) {
-        spinner.classList.add('hidden');
+        stopProgressBar('assets');
         $('assets-error-msg').textContent = '에셋 생성 실패: ' + (e.message || String(e));
         errorDiv.classList.remove('hidden');
       } finally {
