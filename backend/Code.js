@@ -442,6 +442,9 @@ function doPost(e) {
     } else if (action === 'generateBlogMoreAssets') {
       const stats = generateBlogMoreAssets(data);
       result = { success: true, data: stats };
+    } else if (action === 'generateBlogImage') {
+      const stats = generateBlogImage(data);
+      result = { success: true, data: stats };
     } else if (action === 'getBlogPostPlans') {
       const stats = getBlogPostPlans();
       result = { success: true, data: stats };
@@ -1440,6 +1443,60 @@ ${blogPost}
   const contents = [{ role: 'user', parts: [{ text: prompt }] }];
   const imagesText = callGeminiWithSystemInstruction(contents, systemInstruction);
   return { imagesText: imagesText };
+}
+
+function generateBlogImage(payload) {
+  const prompt = payload.prompt || '';
+  if (!prompt) throw new Error('이미지 생성을 위한 프롬프트가 없습니다.');
+
+  const apiKey = PropertiesService.getScriptProperties().getProperty(GEMINI_API_KEY_PROPERTY);
+  if (!apiKey) throw new Error('Gemini API 키가 설정되어 있지 않습니다. 스프레드시트 메뉴에서 "🚀 KIC 헬프데스크 > 🔐 Gemini API 키 설정"을 먼저 실행하세요.');
+
+  // Google Imagen 3 API 엔드포인트
+  const url = 'https://generativelanguage.googleapis.com/v1beta/models/imagen-3.0-generate-002:predict?key=' + encodeURIComponent(apiKey);
+
+  const requestPayload = {
+    instances: [
+      { prompt: prompt }
+    ],
+    parameters: {
+      sampleCount: 1,
+      aspectRatio: '16:9',
+      outputMimeType: 'image/png',
+      personGeneration: 'ALLOW_ADULT'
+    }
+  };
+
+  const options = {
+    method: 'post',
+    contentType: 'application/json',
+    payload: JSON.stringify(requestPayload),
+    muteHttpExceptions: true
+  };
+
+  const response = UrlFetchApp.fetch(url, options);
+  const responseCode = response.getResponseCode();
+  const responseText = response.getContentText();
+
+  if (responseCode >= 200 && responseCode < 300) {
+    const data = JSON.parse(responseText);
+    if (data.predictions && data.predictions.length > 0 && data.predictions[0].bytesBase64Encoded) {
+      return {
+        success: true,
+        imageUrl: 'data:image/png;base64,' + data.predictions[0].bytesBase64Encoded
+      };
+    }
+    throw new Error('Imagen API 응답에 이미지 데이터가 없습니다.');
+  } else {
+    let errorMsg = responseText;
+    try {
+      const errJson = JSON.parse(responseText);
+      if (errJson.error && errJson.error.message) {
+        errorMsg = errJson.error.message;
+      }
+    } catch (e) {}
+    throw new Error('Imagen 3 이미지 생성 실패 (HTTP ' + responseCode + '): ' + errorMsg);
+  }
 }
 
 function getBlogPostingSheet() {
