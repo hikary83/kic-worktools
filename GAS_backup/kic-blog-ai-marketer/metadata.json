@@ -1,0 +1,6 @@
+{
+  "name": "KIC Blog AI Marketer",
+  "description": "B2B 산업용 계측기 및 교정 전문 기업 '코리아인스트루먼트(KIC)'를 위한 전문 네이버 블로그 포스팅 생성 도구입니다.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

@@ -408,6 +408,15 @@ function doPost(e) {
     } else if (action === 'generateGeminiReport') {
       const stats = generateGeminiReport(data.prompt);
       result = { success: true, data: stats };
+    } else if (action === 'generateBlogContent') {
+      const stats = generateBlogContent(data);
+      result = { success: true, data: stats };
+    } else if (action === 'generateBlogAssets') {
+      const stats = generateBlogAssets(data);
+      result = { success: true, data: stats };
+    } else if (action === 'generateBlogMoreAssets') {
+      const stats = generateBlogMoreAssets(data);
+      result = { success: true, data: stats };
     } else if (action === 'getDevelopers') {
       const devs = getDevelopers();
       result = { success: true, data: devs };
@@ -1208,4 +1217,190 @@ function updateIssueHiddenFromDashboard(issueId, hiddenYn, sourceType) {
     sourceType: targetSourceType,
     hiddenFlag: hiddenValue
   };
+}
+
+// ==========================================
+// 📝 AI 블로그 마케터 기능 백엔드 API
+// ==========================================
+
+function getBlogSystemInstruction() {
+  return `당신은 B2B 산업용 계측기 및 교정 전문 기업 '코리아인스트루먼트(KIC)'의 네이버 블로그 포스팅을 전담하는 최고 수준의 AI 마케터 및 전문 엔지니어입니다.
+
+[시각적 스타일 가이드 - 제공된 이미지 스타일 준수]
+1. 블로그 제목: 포스팅의 가장 첫 줄에 [제목: 블로그 제목] 형식으로 매력적인 제목을 작성하십시오.
+2. 섹션 제목 구성: 각 섹션은 반드시 ### (H3) 태그를 사용하여 "### 1. [제목] [이모지]", "### 2. [제목] [이모지]"와 같이 순차적인 번호 형식을 사용합니다. (예: ### 1. 똑똑한 자동 인식, 'Smart-plus' 모듈 시스템 🧠)
+3. 번호 매기기: 모든 소제목(섹션 제목)은 1부터 시작하여 1씩 증가하며 중복되거나 1로 고정되지 않도록 주의하십시오.
+4. 불렛 포인트: 주요 특징이나 설명은 반드시 '✔️' 또는 '✅' 이모지를 사용하여 나열합니다. (언더바(_)나 별표(*)를 불렛 포인트 기호로 사용하지 마십시오.)
+5. 팁/참고 섹션: 추가 설명이나 보상(Compensation) 팁은 '💡 [제목]: [내용]' 형식을 사용합니다.
+6. 줄바꿈: 문장 사이와 섹션 사이에는 충분한 여백(빈 줄 2개 이상)을 두어 모바일에서도 읽기 편하게 작성합니다.
+7. 강조: 중요한 키워드나 문구는 반드시 마크다운의 굵게 기호(**텍스트**)를 사용하여 강조합니다. (예: **핵심 키워드**)
+8. 표(Table): 마크다운 표 형식을 사용하여 데이터를 정리하십시오. (예: | 항목 | 내용 |)
+9. 이미지 캡션: 모든 이미지 캡션은 내용과 어울리는 이모지로 시작하십시오. (예: 📷 [내용], 🔬 [내용] 등)
+10. 리스트 기호 주의: 섹션 제목(소제목)을 작성할 때 마크다운 리스트 기호(1., 2., 3. 등)를 단독으로 사용하지 마십시오. 반드시 ### 기호와 함께 사용하여 헤더로 만드십시오. (예: ### 1. 제목)
+
+[본문 내용 강화 가이드]
+1. 전문성: 단순 제품 소개를 넘어 해당 기술의 원리(예: 피토관의 동압/정압 원리)를 엔지니어 관점에서 상세히 설명합니다.
+2. 사례(Case Study): 해당 장비나 솔루션이 실제 현장(반도체 라인, 제약 클린룸, 발전소 등)에서 어떻게 문제 해결에 기여했는지 구체적인 사례를 포함합니다.
+3. 도표(Table): 장비 사양 비교, 교정 주기 가이드, 오차 범위 등을 나타내는 마크다운 표를 반드시 1개 이상 포함하여 전문성을 높입니다.
+4. KIC 솔루션: KIC만의 차별화된 교정 서비스(KOLAS 인증, 현장 교정 등)를 본문 내용과 연결하여 자연스럽게 제안합니다.
+
+[출력 형식]
+- 블로그 본문은 마크다운 형식으로 작성하되, 네이버 블로그 에디터 호환성을 위해 다음 규칙을 엄격히 따르십시오.
+- **기울임꼴 절대 금지**: 언더바(_)나 별표(*)를 사용하여 텍스트를 기울임꼴(Italic)로 만들지 마십시오. (예: _텍스트_, *텍스트* 사용 금지)
+- **특수문자 금지**: 문장 앞이나 뒤에 불필요한 언더바(_)나 별표(*)를 붙이지 마십시오. 이는 네이버 블로그에서 기울임꼴로 오인될 수 있습니다.
+- **전체 감싸기 금지**: 포스팅 전체를 언더바(_)나 별표(*)로 감싸지 마십시오.
+- **마크다운 기호 최소화**: 굵게(**)를 제외한 다른 마크다운 기호(기울임, 취소선 등)는 절대 사용하지 마십시오.
+- **굵게**: 강조가 필요한 경우에만 마크다운의 굵게 기호(**텍스트**)를 사용하십시오.
+- 코드 블록(\`\`\`)을 사용하지 마십시오.
+- 이미지 삽입 위치는 📷 [이미지 1 삽입 위치], 📷 [이미지 2 삽입 위치]와 같이 순차적으로 표시하십시오.
+- 문장 중간에 특수문자를 남발하지 마십시오.`;
+}
+
+function callGeminiWithSystemInstruction(contents, systemInstructionText) {
+  const apiKey = PropertiesService.getScriptProperties().getProperty(GEMINI_API_KEY_PROPERTY);
+  if (!apiKey) throw new Error('Gemini API 키가 설정되어 있지 않습니다. 스프레드시트 메뉴에서 "🚀 KIC 헬프데스크 > 🔐 Gemini API 키 설정"을 먼저 실행하세요.');
+
+  const basePayload = {
+    generationConfig: { temperature: 0.7, topP: 0.8, maxOutputTokens: 4096 },
+    systemInstruction: {
+      parts: [
+        { text: systemInstructionText }
+      ]
+    }
+  };
+  
+  const errors = [];
+
+  for (let modelIndex = 0; modelIndex < GEMINI_MODELS.length; modelIndex++) {
+    const model = GEMINI_MODELS[modelIndex];
+    const endpoint = GEMINI_API_VERSION + '/models/' + model;
+    const url = 'https://generativelanguage.googleapis.com/' + endpoint + ':generateContent?key=' + encodeURIComponent(apiKey);
+    const delays = [0, 1500, 3500];
+
+    for (let attempt = 0; attempt < delays.length; attempt++) {
+      if (delays[attempt] > 0) Utilities.sleep(delays[attempt]);
+      try {
+        const resultText = requestGeminiWithContinuation(url, basePayload, contents);
+        if (resultText) return resultText;
+        errors.push(model + ': response succeeded but generated text was empty.');
+        break;
+      } catch (error) {
+        const message = String(error.message || error);
+        errors.push(model + ': ' + message);
+        if (message.indexOf('API key') !== -1 || message.indexOf('authentication') !== -1) throw error;
+        if (message.indexOf('unsupported model') !== -1 || message.indexOf('HTTP 404') !== -1) break;
+        if ((message.indexOf('HTTP 429') !== -1 || message.toLowerCase().indexOf('quota') !== -1) && attempt < delays.length - 1) continue;
+        break;
+      }
+    }
+  }
+  throw new Error('모든 Gemini 모델 통신에 실패했습니다. 마지막 에러: ' + (errors[errors.length - 1] || '알 수 없는 오류'));
+}
+
+function generateBlogContent(payload) {
+  let contents = [];
+  if (typeof payload.contents === 'string') {
+    contents = [
+      {
+        role: 'user',
+        parts: [{ text: payload.contents }]
+      }
+    ];
+  } else if (payload.contents && payload.contents.parts) {
+    contents = [
+      {
+        role: 'user',
+        parts: payload.contents.parts
+      }
+    ];
+  } else {
+    const category = payload.category || '';
+    const topic = payload.topic || '';
+    const attachedFile = payload.attachedFile;
+    const userText = `카테고리: ${category}\n주제: ${topic}\n\n위 정보를 바탕으로 네이버 블로그 포스팅 초안을 작성해줘. 반드시 매력적인 [블로그 제목]을 포함해야 하며, 모든 소제목(섹션 제목)은 반드시 ### 1., ### 2., ### 3. 과 같이 순차적으로 번호를 매겨서 작성해줘. 절대 모든 번호를 1로 고정하지 마. ${attachedFile ? '첨부된 파일의 내용을 분석하여 매뉴얼 설명이나 관련 내용을 상세히 포함해줘.' : ''}`;
+    
+    const parts = [{ text: userText }];
+    if (attachedFile && attachedFile.data) {
+      parts.push({
+        inlineData: {
+          data: attachedFile.data,
+          mimeType: attachedFile.mimeType
+        }
+      });
+    }
+    contents = [{ role: 'user', parts: parts }];
+  }
+
+  const systemInstruction = getBlogSystemInstruction();
+  const text = callGeminiWithSystemInstruction(contents, systemInstruction);
+  return { text: text };
+}
+
+function generateBlogAssets(payload) {
+  const blogPost = payload.blogPost || '';
+  const systemInstruction = getBlogSystemInstruction();
+  
+  const imagePrompt = `다음 블로그 포스팅 내용을 깊이 있게 분석하여, 본문의 특정 문맥이나 상황(예: 측정 현장, 장비 클로즈업, 분석 화면 등)이 잘 드러나는 완전히 각기 다른 구도의 고해상도 이미지 프롬프트 3개를 작성해줘. 
+비슷한 이미지가 생성되지 않도록, 3장의 이미지가 담는 정보와 시각적 포커스(Wide, Close-up, Persona 중심 등)를 확연히 다르게 구성해줘.
+(중요: 인물이 등장할 경우 반드시 한국인(Korean people, Korean engineers, etc.)으로 묘사되도록 작성할 것.)
+
+포스팅 내용:
+${blogPost}
+
+반드시 아래 양식을 엄격히 지켜서 출력해줘:
+[이미지 1]
+* 프롬프트(EN): (영문 이미지 생성 프롬프트 - 구체적인 피사체, 조명, 구도 포함)
+* 파일명: (영문파일명만 작성, .png 등 확장자 절대 제외)
+* Alt 태그: (이미지 본문 역할 설명)
+* 캡션: (이미지 하단에 표시될 한글 캡션)
+
+[이미지 2]
+... (동일하게 3개까지)`;
+
+  const imgContents = [{ role: 'user', parts: [{ text: imagePrompt }] }];
+  const imagesText = callGeminiWithSystemInstruction(imgContents, systemInstruction);
+
+  const hashtagPrompt = `다음 블로그 포스팅 내용에 어울리는 해시태그를 생성해줘.
+
+[필수 포함 해시태그]
+#검교정 #계측기교정 #캘리브레이션 #ISO17025 #KOLAS #교정기관 #코리아인스트루먼트 #KIC
+
+위의 필수 해시태그를 반드시 포함하고, 추가로 포스팅 주제에 맞는 태그 5~10개를 더 생성해서 전체 해시태그 리스트를 출력해줘.
+다른 설명이나 인사말 없이 오직 해시태그(#...)만 나열해줘.
+
+포스팅 내용:
+${blogPost}`;
+
+  const hashContents = [{ role: 'user', parts: [{ text: hashtagPrompt }] }];
+  const hashtagsText = callGeminiWithSystemInstruction(hashContents, systemInstruction);
+
+  return {
+    imagesText: imagesText,
+    hashtagsText: hashtagsText
+  };
+}
+
+function generateBlogMoreAssets(payload) {
+  const blogPost = payload.blogPost || '';
+  const currentCount = Number(payload.currentCount || 3);
+  const systemInstruction = getBlogSystemInstruction();
+
+  const prompt = `다음 블로그 포스팅 내용을 깊이 있게 분석하여, 기존 내용과 중복되지 않는 새로운 추가 이미지 프롬프트 3개를 작성해줘. 
+각 프롬프트는 본문에서 아직 시각화되지 않은 디테일이나 완전히 새로운 구도를 제안해야 해.
+(중요: 이미지 프롬프트에 인물이 등장할 경우, 반드시 한국인(Korean people, Korean engineers, etc.)으로 묘사되도록 작성해줘.)
+
+포스팅 내용:
+${blogPost}
+
+출력 양식:
+[이미지 ${currentCount + 1} - 추가]
+* 프롬프트(EN): (상세한 영문 프롬프트)
+* 파일명: (...확장자 제외)
+* Alt 태그: ...
+* 캡션: ...
+(이미지 ${currentCount + 2}, ${currentCount + 3}도 동일하게)`;
+
+  const contents = [{ role: 'user', parts: [{ text: prompt }] }];
+  const imagesText = callGeminiWithSystemInstruction(contents, systemInstruction);
+  return { imagesText: imagesText };
 }
