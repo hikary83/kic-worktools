@@ -130,32 +130,61 @@
       <!-- 📋 STEP 1: 입력 화면 -->
       <section id="panel-input" class="space-y-6">
         
-        <!-- 📅 구글 시트 연간 플랜 선택 카드 -->
-        <div class="bg-gradient-to-r from-blue-50 to-indigo-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm space-y-4">
-          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200/50 pb-3">
-            <div class="flex items-center gap-2">
-              <span class="text-lg">📅</span>
-              <h3 class="text-sm font-extrabold text-blue-900">구글 시트 '블로그포스팅' 연간 일정 불러오기</h3>
-            </div>
+        <!-- 📅 구글 시트 연간 플랜 캘린더 카드 -->
+        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+          <!-- 캘린더 헤더 & 월 이동 -->
+          <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div class="flex items-center gap-3">
-              <label class="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
-                <input type="checkbox" id="check-only-unposted" checked onchange="renderPlanDropdown()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
-                <span>미작성 일정만 보기</span>
-              </label>
-              <button onclick="loadBlogPostPlans(true)" class="p-1.5 hover:bg-white rounded-lg transition-colors text-blue-600 hover:text-blue-800" title="시트 새로고침">
-                <i data-lucide="refresh-cw" id="icon-plan-refresh" class="w-3.5 h-3.5"></i>
+              <span class="text-2xl">📅</span>
+              <div>
+                <h3 class="text-base font-extrabold text-slate-800 flex items-center gap-2">
+                  <span id="cal-current-month-label">2026년 2월</span>
+                  <span class="text-xs font-bold text-slate-400">포스팅 캘린더</span>
+                </h3>
+                <div id="cal-summary-chips" class="flex flex-wrap gap-2 text-[11px] font-bold mt-1 text-slate-500">
+                  <span class="bg-slate-100 text-slate-600 px-2 py-0.5 rounded-md">일정을 불러오는 중입니다...</span>
+                </div>
+              </div>
+            </div>
+            <div class="flex items-center gap-1.5">
+              <button onclick="changeCalMonth(-1)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-slate-600 font-bold text-xs flex items-center gap-1">
+                <i data-lucide="chevron-left" class="w-4 h-4"></i> 이전달
+              </button>
+              <button onclick="goToCurrentMonth()" class="px-3 py-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-slate-600 font-bold text-xs">
+                오늘
+              </button>
+              <button onclick="changeCalMonth(1)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-slate-600 font-bold text-xs flex items-center gap-1">
+                다음달 <i data-lucide="chevron-right" class="w-4 h-4"></i>
+              </button>
+              <button onclick="loadBlogPostPlans(true)" class="p-2 border border-slate-200 hover:bg-slate-50 rounded-xl transition-all text-blue-600" title="시트 실시간 새로고침">
+                <i data-lucide="refresh-cw" id="icon-plan-refresh" class="w-4 h-4"></i>
               </button>
             </div>
           </div>
 
-          <div class="space-y-2">
-            <div class="flex items-center justify-between text-xs">
-              <span class="font-bold text-slate-500">포스팅 회차 선택:</span>
-              <span id="plan-status-badge" class="hidden text-[10px] font-extrabold px-2 py-0.5 rounded-full"></span>
+          <!-- 요일 헤더 -->
+          <div class="grid grid-cols-7 gap-2 text-center text-xs font-extrabold text-slate-400 py-1">
+            <div class="text-rose-500">일</div>
+            <div>월</div>
+            <div>화</div>
+            <div>수</div>
+            <div>목</div>
+            <div>금</div>
+            <div class="text-blue-500">토</div>
+          </div>
+
+          <!-- 달력 일자 그리드 -->
+          <div id="calendar-grid" class="grid grid-cols-7 gap-2 min-h-[220px]">
+            <!-- 동적 일자 셀 렌더링 -->
+          </div>
+
+          <!-- 선택된 플랜 정보 알림 바 -->
+          <div id="selected-plan-banner" class="hidden flex items-center justify-between bg-blue-50/70 border border-blue-200/70 p-3.5 rounded-xl text-xs text-blue-900 font-bold">
+            <div class="flex items-center gap-2 truncate">
+              <span class="text-base">📌</span>
+              <span id="selected-plan-text" class="truncate">선택된 포스팅: ...</span>
             </div>
-            <select id="select-plan" onchange="onPlanSelected()" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-xs font-bold text-slate-700">
-              <option value="">일정을 불러오는 중입니다...</option>
-            </select>
+            <span id="selected-plan-badge" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex-shrink-0"></span>
           </div>
         </div>
 
@@ -218,9 +247,20 @@
             <i data-lucide="arrow-left" class="w-4 h-4"></i> 뒤로가기
           </button>
           <div class="flex flex-wrap items-center gap-2">
-            <button id="btn-mark-posted-step2" onclick="markCurrentPlanAsPosted()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> <span id="mark-posted-label-2">포스팅 완료(○) 저장</span>
+            <button id="btn-mark-posted-step2" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> 완료(○) 저장
             </button>
+            <button id="btn-mark-reserved-step2" onclick="savePlanStatus('△')" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> 예약(△) 저장
+            </button>
+            <button onclick="copyRichText('rendered-markdown')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="copy" class="w-3.5 h-3.5"></i> 네이버 블로그 복사 <span id="badge-copied-rich" class="hidden ml-1 text-[10px] bg-emerald-500 px-1 py-0.5 rounded">완료</span>
+            </button>
+            <button onclick="generateAssets()" class="px-4 py-2 rounded-xl bg-blue-600 text-white text-xs font-extrabold hover:bg-blue-700 transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="image" class="w-3.5 h-3.5"></i> 에셋 및 해시태그 생성
+            </button>
+          </div>
+        </div>
             <button onclick="copyRichText('rendered-markdown')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1.5">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i> 네이버 블로그 복사 <span id="badge-copied-rich" class="hidden ml-1 text-[10px] bg-emerald-500 px-1 py-0.5 rounded">완료</span>
             </button>
@@ -274,9 +314,14 @@
           <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> 포스팅 편집으로 돌아가기
           </button>
-          <button id="btn-mark-posted-step4" onclick="markCurrentPlanAsPosted()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
-            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> <span id="mark-posted-label-4">포스팅 완료(○) 저장</span>
-          </button>
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-mark-posted-step4" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> 완료(○) 저장
+            </button>
+            <button id="btn-mark-reserved-step4" onclick="savePlanStatus('△')" class="px-3.5 py-2 rounded-xl bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="clock" class="w-3.5 h-3.5 text-amber-600"></i> 예약(△) 저장
+            </button>
+          </div>
         </div>
 
         <div class="space-y-6">
@@ -345,8 +390,12 @@
     let imageAssets = [];
     let blogPlans = [];
     let selectedPlan = null;
+
+    // 캘린더 상태 (연도 및 월, 0-indexed)
+    let currentCalYear = 2026;
+    let currentCalMonth = 1; // 2월 (0=1월, 1=2월...)
     
-    // 카테고리 초기 데이터
+    // 기본 카테고리 데이터
     let categories = [
       '01. 이론: 측정 이론 및 기초',
       '02. 솔루션: 교정 표준 솔루션',
@@ -358,8 +407,15 @@
       lucide.createIcons();
       loadCategories();
       initFileUploader();
+      initCalendarDate();
       loadBlogPostPlans();
     };
+
+    function initCalendarDate() {
+      const now = new Date();
+      currentCalYear = now.getFullYear() >= 2026 ? now.getFullYear() : 2026;
+      currentCalMonth = now.getMonth();
+    }
 
     function loadCategories() {
       const saved = localStorage.getItem('kic_categories');
@@ -382,73 +438,160 @@
 
     // 📅 구글 시트 연간 플랜 로드
     async function loadBlogPostPlans(isManualRefresh = false) {
-      const select = $('select-plan');
       const refreshIcon = $('icon-plan-refresh');
       if (refreshIcon) refreshIcon.classList.add('animate-spin');
-
-      if (isManualRefresh) {
-        select.innerHTML = '<option value="">구글 시트에서 최신 일정을 갱신 중입니다...</option>';
-      }
 
       try {
         const res = await runServerFunction('getBlogPostPlans');
         blogPlans = Array.isArray(res) ? res : (res && res.data) || [];
-        renderPlanDropdown();
+        renderCalendar();
       } catch (e) {
         console.error('Failed to load blog plans:', e);
-        select.innerHTML = '<option value="">일정 불러오기 실패 (' + (e.message || String(e)) + ')</option>';
+        alert('시트 일정 불러오기 실패: ' + (e.message || String(e)));
       } finally {
         if (refreshIcon) refreshIcon.classList.remove('animate-spin');
       }
     }
 
-    function renderPlanDropdown() {
-      const select = $('select-plan');
-      const onlyUnposted = $('check-only-unposted').checked;
-      select.innerHTML = '<option value="">-- 포스팅할 연간 일정을 선택하세요 --</option>';
-
-      if (!blogPlans || blogPlans.length === 0) {
-        select.innerHTML = '<option value="">등록된 포스팅 일정이 없습니다.</option>';
-        return;
+    // 📅 캘린더 월 변경
+    function changeCalMonth(delta) {
+      currentCalMonth += delta;
+      if (currentCalMonth < 0) {
+        currentCalMonth = 11;
+        currentCalYear--;
+      } else if (currentCalMonth > 11) {
+        currentCalMonth = 0;
+        currentCalYear++;
       }
-
-      const filtered = onlyUnposted 
-        ? blogPlans.filter(p => p.status !== '○')
-        : blogPlans;
-
-      filtered.forEach(p => {
-        const opt = document.createElement('option');
-        opt.value = p.row;
-        const statusMark = p.status === '○' ? ' [완료(○)]' : (p.status ? ` [${p.status}]` : ' [미작성]');
-        const yearMonth = [p.year, p.month, p.date].filter(Boolean).join(' ');
-        opt.textContent = `No.${p.no} | ${yearMonth} | [${p.category}] ${p.topic}${statusMark}`;
-        select.appendChild(opt);
-      });
-
-      if (selectedPlan) {
-        const exists = blogPlans.find(p => p.row === selectedPlan.row);
-        if (exists) {
-          selectedPlan = exists;
-          select.value = selectedPlan.row;
-          updatePlanStatusBadge(selectedPlan);
-        }
-      }
+      renderCalendar();
     }
 
-    function onPlanSelected() {
-      const select = $('select-plan');
-      const rowNum = Number(select.value);
-      if (!rowNum) {
-        selectedPlan = null;
-        updatePlanStatusBadge(null);
-        return;
+    function goToCurrentMonth() {
+      const now = new Date();
+      currentCalYear = now.getFullYear() >= 2026 ? now.getFullYear() : 2026;
+      currentCalMonth = now.getMonth();
+      renderCalendar();
+    }
+
+    // 📅 캘린더 렌더링 엔진
+    function renderCalendar() {
+      $('cal-current-month-label').textContent = `${currentCalYear}년 ${currentCalMonth + 1}월`;
+
+      const grid = $('calendar-grid');
+      grid.innerHTML = '';
+
+      const firstDay = new Date(currentCalYear, currentCalMonth, 1).getDay();
+      const lastDate = new Date(currentCalYear, currentCalMonth + 1, 0).getDate();
+
+      // 1. 이번 달 플랜 추출 및 월간 요약 통계 계산
+      const targetMonthStr = `${currentCalMonth + 1}월`;
+      const targetMonthPad = String(currentCalMonth + 1).padStart(2, '0');
+
+      const monthPlans = blogPlans.filter(p => {
+        const pYear = String(p.year || '');
+        const pMonth = String(p.month || '');
+        const pDate = String(p.date || '');
+        const yearMatch = !pYear || pYear.includes(String(currentCalYear));
+        const monthMatch = pMonth.includes(targetMonthStr) || pDate.startsWith(targetMonthPad + '.');
+        return yearMatch && monthMatch;
+      });
+
+      const totalCount = monthPlans.length;
+      const doneCount = monthPlans.filter(p => p.status === '○').length;
+      const reservedCount = monthPlans.filter(p => p.status === '△').length;
+      const pendingCount = totalCount - doneCount - reservedCount;
+
+      $('cal-summary-chips').innerHTML = `
+        <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">총 ${totalCount}건</span>
+        <span class="bg-emerald-50 text-emerald-700 border border-emerald-200 px-2 py-0.5 rounded-md">🟢 완료 ${doneCount}</span>
+        <span class="bg-amber-50 text-amber-700 border border-amber-200 px-2 py-0.5 rounded-md">🟡 예약 ${reservedCount}</span>
+        <span class="bg-blue-50 text-blue-700 border border-blue-200 px-2 py-0.5 rounded-md">🔵 예정 ${pendingCount}</span>
+      `;
+
+      // 2. 이전 달 빈 칸
+      for (let i = 0; i < firstDay; i++) {
+        const emptyCell = document.createElement('div');
+        emptyCell.className = 'min-h-[105px] bg-slate-50/40 rounded-xl border border-dashed border-slate-100 p-1.5 opacity-40';
+        grid.appendChild(emptyCell);
       }
 
-      const plan = blogPlans.find(p => p.row === rowNum);
+      // 3. 날짜별 셀 렌더링
+      const today = new Date();
+      const isCurrentMonthNow = today.getFullYear() === currentCalYear && today.getMonth() === currentCalMonth;
+
+      for (let day = 1; day <= lastDate; day++) {
+        const cell = document.createElement('div');
+        const isToday = isCurrentMonthNow && today.getDate() === day;
+        const dayOfWeek = (firstDay + day - 1) % 7;
+
+        let dayColor = 'text-slate-700';
+        if (dayOfWeek === 0) dayColor = 'text-rose-500 font-bold';
+        else if (dayOfWeek === 6) dayColor = 'text-blue-500 font-bold';
+
+        cell.className = `min-h-[105px] bg-white rounded-xl border ${isToday ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-100'} p-2 flex flex-col justify-between hover:border-slate-300 transition-all`;
+
+        // 날짜 헤더
+        const header = document.createElement('div');
+        header.className = 'flex items-center justify-between text-xs mb-1';
+        header.innerHTML = `
+          <span class="font-extrabold ${dayColor}">${day}</span>
+          ${isToday ? '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">오늘</span>' : ''}
+        `;
+        cell.appendChild(header);
+
+        // 해당 날짜에 배정된 플랜 찾기
+        const dayPad = String(day).padStart(2, '0');
+        const datePattern = `${targetMonthPad}.${dayPad}`;
+        const dayPlans = monthPlans.filter(p => String(p.date || '').includes(datePattern));
+
+        const cardsContainer = document.createElement('div');
+        cardsContainer.className = 'space-y-1.5 flex-1';
+
+        dayPlans.forEach(plan => {
+          const isSelected = selectedPlan && selectedPlan.row === plan.row;
+          const planCard = document.createElement('div');
+          
+          let cardStyle = 'bg-blue-50/80 border-blue-200 text-blue-900 hover:bg-blue-100/70';
+          let badgeHtml = '<span class="text-[9px] font-extrabold text-blue-700 bg-blue-100 px-1 py-0.2 rounded">예정</span>';
+
+          if (plan.status === '○') {
+            cardStyle = 'bg-emerald-50/80 border-emerald-200 text-emerald-900 hover:bg-emerald-100/70';
+            badgeHtml = '<span class="text-[9px] font-extrabold text-emerald-700 bg-emerald-100 px-1 py-0.2 rounded">🟢 완료</span>';
+          } else if (plan.status === '△') {
+            cardStyle = 'bg-amber-50/80 border-amber-200 text-amber-900 hover:bg-amber-100/70';
+            badgeHtml = '<span class="text-[9px] font-extrabold text-amber-700 bg-amber-100 px-1 py-0.2 rounded">🟡 예약</span>';
+          }
+
+          if (isSelected) {
+            cardStyle += ' ring-2 ring-blue-600 shadow-md font-extrabold';
+          }
+
+          planCard.className = `cursor-pointer border rounded-lg p-1.5 transition-all text-left space-y-0.5 ${cardStyle}`;
+          planCard.innerHTML = `
+            <div class="flex items-center justify-between gap-1">
+              <span class="text-[9px] font-bold text-slate-500 truncate">${plan.category || '포스팅'}</span>
+              ${badgeHtml}
+            </div>
+            <div class="text-[11px] font-bold leading-tight line-clamp-2">${plan.topic || '주제 미정'}</div>
+          `;
+
+          planCard.onclick = () => selectPlan(plan);
+          cardsContainer.appendChild(planCard);
+        });
+
+        cell.appendChild(cardsContainer);
+        grid.appendChild(cell);
+      }
+
+      lucide.createIcons();
+    }
+
+    // 📌 플랜 선택 및 폼 자동 완성
+    function selectPlan(plan) {
       if (!plan) return;
       selectedPlan = plan;
 
-      // 1. 카테고리 스마트 매핑
+      // 1. 카테고리 자동 선택
       matchAndSelectCategory(plan.category);
 
       // 2. 주제 및 키워드 자동 채우기
@@ -461,8 +604,30 @@
       }
       $('textarea-topic').value = topicText;
 
-      // 3. 상태 뱃지 표시
-      updatePlanStatusBadge(plan);
+      // 3. 알림 바 갱신
+      const banner = $('selected-plan-banner');
+      const bannerText = $('selected-plan-text');
+      const bannerBadge = $('selected-plan-badge');
+
+      banner.classList.remove('hidden');
+      bannerText.textContent = `선택된 포스팅: No.${plan.no} [${plan.date}] ${plan.topic}`;
+
+      if (plan.status === '○') {
+        bannerBadge.textContent = '포스팅 완료 (○)';
+        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+      } else if (plan.status === '△') {
+        bannerBadge.textContent = '예약 발행됨 (△)';
+        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+      } else {
+        bannerBadge.textContent = '작성 예정';
+        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
+      }
+
+      // 4. 캘린더 선택 하이라이트 재렌더링
+      renderCalendar();
+
+      // 5. 폼으로 부드럽게 스크롤
+      $('select-category').scrollIntoView({ behavior: 'smooth', block: 'center' });
     }
 
     function matchAndSelectCategory(catCode) {
@@ -495,67 +660,28 @@
       }
     }
 
-    function updatePlanStatusBadge(plan) {
-      const badge = $('plan-status-badge');
-      if (!badge) return;
-
-      if (!plan) {
-        badge.classList.add('hidden');
-        return;
-      }
-
-      badge.classList.remove('hidden');
-      if (plan.status === '○') {
-        badge.textContent = '포스팅 완료 (○)';
-        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
-      } else if (plan.status) {
-        badge.textContent = `진행 상태: ${plan.status}`;
-        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
-      } else {
-        badge.textContent = '미작성 일정';
-        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700';
-      }
-    }
-
-    // ✅ 원클릭 포스팅 완료 처리 (시트 실시간 저장)
-    async function markCurrentPlanAsPosted() {
+    // ✅ 원클릭 포스팅 상태 저장 (○ 완료 또는 △ 예약)
+    async function savePlanStatus(statusSymbol) {
       if (!selectedPlan || !selectedPlan.row) {
-        alert('먼저 1단계 화면에서 연간 포스팅 일정을 선택해 주세요.');
+        alert('먼저 캘린더에서 저장할 포스팅 일정을 클릭해 주세요.');
         return;
       }
 
-      const btn2 = $('btn-mark-posted-step2');
-      const btn4 = $('btn-mark-posted-step4');
-      const lbl2 = $('mark-posted-label-2');
-      const lbl4 = $('mark-posted-label-4');
-
-      if (btn2) btn2.disabled = true;
-      if (btn4) btn4.disabled = true;
-      if (lbl2) lbl2.textContent = '시트 저장 중...';
-      if (lbl4) lbl4.textContent = '시트 저장 중...';
-
+      const statusName = statusSymbol === '○' ? '포스팅 완료(○)' : '예약 발행(△)';
+      
       try {
         await runServerFunction('updateBlogPostStatus', {
           row: selectedPlan.row,
-          status: '○'
+          status: statusSymbol
         });
 
-        selectedPlan.status = '○';
-        updatePlanStatusBadge(selectedPlan);
+        selectedPlan.status = statusSymbol;
+        renderCalendar();
+        selectPlan(selectedPlan);
 
-        if (lbl2) lbl2.textContent = '포스팅 완료(○) 반영됨';
-        if (lbl4) lbl4.textContent = '포스팅 완료(○) 반영됨';
-        if (btn2) btn2.className = 'px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5';
-        if (btn4) btn4.className = 'px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5';
-
-        alert(`구글 시트 '블로그포스팅'의 No.${selectedPlan.no} (${selectedPlan.date}) 일정이 포스팅 완료(○)로 저장되었습니다!`);
+        alert(`구글 시트 '블로그포스팅'의 No.${selectedPlan.no} (${selectedPlan.date}) 일정이 [${statusName}] 상태로 실시간 저장되었습니다!`);
       } catch (e) {
         alert('시트 상태 저장 실패: ' + (e.message || String(e)));
-        if (lbl2) lbl2.textContent = '포스팅 완료(○) 저장';
-        if (lbl4) lbl4.textContent = '포스팅 완료(○) 저장';
-      } finally {
-        if (btn2) btn2.disabled = false;
-        if (btn4) btn4.disabled = false;
       }
     }
 

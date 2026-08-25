@@ -1416,6 +1416,20 @@ function getBlogPostingSheet() {
   return ss.getSheetByName("블로그포스팅");
 }
 
+function parsePlanDate(yearStr, dateStr) {
+  try {
+    const yearMatch = String(yearStr || '').match(/\d{4}/);
+    const year = yearMatch ? parseInt(yearMatch[0], 10) : new Date().getFullYear();
+    const dateMatch = String(dateStr || '').match(/(\d{1,2})\.(\d{1,2})/);
+    if (!dateMatch) return null;
+    const month = parseInt(dateMatch[1], 10);
+    const day = parseInt(dateMatch[2], 10);
+    return new Date(year, month - 1, day, 23, 59, 59);
+  } catch (e) {
+    return null;
+  }
+}
+
 function getBlogPostPlans() {
   const sheet = getBlogPostingSheet();
   if (!sheet) return [];
@@ -1429,6 +1443,7 @@ function getBlogPostPlans() {
 
   let currentYear = "";
   let currentMonth = "";
+  const now = new Date();
 
   for (let i = 0; i < values.length; i++) {
     const row = values[i];
@@ -1442,11 +1457,20 @@ function getBlogPostPlans() {
     const topic = row[5] ? String(row[5]).trim() : "";
     const keywords = row[6] ? String(row[6]).trim() : "";
     const note = row[7] ? String(row[7]).trim() : "";
-    const status = row[8] ? String(row[8]).trim() : "";
+    let status = row[8] ? String(row[8]).trim() : "";
 
     // 년도, 월이 셀 병합 등으로 비어있는 경우 이전 값 상속
     if (yearVal) currentYear = yearVal;
     if (monthVal) currentMonth = monthVal;
+
+    // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 자동으로 '○'(완료)로 승격!
+    if (status === '△') {
+      const planDate = parsePlanDate(currentYear, dateVal);
+      if (planDate && planDate <= now) {
+        status = '○';
+        sheet.getRange(rowNumber, 9).setValue('○');
+      }
+    }
 
     if (topic || dateVal) {
       plans.push({
