@@ -734,6 +734,9 @@
         if (functionName === 'generateHelpdeskReply') {
           return await callGASApi('generateReply', args[0]);
         }
+        if (functionName === 'generateGeminiReport') {
+          return await callGASApi('generateGeminiReport', { prompt: args[0] });
+        }
         if (functionName === 'chatWithGemini') {
           return await callGASApi('chatWithGemini', { contents: args[0] });
         }

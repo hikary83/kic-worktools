@@ -405,6 +405,9 @@ function doPost(e) {
     } else if (action === 'analyzeCapture') {
       const stats = analyzeHelpdeskCapture(data);
       result = { success: true, data: stats };
+    } else if (action === 'generateGeminiReport') {
+      const stats = generateGeminiReport(data.prompt);
+      result = { success: true, data: stats };
     } else if (action === 'getDevelopers') {
       const devs = getDevelopers();
       result = { success: true, data: devs };
