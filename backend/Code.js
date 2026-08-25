@@ -448,6 +448,9 @@ function doPost(e) {
     } else if (action === 'updateBlogPostStatus') {
       const stats = updateBlogPostStatus(data);
       result = { success: true, data: stats };
+    } else if (action === 'addBlogPostPlan') {
+      const stats = addBlogPostPlan(data);
+      result = { success: true, data: stats };
     } else if (action === 'migrateBlogPostingSheet') {
       const stats = migrateBlogPostingSheet();
       result = { success: true, data: stats };
@@ -1785,5 +1788,60 @@ function updateBlogPostStatus(data) {
     success: true,
     row: rowNumber,
     status: newStatus
+  };
+}
+
+function addBlogPostPlan(data) {
+  const sheet = getBlogPostingSheet();
+  if (!sheet) throw new Error("'블로그포스팅' 시트 탭을 찾을 수 없습니다.");
+
+  const lastRow = sheet.getLastRow();
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
+  const isSingleDateCol = headers.includes("포스팅 일자") || headers.includes("포스팅일자") || headers.includes("일자");
+
+  const dateVal = String(data.date || '').trim();
+  const category = String(data.category || '').trim();
+  const topic = String(data.topic || '').trim();
+  const keywords = String(data.keywords || '').trim();
+  const note = String(data.note || '').trim();
+  const status = String(data.status || '○').trim();
+
+  // 날짜 정규화
+  const dateObj = formatPlanDateObject(dateVal);
+  const fullDate = dateObj.fullDate;
+
+  if (isSingleDateCol) {
+    // 7열 구조: No, 포스팅 일자, 카테고리, 주제, 핵심 키워드, 비고, 포스팅 여부
+    const newRowNumber = lastRow + 1;
+    const newRow = [newRowNumber - 1, fullDate, category, topic, keywords, note, status];
+    sheet.appendRow(newRow);
+
+    // 포스팅 일자(2번째 열) 기준 오름차순 정렬
+    const totalDataRows = sheet.getLastRow() - 1;
+    if (totalDataRows > 1) {
+      const dataRange = sheet.getRange(2, 1, totalDataRows, 7);
+      dataRange.sort({ column: 2, ascending: true });
+
+      // 정렬 후 No(1열) 번호 1부터 순차 재부여
+      const numbers = [];
+      for (let i = 1; i <= totalDataRows; i++) {
+        numbers.push([i]);
+      }
+      sheet.getRange(2, 1, totalDataRows, 1).setValues(numbers);
+    }
+  } else {
+    // 구버전 9열 구조
+    const ym = fullDate.match(/(\d{4})[-.](\d{1,2})[-.](\d{1,2})/);
+    const yStr = ym ? `${ym[1]}년` : "2026년";
+    const mStr = ym ? `${parseInt(ym[2], 10)}월` : "1월";
+    const dStr = dateObj.date;
+    const newRowNumber = lastRow + 1;
+    sheet.appendRow([newRowNumber - 1, yStr, mStr, dStr, category, topic, keywords, note, status]);
+  }
+
+  return {
+    success: true,
+    message: "새 포스팅 계획이 구글 시트에 일자순으로 저장되었습니다!"
   };
 }

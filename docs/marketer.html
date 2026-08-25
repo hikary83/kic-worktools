@@ -653,14 +653,21 @@
         if (dayOfWeek === 0) dayColor = 'text-rose-500 font-bold';
         else if (dayOfWeek === 6) dayColor = 'text-blue-500 font-bold';
 
-        cell.className = `min-h-[105px] bg-white rounded-xl border ${isToday ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-100'} p-2 flex flex-col justify-between hover:border-slate-300 transition-all`;
+        const isNewSelectedDay = selectedPlan && selectedPlan.isNew && selectedPlan.fullDate && selectedPlan.fullDate.includes(`-${targetMonthPad}-${String(day).padStart(2, '0')}`);
 
-        // 날짜 헤더
+        cell.className = `min-h-[105px] bg-white rounded-xl border ${isNewSelectedDay ? 'border-blue-500 ring-2 ring-blue-300 shadow-md' : (isToday ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-100')} p-2 flex flex-col justify-between hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group`;
+
+        // 날짜 헤더 (+ 추가 아이콘 포함)
         const header = document.createElement('div');
         header.className = 'flex items-center justify-between text-xs mb-1';
         header.innerHTML = `
-          <span class="font-extrabold ${dayColor}">${day}</span>
-          ${isToday ? '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">오늘</span>' : ''}
+          <div class="flex items-center gap-1">
+            <span class="font-extrabold ${dayColor}">${day}</span>
+            ${isToday ? '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">오늘</span>' : ''}
+          </div>
+          <span class="text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5" title="이 날짜에 새 글 배정하기">
+            <i data-lucide="plus" class="w-3 h-3"></i> 새 일정
+          </span>
         `;
         cell.appendChild(header);
 
@@ -680,7 +687,7 @@
         cardsContainer.className = 'space-y-1.5 flex-1';
 
         dayPlans.forEach(plan => {
-          const isSelected = selectedPlan && selectedPlan.row === plan.row;
+          const isSelected = selectedPlan && !selectedPlan.isNew && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
           // 포스팅 일자가 오늘이거나 과거인 예약(△) 건은 자동으로 완료(○) 처리
@@ -715,9 +722,16 @@
             <div class="text-[11px] font-bold leading-tight line-clamp-2">${plan.topic || '주제 미정'}</div>
           `;
 
-          planCard.onclick = () => selectPlan(plan);
+          planCard.onclick = (e) => {
+            e.stopPropagation();
+            selectPlan(plan);
+          };
           cardsContainer.appendChild(planCard);
         });
+
+        // 날짜 셀 클릭 시 새 일정 배정
+        const curDay = day;
+        cell.onclick = () => selectDateForNewPlan(curDay);
 
         cell.appendChild(cardsContainer);
         grid.appendChild(cell);
@@ -801,15 +815,84 @@
       }
     }
 
+    // 📅 달력의 특정 날짜를 클릭하여 신규 포스팅 계획 배정
+    function selectDateForNewPlan(day) {
+      const dayPad = String(day).padStart(2, '0');
+      const monthPad = String(currentCalMonth + 1).padStart(2, '0');
+      const dt = new Date(currentCalYear, currentCalMonth, day);
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      const dow = dayNames[dt.getDay()];
+      const fullDate = `${currentCalYear}-${monthPad}-${dayPad} (${dow})`;
+
+      selectedPlan = {
+        isNew: true,
+        row: null,
+        no: '신규',
+        year: `${currentCalYear}년`,
+        month: `${currentCalMonth + 1}월`,
+        date: `${monthPad}.${dayPad} (${dow})`,
+        fullDate: fullDate,
+        category: $('select-category').value || '',
+        topic: $('textarea-topic').value || '',
+        keywords: '',
+        note: '',
+        status: ''
+      };
+
+      // 알림 바 갱신
+      const banner = $('selected-plan-banner');
+      const bannerText = $('selected-plan-text');
+      const bannerBadge = $('selected-plan-badge');
+
+      banner.classList.remove('hidden');
+      bannerText.textContent = `📅 포스팅 일자 지정: [${fullDate}] 신규 포스팅 작성`;
+      bannerBadge.textContent = '신규 배정';
+      bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
+
+      updateCategoryAndDateBadges();
+      renderCalendar();
+
+      // 폼으로 부드럽게 스크롤
+      $('select-category').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+
     // ✅ 원클릭 포스팅 상태 저장 (○ 완료 또는 △ 예약)
     async function savePlanStatus(statusSymbol) {
-      if (!selectedPlan || !selectedPlan.row) {
-        alert('먼저 캘린더에서 저장할 포스팅 일정을 클릭해 주세요.');
+      const category = $('select-category').value || (selectedPlan && selectedPlan.category) || '01. 이론: 측정 이론 및 기초';
+      const topic = $('textarea-topic').value.trim() || (selectedPlan && selectedPlan.topic) || '블로그 포스팅';
+      const statusName = statusSymbol === '○' ? '포스팅 완료(○)' : '예약 발행(△)';
+
+      // 1. 신규 날짜 배정 건이거나 선택된 플랜이 없는 경우 -> 시트에 새 행 추가 및 날짜순 정렬!
+      if (!selectedPlan || selectedPlan.isNew || !selectedPlan.row) {
+        let postDate = (selectedPlan && selectedPlan.fullDate) || '';
+        if (!postDate) {
+          const now = new Date();
+          const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+          const m = String(currentCalMonth + 1).padStart(2, '0');
+          const d = String(now.getDate()).padStart(2, '0');
+          postDate = `${currentCalYear}-${m}-${d} (${dayNames[now.getDay()]})`;
+        }
+
+        try {
+          const res = await runServerFunction('addBlogPostPlan', {
+            date: postDate,
+            category: category,
+            topic: topic,
+            keywords: '',
+            note: '웹앱에서 등록됨',
+            status: statusSymbol
+          });
+
+          alert(`구글 시트 '블로그포스팅'에 [${postDate}] 일정이 [${statusName}] 상태로 신규 등록되고 포스팅 일자순으로 정렬되었습니다! ✨`);
+          selectedPlan = null;
+          await loadBlogPostPlans();
+        } catch (e) {
+          alert('시트 신규 등록 실패: ' + (e.message || String(e)));
+        }
         return;
       }
 
-      const statusName = statusSymbol === '○' ? '포스팅 완료(○)' : '예약 발행(△)';
-      
+      // 2. 기존 플랜 상태 업데이트 건
       try {
         await runServerFunction('updateBlogPostStatus', {
           row: selectedPlan.row,
@@ -991,6 +1074,9 @@
       }
       if (functionName === 'updateBlogPostStatus') {
         return callGASApi('updateBlogPostStatus', args[0]);
+      }
+      if (functionName === 'addBlogPostPlan') {
+        return callGASApi('addBlogPostPlan', args[0]);
       }
       throw new Error('Unsupported server function: ' + functionName);
     }
