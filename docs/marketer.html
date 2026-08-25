@@ -129,9 +129,34 @@
       
       <!-- 📋 STEP 1: 입력 화면 -->
       <section id="panel-input" class="space-y-6">
-        <div class="space-y-2">
-          <h2 class="text-2xl font-bold tracking-tight text-slate-800">새로운 블로그 글 작성</h2>
-          <p class="text-sm text-slate-500">카테고리와 상세 주제를 입력하면 AI가 KIC 스타일 가이드에 맞춰 포스팅을 작성합니다.</p>
+        
+        <!-- 📅 구글 시트 연간 플랜 선택 카드 -->
+        <div class="bg-gradient-to-r from-blue-50 to-indigo-50/50 p-6 rounded-2xl border border-blue-100 shadow-sm space-y-4">
+          <div class="flex flex-wrap items-center justify-between gap-2 border-b border-blue-200/50 pb-3">
+            <div class="flex items-center gap-2">
+              <span class="text-lg">📅</span>
+              <h3 class="text-sm font-extrabold text-blue-900">구글 시트 '블로그포스팅' 연간 일정 불러오기</h3>
+            </div>
+            <div class="flex items-center gap-3">
+              <label class="flex items-center gap-1.5 text-xs font-bold text-slate-600 cursor-pointer">
+                <input type="checkbox" id="check-only-unposted" checked onchange="renderPlanDropdown()" class="rounded border-slate-300 text-blue-600 focus:ring-blue-500" />
+                <span>미작성 일정만 보기</span>
+              </label>
+              <button onclick="loadBlogPostPlans(true)" class="p-1.5 hover:bg-white rounded-lg transition-colors text-blue-600 hover:text-blue-800" title="시트 새로고침">
+                <i data-lucide="refresh-cw" id="icon-plan-refresh" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div class="space-y-2">
+            <div class="flex items-center justify-between text-xs">
+              <span class="font-bold text-slate-500">포스팅 회차 선택:</span>
+              <span id="plan-status-badge" class="hidden text-[10px] font-extrabold px-2 py-0.5 rounded-full"></span>
+            </div>
+            <select id="select-plan" onchange="onPlanSelected()" class="w-full bg-white border border-blue-200 rounded-xl px-4 py-3 focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all text-xs font-bold text-slate-700">
+              <option value="">일정을 불러오는 중입니다...</option>
+            </select>
+          </div>
         </div>
 
         <div class="bg-white p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
@@ -188,11 +213,14 @@
 
       <!-- 📋 STEP 2/3: 초안 작성 및 피드백 화면 -->
       <section id="panel-generation" class="hidden space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
           <button onclick="goBackToInput()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> 뒤로가기
           </button>
-          <div class="flex gap-2">
+          <div class="flex flex-wrap items-center gap-2">
+            <button id="btn-mark-posted-step2" onclick="markCurrentPlanAsPosted()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> <span id="mark-posted-label-2">포스팅 완료(○) 저장</span>
+            </button>
             <button onclick="copyRichText('rendered-markdown')" class="px-4 py-2 rounded-xl bg-emerald-600 text-white text-xs font-extrabold hover:bg-emerald-700 transition-all shadow-sm flex items-center gap-1.5">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i> 네이버 블로그 복사 <span id="badge-copied-rich" class="hidden ml-1 text-[10px] bg-emerald-500 px-1 py-0.5 rounded">완료</span>
             </button>
@@ -242,9 +270,12 @@
 
       <!-- 📋 STEP 4: 마케팅 에셋 화면 -->
       <section id="panel-assets" class="hidden space-y-6">
-        <div class="flex items-center justify-between">
+        <div class="flex flex-wrap items-center justify-between gap-3">
           <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> 포스팅 편집으로 돌아가기
+          </button>
+          <button id="btn-mark-posted-step4" onclick="markCurrentPlanAsPosted()" class="px-4 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-400"></i> <span id="mark-posted-label-4">포스팅 완료(○) 저장</span>
           </button>
         </div>
 
@@ -312,6 +343,8 @@
     let blogPostText = '';
     let attachedFile = null;
     let imageAssets = [];
+    let blogPlans = [];
+    let selectedPlan = null;
     
     // 카테고리 초기 데이터
     let categories = [
@@ -325,6 +358,7 @@
       lucide.createIcons();
       loadCategories();
       initFileUploader();
+      loadBlogPostPlans();
     };
 
     function loadCategories() {
@@ -344,6 +378,185 @@
         opt.textContent = cat;
         select.appendChild(opt);
       });
+    }
+
+    // 📅 구글 시트 연간 플랜 로드
+    async function loadBlogPostPlans(isManualRefresh = false) {
+      const select = $('select-plan');
+      const refreshIcon = $('icon-plan-refresh');
+      if (refreshIcon) refreshIcon.classList.add('animate-spin');
+
+      if (isManualRefresh) {
+        select.innerHTML = '<option value="">구글 시트에서 최신 일정을 갱신 중입니다...</option>';
+      }
+
+      try {
+        const res = await runServerFunction('getBlogPostPlans');
+        blogPlans = Array.isArray(res) ? res : (res && res.data) || [];
+        renderPlanDropdown();
+      } catch (e) {
+        console.error('Failed to load blog plans:', e);
+        select.innerHTML = '<option value="">일정 불러오기 실패 (' + (e.message || String(e)) + ')</option>';
+      } finally {
+        if (refreshIcon) refreshIcon.classList.remove('animate-spin');
+      }
+    }
+
+    function renderPlanDropdown() {
+      const select = $('select-plan');
+      const onlyUnposted = $('check-only-unposted').checked;
+      select.innerHTML = '<option value="">-- 포스팅할 연간 일정을 선택하세요 --</option>';
+
+      if (!blogPlans || blogPlans.length === 0) {
+        select.innerHTML = '<option value="">등록된 포스팅 일정이 없습니다.</option>';
+        return;
+      }
+
+      const filtered = onlyUnposted 
+        ? blogPlans.filter(p => p.status !== '○')
+        : blogPlans;
+
+      filtered.forEach(p => {
+        const opt = document.createElement('option');
+        opt.value = p.row;
+        const statusMark = p.status === '○' ? ' [완료(○)]' : (p.status ? ` [${p.status}]` : ' [미작성]');
+        const yearMonth = [p.year, p.month, p.date].filter(Boolean).join(' ');
+        opt.textContent = `No.${p.no} | ${yearMonth} | [${p.category}] ${p.topic}${statusMark}`;
+        select.appendChild(opt);
+      });
+
+      if (selectedPlan) {
+        const exists = blogPlans.find(p => p.row === selectedPlan.row);
+        if (exists) {
+          selectedPlan = exists;
+          select.value = selectedPlan.row;
+          updatePlanStatusBadge(selectedPlan);
+        }
+      }
+    }
+
+    function onPlanSelected() {
+      const select = $('select-plan');
+      const rowNum = Number(select.value);
+      if (!rowNum) {
+        selectedPlan = null;
+        updatePlanStatusBadge(null);
+        return;
+      }
+
+      const plan = blogPlans.find(p => p.row === rowNum);
+      if (!plan) return;
+      selectedPlan = plan;
+
+      // 1. 카테고리 스마트 매핑
+      matchAndSelectCategory(plan.category);
+
+      // 2. 주제 및 키워드 자동 채우기
+      let topicText = plan.topic || '';
+      if (plan.keywords) {
+        topicText += `\n\n[핵심 키워드/참고 자료]\n${plan.keywords}`;
+      }
+      if (plan.note) {
+        topicText += `\n(비고: ${plan.note})`;
+      }
+      $('textarea-topic').value = topicText;
+
+      // 3. 상태 뱃지 표시
+      updatePlanStatusBadge(plan);
+    }
+
+    function matchAndSelectCategory(catCode) {
+      if (!catCode) return;
+      const select = $('select-category');
+      const normalized = catCode.replace(/_/g, ' ').toLowerCase();
+
+      let matchedValue = '';
+      for (let i = 0; i < select.options.length; i++) {
+        const optText = select.options[i].text.toLowerCase();
+        if (optText.includes(normalized) || (catCode.includes('이론') && optText.includes('이론')) ||
+            (catCode.includes('매뉴얼') && optText.includes('매뉴얼')) ||
+            (catCode.includes('솔루션') && optText.includes('솔루션')) ||
+            (catCode.includes('FAQ') && optText.includes('faq'))) {
+          matchedValue = select.options[i].value;
+          break;
+        }
+      }
+
+      if (matchedValue) {
+        select.value = matchedValue;
+      } else {
+        const newCat = catCode;
+        if (!categories.includes(newCat)) {
+          categories.push(newCat);
+          localStorage.setItem('kic_categories', JSON.stringify(categories));
+          renderCategoryDropdown();
+        }
+        select.value = newCat;
+      }
+    }
+
+    function updatePlanStatusBadge(plan) {
+      const badge = $('plan-status-badge');
+      if (!badge) return;
+
+      if (!plan) {
+        badge.classList.add('hidden');
+        return;
+      }
+
+      badge.classList.remove('hidden');
+      if (plan.status === '○') {
+        badge.textContent = '포스팅 완료 (○)';
+        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+      } else if (plan.status) {
+        badge.textContent = `진행 상태: ${plan.status}`;
+        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+      } else {
+        badge.textContent = '미작성 일정';
+        badge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-slate-200 text-slate-700';
+      }
+    }
+
+    // ✅ 원클릭 포스팅 완료 처리 (시트 실시간 저장)
+    async function markCurrentPlanAsPosted() {
+      if (!selectedPlan || !selectedPlan.row) {
+        alert('먼저 1단계 화면에서 연간 포스팅 일정을 선택해 주세요.');
+        return;
+      }
+
+      const btn2 = $('btn-mark-posted-step2');
+      const btn4 = $('btn-mark-posted-step4');
+      const lbl2 = $('mark-posted-label-2');
+      const lbl4 = $('mark-posted-label-4');
+
+      if (btn2) btn2.disabled = true;
+      if (btn4) btn4.disabled = true;
+      if (lbl2) lbl2.textContent = '시트 저장 중...';
+      if (lbl4) lbl4.textContent = '시트 저장 중...';
+
+      try {
+        await runServerFunction('updateBlogPostStatus', {
+          row: selectedPlan.row,
+          status: '○'
+        });
+
+        selectedPlan.status = '○';
+        updatePlanStatusBadge(selectedPlan);
+
+        if (lbl2) lbl2.textContent = '포스팅 완료(○) 반영됨';
+        if (lbl4) lbl4.textContent = '포스팅 완료(○) 반영됨';
+        if (btn2) btn2.className = 'px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5';
+        if (btn4) btn4.className = 'px-4 py-2 rounded-xl bg-emerald-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5';
+
+        alert(`구글 시트 '블로그포스팅'의 No.${selectedPlan.no} (${selectedPlan.date}) 일정이 포스팅 완료(○)로 저장되었습니다!`);
+      } catch (e) {
+        alert('시트 상태 저장 실패: ' + (e.message || String(e)));
+        if (lbl2) lbl2.textContent = '포스팅 완료(○) 저장';
+        if (lbl4) lbl4.textContent = '포스팅 완료(○) 저장';
+      } finally {
+        if (btn2) btn2.disabled = false;
+        if (btn4) btn4.disabled = false;
+      }
     }
 
     function openCategorySettings() {
@@ -474,6 +687,12 @@
       }
       if (functionName === 'generateBlogMoreAssets') {
         return callGASApi('generateBlogMoreAssets', args[0]);
+      }
+      if (functionName === 'getBlogPostPlans') {
+        return callGASApi('getBlogPostPlans', args[0]);
+      }
+      if (functionName === 'updateBlogPostStatus') {
+        return callGASApi('updateBlogPostStatus', args[0]);
       }
       throw new Error('Unsupported server function: ' + functionName);
     }

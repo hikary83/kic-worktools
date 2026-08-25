@@ -417,6 +417,12 @@ function doPost(e) {
     } else if (action === 'generateBlogMoreAssets') {
       const stats = generateBlogMoreAssets(data);
       result = { success: true, data: stats };
+    } else if (action === 'getBlogPostPlans') {
+      const stats = getBlogPostPlans();
+      result = { success: true, data: stats };
+    } else if (action === 'updateBlogPostStatus') {
+      const stats = updateBlogPostStatus(data);
+      result = { success: true, data: stats };
     } else if (action === 'getDevelopers') {
       const devs = getDevelopers();
       result = { success: true, data: devs };
@@ -1403,4 +1409,80 @@ ${blogPost}
   const contents = [{ role: 'user', parts: [{ text: prompt }] }];
   const imagesText = callGeminiWithSystemInstruction(contents, systemInstruction);
   return { imagesText: imagesText };
+}
+
+function getBlogPostingSheet() {
+  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  return ss.getSheetByName("블로그포스팅");
+}
+
+function getBlogPostPlans() {
+  const sheet = getBlogPostingSheet();
+  if (!sheet) return [];
+
+  const lastRow = sheet.getLastRow();
+  if (lastRow < 2) return [];
+
+  // A열부터 I열까지 (1~9열) 읽기
+  const values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
+  const plans = [];
+
+  let currentYear = "";
+  let currentMonth = "";
+
+  for (let i = 0; i < values.length; i++) {
+    const row = values[i];
+    const rowNumber = i + 2;
+
+    const no = row[0];
+    const yearVal = row[1] ? String(row[1]).trim() : "";
+    const monthVal = row[2] ? String(row[2]).trim() : "";
+    const dateVal = row[3] ? String(row[3]).trim() : "";
+    const category = row[4] ? String(row[4]).trim() : "";
+    const topic = row[5] ? String(row[5]).trim() : "";
+    const keywords = row[6] ? String(row[6]).trim() : "";
+    const note = row[7] ? String(row[7]).trim() : "";
+    const status = row[8] ? String(row[8]).trim() : "";
+
+    // 년도, 월이 셀 병합 등으로 비어있는 경우 이전 값 상속
+    if (yearVal) currentYear = yearVal;
+    if (monthVal) currentMonth = monthVal;
+
+    if (topic || dateVal) {
+      plans.push({
+        row: rowNumber,
+        no: no || (i + 1),
+        year: currentYear,
+        month: currentMonth,
+        date: dateVal,
+        category: category,
+        topic: topic,
+        keywords: keywords,
+        note: note,
+        status: status // '○', '△', ''
+      });
+    }
+  }
+
+  return plans;
+}
+
+function updateBlogPostStatus(data) {
+  const sheet = getBlogPostingSheet();
+  if (!sheet) throw new Error("'블로그포스팅' 시트 탭을 찾을 수 없습니다.");
+
+  const rowNumber = Number(data.row);
+  if (!rowNumber || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    throw new Error("유효하지 않은 행 번호입니다: " + data.row);
+  }
+
+  const newStatus = data.status || "○";
+  // I열은 9번째 열
+  sheet.getRange(rowNumber, 9).setValue(newStatus);
+
+  return {
+    success: true,
+    row: rowNumber,
+    status: newStatus
+  };
 }
