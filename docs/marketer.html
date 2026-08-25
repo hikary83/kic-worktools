@@ -493,8 +493,15 @@
         const pYear = String(p.year || '');
         const pMonth = String(p.month || '');
         const pDate = String(p.date || '');
-        const yearMatch = !pYear || pYear.includes(String(currentCalYear));
-        const monthMatch = pMonth.includes(targetMonthStr) || pDate.startsWith(targetMonthPad + '.');
+        const pFullDate = String(p.fullDate || '');
+
+        const yearMatch = !pYear || pYear.includes(String(currentCalYear)) || pFullDate.includes(String(currentCalYear));
+        const monthMatch = pMonth === targetMonthStr || 
+                           pMonth.includes(targetMonthStr) || 
+                           pDate.startsWith(targetMonthPad + '.') || 
+                           pDate.includes(`.${targetMonthPad}.`) ||
+                           pFullDate.includes(`-${targetMonthPad}-`) ||
+                           pFullDate.includes(`.${targetMonthPad}.`);
         return yearMatch && monthMatch;
       });
 
@@ -541,10 +548,17 @@
         `;
         cell.appendChild(header);
 
-        // 해당 날짜에 배정된 플랜 찾기
+        // 해당 날짜에 배정된 플랜 찾기 (다양한 날짜 표기 호환)
         const dayPad = String(day).padStart(2, '0');
-        const datePattern = `${targetMonthPad}.${dayPad}`;
-        const dayPlans = monthPlans.filter(p => String(p.date || '').includes(datePattern));
+        const pattern1 = `${targetMonthPad}.${dayPad}`;
+        const pattern2 = `-${targetMonthPad}-${dayPad}`;
+        const pattern3 = `.${targetMonthPad}.${dayPad}`;
+        const pattern4 = `/${targetMonthPad}/${dayPad}`;
+        
+        const dayPlans = monthPlans.filter(p => {
+          const combo = `${p.date || ''} ${p.fullDate || ''}`;
+          return combo.includes(pattern1) || combo.includes(pattern2) || combo.includes(pattern3) || combo.includes(pattern4);
+        });
 
         const cardsContainer = document.createElement('div');
         cardsContainer.className = 'space-y-1.5 flex-1';

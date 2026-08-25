@@ -1454,11 +1454,79 @@ function getBlogPostingSheet() {
   return sheet;
 }
 
+function formatPlanDateObject(val) {
+  if (!val) return { year: '2026년', month: '1월', date: '01.01', fullDate: '2026-01-01' };
+  
+  if (val instanceof Date) {
+    const y = val.getFullYear();
+    const m = val.getMonth() + 1;
+    const d = val.getDate();
+    const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+    const dow = dayNames[val.getDay()];
+    const mPad = String(m).padStart(2, '0');
+    const dPad = String(d).padStart(2, '0');
+    return {
+      year: `${y}년`,
+      month: `${m}월`,
+      date: `${mPad}.${dPad} (${dow})`,
+      fullDate: `${y}-${mPad}-${dPad} (${dow})`
+    };
+  }
+
+  const str = String(val).trim();
+  const fullYmdMatch = str.match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+  if (fullYmdMatch) {
+    const y = fullYmdMatch[1];
+    const m = parseInt(fullYmdMatch[2], 10);
+    const d = parseInt(fullYmdMatch[3], 10);
+    const mPad = String(m).padStart(2, '0');
+    const dPad = String(d).padStart(2, '0');
+    const dowMatch = str.match(/\((.*?)\)/);
+    let dowStr = '';
+    if (dowMatch) {
+      dowStr = ` (${dowMatch[1]})`;
+    } else {
+      const dt = new Date(parseInt(y, 10), m - 1, d);
+      const dayNames = ['일', '월', '화', '수', '목', '금', '토'];
+      dowStr = ` (${dayNames[dt.getDay()]})`;
+    }
+    return {
+      year: `${y}년`,
+      month: `${m}월`,
+      date: `${mPad}.${dPad}${dowStr}`,
+      fullDate: `${y}-${mPad}-${dPad}${dowStr}`
+    };
+  }
+
+  const mdMatch = str.match(/(\d{1,2})[-./](\d{1,2})/);
+  if (mdMatch) {
+    const m = parseInt(mdMatch[1], 10);
+    const d = parseInt(mdMatch[2], 10);
+    const mPad = String(m).padStart(2, '0');
+    const dPad = String(d).padStart(2, '0');
+    const dowMatch = str.match(/\((.*?)\)/);
+    const dowStr = dowMatch ? ` (${dowMatch[1]})` : '';
+    return {
+      year: '2026년',
+      month: `${m}월`,
+      date: `${mPad}.${dPad}${dowStr}`,
+      fullDate: `2026-${mPad}-${dPad}${dowStr}`
+    };
+  }
+
+  return {
+    year: '2026년',
+    month: '1월',
+    date: str,
+    fullDate: str
+  };
+}
+
 function parsePlanDate(yearStr, dateStr) {
   try {
     const yearMatch = String(yearStr || '').match(/\d{4}/);
     const year = yearMatch ? parseInt(yearMatch[0], 10) : new Date().getFullYear();
-    const dateMatch = String(dateStr || '').match(/(\d{1,2})\.(\d{1,2})/);
+    const dateMatch = String(dateStr || '').match(/(\d{1,2})[-.](\d{1,2})/);
     if (!dateMatch) return null;
     const month = parseInt(dateMatch[1], 10);
     const day = parseInt(dateMatch[2], 10);
@@ -1602,30 +1670,19 @@ function getBlogPostPlans() {
         const row = values[i];
         const rowNumber = i + 1;
         const no = row[0] || i;
-        const fullDate = String(row[dateColIdx] || '').trim();
+        const rawDate = row[dateColIdx];
         const category = String(row[catColIdx] || '').trim();
         const topic = String(row[topicColIdx] || '').trim();
         const keywords = String(row[kwColIdx] || '').trim();
         const note = String(row[noteColIdx] || '').trim();
         let status = String(row[statusColIdx] || '').trim();
 
-        if (!topic && !fullDate && !category) continue;
+        if (!topic && !rawDate && !category) continue;
 
-        // 년, 월, 일 파싱 (예: "2026-01-06 (화)")
-        const yearMatch = fullDate.match(/\d{4}/);
-        const year = yearMatch ? yearMatch[0] : "2026";
-        const dateMatch = fullDate.match(/(\d{1,2})[-.](\d{1,2})/);
-        let monthStr = "1월";
-        let dateStr = fullDate;
-        if (dateMatch) {
-          monthStr = `${parseInt(dateMatch[1], 10)}월`;
-          dateStr = `${String(parseInt(dateMatch[1], 10)).padStart(2, '0')}.${String(parseInt(dateMatch[2], 10)).padStart(2, '0')}`;
-          const dowMatch = fullDate.match(/\((.*?)\)/);
-          if (dowMatch) dateStr += ` (${dowMatch[1]})`;
-        }
+        const dateObj = formatPlanDateObject(rawDate);
 
         if (status === '△') {
-          const planDate = parsePlanDate(year, dateStr);
+          const planDate = parsePlanDate(dateObj.year, dateObj.date);
           if (planDate && planDate <= now) {
             status = '○';
           }
@@ -1634,10 +1691,10 @@ function getBlogPostPlans() {
         plans.push({
           row: rowNumber,
           no: no,
-          year: `${year}년`,
-          month: monthStr,
-          date: dateStr,
-          fullDate: fullDate,
+          year: dateObj.year,
+          month: dateObj.month,
+          date: dateObj.date,
+          fullDate: dateObj.fullDate,
           category: category,
           topic: topic,
           keywords: keywords,
