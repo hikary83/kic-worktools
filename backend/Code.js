@@ -356,6 +356,12 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.TEXT);
     }
 
+    if (action === 'getBlogPostPlans') {
+      const plans = getBlogPostPlans();
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: plans }))
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
     return ContentService.createTextOutput(JSON.stringify({ 
       success: false, 
       message: 'KIC API Server is running. Please use GitHub Pages frontend to access UI.' 
@@ -1413,7 +1419,17 @@ ${blogPost}
 
 function getBlogPostingSheet() {
   const ss = SpreadsheetApp.getActiveSpreadsheet();
-  return ss.getSheetByName("블로그포스팅");
+  let sheet = ss.getSheetByName("블로그포스팅");
+  if (!sheet) {
+    const sheets = ss.getSheets();
+    for (let s of sheets) {
+      const sName = s.getName().replace(/\s+/g, '');
+      if (sName === '블로그포스팅' || sName.includes('블로그')) {
+        return s;
+      }
+    }
+  }
+  return sheet;
 }
 
 function parsePlanDate(yearStr, dateStr) {
@@ -1431,64 +1447,71 @@ function parsePlanDate(yearStr, dateStr) {
 }
 
 function getBlogPostPlans() {
-  const sheet = getBlogPostingSheet();
-  if (!sheet) return [];
+  try {
+    const sheet = getBlogPostingSheet();
+    if (!sheet) return [];
 
-  const lastRow = sheet.getLastRow();
-  if (lastRow < 2) return [];
+    const lastRow = sheet.getLastRow();
+    if (lastRow < 2) return [];
 
-  // A열부터 I열까지 (1~9열) 읽기
-  const values = sheet.getRange(2, 1, lastRow - 1, 9).getValues();
-  const plans = [];
+    const maxCols = Math.min(Math.max(sheet.getLastColumn(), 1), 9);
+    const values = sheet.getRange(2, 1, lastRow - 1, maxCols).getValues();
+    const plans = [];
 
-  let currentYear = "";
-  let currentMonth = "";
-  const now = new Date();
+    let currentYear = "";
+    let currentMonth = "";
+    const now = new Date();
 
-  for (let i = 0; i < values.length; i++) {
-    const row = values[i];
-    const rowNumber = i + 2;
+    for (let i = 0; i < values.length; i++) {
+      const row = values[i];
+      const rowNumber = i + 2;
 
-    const no = row[0];
-    const yearVal = row[1] ? String(row[1]).trim() : "";
-    const monthVal = row[2] ? String(row[2]).trim() : "";
-    const dateVal = row[3] ? String(row[3]).trim() : "";
-    const category = row[4] ? String(row[4]).trim() : "";
-    const topic = row[5] ? String(row[5]).trim() : "";
-    const keywords = row[6] ? String(row[6]).trim() : "";
-    const note = row[7] ? String(row[7]).trim() : "";
-    let status = row[8] ? String(row[8]).trim() : "";
+      const no = row[0] !== undefined ? row[0] : "";
+      const yearVal = row[1] !== undefined ? String(row[1]).trim() : "";
+      const monthVal = row[2] !== undefined ? String(row[2]).trim() : "";
+      const dateVal = row[3] !== undefined ? String(row[3]).trim() : "";
+      const category = row[4] !== undefined ? String(row[4]).trim() : "";
+      const topic = row[5] !== undefined ? String(row[5]).trim() : "";
+      const keywords = row[6] !== undefined ? String(row[6]).trim() : "";
+      const note = row[7] !== undefined ? String(row[7]).trim() : "";
+      let status = row[8] !== undefined ? String(row[8]).trim() : "";
 
-    // 년도, 월이 셀 병합 등으로 비어있는 경우 이전 값 상속
-    if (yearVal) currentYear = yearVal;
-    if (monthVal) currentMonth = monthVal;
+      // 년도, 월이 셀 병합 등으로 비어있는 경우 이전 값 상속
+      if (yearVal) currentYear = yearVal;
+      if (monthVal) currentMonth = monthVal;
 
-    // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 자동으로 '○'(완료)로 승격!
-    if (status === '△') {
-      const planDate = parsePlanDate(currentYear, dateVal);
-      if (planDate && planDate <= now) {
-        status = '○';
-        sheet.getRange(rowNumber, 9).setValue('○');
+      // 만약 상태가 예약(△)인데 포스팅 일자가 오늘이거나 과거라면 자동으로 '○'(완료)로 승격!
+      if (status === '△') {
+        try {
+          const planDate = parsePlanDate(currentYear, dateVal);
+          if (planDate && planDate <= now) {
+            status = '○';
+            sheet.getRange(rowNumber, 9).setValue('○');
+          }
+        } catch (e) {}
+      }
+
+      if (topic || dateVal || category) {
+        plans.push({
+          row: rowNumber,
+          no: no || (i + 1),
+          year: currentYear,
+          month: currentMonth,
+          date: dateVal,
+          category: category,
+          topic: topic,
+          keywords: keywords,
+          note: note,
+          status: status // '○', '△', ''
+        });
       }
     }
 
-    if (topic || dateVal) {
-      plans.push({
-        row: rowNumber,
-        no: no || (i + 1),
-        year: currentYear,
-        month: currentMonth,
-        date: dateVal,
-        category: category,
-        topic: topic,
-        keywords: keywords,
-        note: note,
-        status: status // '○', '△', ''
-      });
-    }
+    return plans;
+  } catch (err) {
+    Logger.log("getBlogPostPlans error: " + err);
+    return [];
   }
-
-  return plans;
 }
 
 function updateBlogPostStatus(data) {

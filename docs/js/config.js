@@ -54,7 +54,24 @@ async function callGASApi(action, data = {}) {
 
     return result.data;
   } catch (error) {
-    console.error("GAS API Call failed:", error);
+    console.warn("POST call failed, trying GET fallback for:", action, error);
+    
+    // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도
+    try {
+      const getUrl = `${CONFIG.API_URL}?action=${encodeURIComponent(action)}`;
+      const getResponse = await fetch(getUrl, { method: "GET" });
+      if (getResponse.ok) {
+        const getRaw = await getResponse.text();
+        const getResult = JSON.parse(getRaw);
+        if (getResult.success) {
+          return getResult.data;
+        }
+      }
+    } catch (fallbackError) {
+      console.error("GET Fallback also failed:", fallbackError);
+    }
+
+    console.error("GAS API Call completely failed:", error);
     throw error;
   }
 }
