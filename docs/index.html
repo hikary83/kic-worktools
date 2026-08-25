@@ -717,10 +717,10 @@
           return await callGASApi('saveDevelopers', { devList: args[0] });
         }
         if (functionName === 'addIssueFromDashboard') {
-          return await callGASApi('addIssue', { data: args[0] });
+          return await callGASApi('addIssue', args[0]);
         }
         if (functionName === 'updateIssueFromDashboard') {
-          return await callGASApi('updateIssue', { data: args[0] });
+          return await callGASApi('updateIssue', args[0]);
         }
         if (functionName === 'updateIssueStatusFromDashboard') {
           return await callGASApi('updateStatus', { id: args[0], status: args[1], sourceType: args[2] });
@@ -729,10 +729,10 @@
           return await callGASApi('updateHidden', { id: args[0], hiddenYn: args[1], sourceType: args[2] });
         }
         if (functionName === 'analyzeHelpdeskCapture') {
-          return await callGASApi('analyzeCapture', { data: args[0] });
+          return await callGASApi('analyzeCapture', args[0]);
         }
         if (functionName === 'generateHelpdeskReply') {
-          return await callGASApi('generateReply', { data: args[0] });
+          return await callGASApi('generateReply', args[0]);
         }
         if (functionName === 'chatWithGemini') {
           return await callGASApi('chatWithGemini', { contents: args[0] });

@@ -378,32 +378,33 @@ function doPost(e) {
     
     const payload = JSON.parse(rawData);
     const action = payload.action;
+    const data = payload.data || {};
     let result = { success: false, error: 'Invalid post action' };
 
     if (action === 'getDashboardData') {
-      const data = getDashboardData(payload.startDate, payload.endDate);
-      result = { success: true, data: data };
+      const stats = getDashboardData(data.startDate, data.endDate);
+      result = { success: true, data: stats };
     } else if (action === 'addIssue') {
-      const data = addIssueFromDashboard(payload.data);
-      result = { success: true, data: data };
+      const stats = addIssueFromDashboard(data);
+      result = { success: true, data: stats };
     } else if (action === 'updateIssue') {
-      const data = updateIssueFromDashboard(payload.data);
-      result = { success: true, data: data };
+      const stats = updateIssueFromDashboard(data);
+      result = { success: true, data: stats };
     } else if (action === 'updateStatus') {
-      const data = updateIssueStatusFromDashboard(payload.id, payload.status, payload.sourceType);
-      result = { success: true, data: data };
+      const stats = updateIssueStatusFromDashboard(data.id, data.status, data.sourceType);
+      result = { success: true, data: stats };
     } else if (action === 'updateHidden') {
-      const data = updateIssueHiddenFromDashboard(payload.id, payload.hiddenYn, payload.sourceType);
-      result = { success: true, data: data };
+      const stats = updateIssueHiddenFromDashboard(data.id, data.hiddenYn, data.sourceType);
+      result = { success: true, data: stats };
     } else if (action === 'saveDevelopers') {
-      const data = saveDevelopers(payload.devList);
-      result = { success: true, data: data };
+      const stats = saveDevelopers(data.devList);
+      result = { success: true, data: stats };
     } else if (action === 'generateReply') {
-      const data = generateHelpdeskReply(payload.data);
-      result = { success: true, data: data };
+      const stats = generateHelpdeskReply(data);
+      result = { success: true, data: stats };
     } else if (action === 'analyzeCapture') {
-      const data = analyzeHelpdeskCapture(payload.data);
-      result = { success: true, data: data };
+      const stats = analyzeHelpdeskCapture(data);
+      result = { success: true, data: stats };
     } else if (action === 'getDevelopers') {
       const devs = getDevelopers();
       result = { success: true, data: devs };
