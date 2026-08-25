@@ -769,38 +769,32 @@
 
     function updateStepBadges(step) {
       currentStep = step;
-      ['step-badge-1', 'step-badge-2', 'step-badge-4'].forEach(id => $(id).className = 'text-slate-400');
+      ['step-badge-1', 'step-badge-2', 'step-badge-4'].forEach(id => {
+        const el = $(id);
+        if (el) el.className = 'text-slate-400';
+      });
       
       const pInput = $('panel-input');
       const pGen = $('panel-generation');
       const pAssets = $('panel-assets');
 
       if (step === 1) {
-        $('step-badge-1').className = 'text-slate-800 font-extrabold';
-        pInput.classList.remove('hidden');
-        pInput.style.display = 'block';
-        pGen.classList.add('hidden');
-        pGen.style.display = 'none';
-        pAssets.classList.add('hidden');
-        pAssets.style.display = 'none';
+        if ($('step-badge-1')) $('step-badge-1').className = 'text-slate-800 font-extrabold';
+        if (pInput) { pInput.style.setProperty('display', 'block', 'important'); pInput.classList.remove('hidden'); }
+        if (pGen) { pGen.style.setProperty('display', 'none', 'important'); pGen.classList.add('hidden'); }
+        if (pAssets) { pAssets.style.setProperty('display', 'none', 'important'); pAssets.classList.add('hidden'); }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (step === 2) {
-        $('step-badge-2').className = 'text-slate-800 font-extrabold';
-        pInput.classList.add('hidden');
-        pInput.style.display = 'none';
-        pGen.classList.remove('hidden');
-        pGen.style.display = 'block';
-        pAssets.classList.add('hidden');
-        pAssets.style.display = 'none';
+        if ($('step-badge-2')) $('step-badge-2').className = 'text-slate-800 font-extrabold';
+        if (pInput) { pInput.style.setProperty('display', 'none', 'important'); pInput.classList.add('hidden'); }
+        if (pGen) { pGen.style.setProperty('display', 'block', 'important'); pGen.classList.remove('hidden'); }
+        if (pAssets) { pAssets.style.setProperty('display', 'none', 'important'); pAssets.classList.add('hidden'); }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       } else if (step === 4) {
-        $('step-badge-4').className = 'text-slate-800 font-extrabold';
-        pInput.classList.add('hidden');
-        pInput.style.display = 'none';
-        pGen.classList.add('hidden');
-        pGen.style.display = 'none';
-        pAssets.classList.remove('hidden');
-        pAssets.style.display = 'block';
+        if ($('step-badge-4')) $('step-badge-4').className = 'text-slate-800 font-extrabold';
+        if (pInput) { pInput.style.setProperty('display', 'none', 'important'); pInput.classList.add('hidden'); }
+        if (pGen) { pGen.style.setProperty('display', 'none', 'important'); pGen.classList.add('hidden'); }
+        if (pAssets) { pAssets.style.setProperty('display', 'block', 'important'); pAssets.classList.remove('hidden'); }
         window.scrollTo({ top: 0, behavior: 'smooth' });
       }
     }
