@@ -1480,7 +1480,7 @@
       lucide.createIcons();
     }
 
-    // 🎨 개별 AI 이미지 생성 (Google Imagen 3 API)
+    // 🎨 개별 AI 이미지 생성 (최첨단 실사 Flux.1 모델 다이렉트 연동)
     async function generateSingleImage(id) {
       const asset = imageAssets.find(a => a.id === id);
       if (!asset) return;
@@ -1489,12 +1489,31 @@
       renderImageAssetsList();
 
       try {
-        const result = await runServerFunction('generateBlogImage', { prompt: asset.prompt });
-        if (result && result.imageUrl) {
-          asset.generatedImageUrl = result.imageUrl;
-        } else {
-          throw new Error('생성된 이미지 URL이 없습니다.');
-        }
+        const randomSeed = Math.floor(Math.random() * 1000000);
+        const cleanPrompt = (asset.prompt || 'Korean industrial calibration laboratory equipment')
+          .replace(/[^\w\s,.-]/g, ' ')
+          .replace(/\s+/g, ' ')
+          .trim();
+        
+        const fluxUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1280&height=720&model=flux&nologo=true&seed=${randomSeed}`;
+
+        // 이미지 프리로드
+        await new Promise((resolve, reject) => {
+          const img = new Image();
+          img.crossOrigin = 'anonymous';
+          img.onload = () => {
+            asset.generatedImageUrl = fluxUrl;
+            resolve();
+          };
+          img.onerror = () => {
+            // 폴백: Turbo 모델
+            const fallbackUrl = `https://image.pollinations.ai/prompt/${encodeURIComponent(cleanPrompt)}?width=1280&height=720&model=turbo&nologo=true&seed=${randomSeed}`;
+            asset.generatedImageUrl = fallbackUrl;
+            resolve();
+          };
+          img.src = fluxUrl;
+        });
+
       } catch (err) {
         alert(`이미지 ${id} 생성 실패: ` + (err.message || String(err)));
       } finally {
@@ -1526,12 +1545,12 @@
     }
 
     // 📋 생성된 AI 이미지 클립보드 복사 (블로그 Ctrl+V용)
-    async function copyGeneratedImageToClipboard(dataUrl, id) {
+    async function copyGeneratedImageToClipboard(imageUrl, id) {
       try {
-        const response = await fetch(dataUrl);
+        const response = await fetch(imageUrl);
         const blob = await response.blob();
         await navigator.clipboard.write([
-          new ClipboardItem({ [blob.type || 'image/png']: blob })
+          new ClipboardItem({ 'image/png': blob })
         ]);
         const badge = $(`badge-copied-img-${id}`);
         if (badge) {
@@ -1539,7 +1558,8 @@
           setTimeout(() => badge.classList.add('hidden'), 3000);
         }
       } catch (err) {
-        alert('이미지가 클립보드에 복사되었습니다! 블로그 에디터에서 Ctrl+V를 눌러보세요. (안 될 경우 다운로드 버튼을 이용하세요!)');
+        // 클립보드 복사 실패 시 새 탭에서 이미지 열기 또는 다운로드 유도
+        window.open(imageUrl, '_blank');
       }
     }
 
