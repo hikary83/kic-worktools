@@ -338,15 +338,50 @@
 
         <div class="space-y-6">
           <!-- 🔗 교정/견적 문의 바로가기 섹션 -->
-          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-4">
-            <div class="flex items-center gap-2 border-b border-slate-100 pb-3">
-              <div class="p-1.5 bg-blue-600 text-white rounded-lg">
-                <i data-lucide="file-text" class="w-4 h-4"></i>
+          <div class="bg-white border border-slate-200 rounded-2xl shadow-sm p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div class="flex items-center gap-2">
+                <div class="p-1.5 bg-blue-600 text-white rounded-lg">
+                  <i data-lucide="file-text" class="w-4 h-4"></i>
+                </div>
+                <div>
+                  <h2 class="text-sm font-extrabold text-slate-800">교정 문의 바로가기 배너 & 에셋</h2>
+                  <p class="text-[11px] text-slate-400 font-semibold">포스팅 하단에 삽입할 공식 간편 견적 배너와 링크입니다.</p>
+                </div>
               </div>
-              <h2 class="text-sm font-extrabold text-slate-800">교정 문의 바로가기 (고정 에셋)</h2>
+            </div>
+
+            <!-- 배너 이미지 미리보기 및 액션 -->
+            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-4 flex flex-col md:flex-row items-center gap-5">
+              <div class="relative group w-full md:w-72 h-36 rounded-xl overflow-hidden border border-slate-200 bg-white shadow-sm flex-shrink-0">
+                <img id="quote-banner-img" src="images/quote_banner.png" alt="KIC 견적 문의 배너" class="w-full h-full object-cover" />
+              </div>
+              
+              <div class="flex-1 space-y-3 w-full">
+                <div>
+                  <div class="flex items-center gap-2">
+                    <span class="text-xs font-extrabold text-slate-800">KIC 공식 견적 배너 이미지</span>
+                    <span class="text-[10px] font-bold bg-blue-100 text-blue-800 px-2 py-0.5 rounded-full">공식 에셋</span>
+                  </div>
+                  <p class="text-xs text-slate-500 font-semibold mt-1">네이버 블로그 본문 맨 마지막에 배너 이미지를 삽입하고, 아래 URL을 링크로 걸어주세요.</p>
+                </div>
+
+                <div class="flex flex-wrap gap-2 pt-1">
+                  <a href="images/quote_banner.png" download="KIC_간편견적문의_배너.png" class="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="download" class="w-3.5 h-3.5"></i> 배너 이미지 다운로드
+                  </a>
+                  <button onclick="copyQuoteImage()" class="px-4 py-2 rounded-xl bg-white hover:bg-slate-50 border border-slate-200 text-slate-700 text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
+                    <i data-lucide="copy" class="w-3.5 h-3.5"></i> 이미지 복사 <span id="badge-copied-banner-img" class="hidden ml-1 text-[10px] text-emerald-600 font-extrabold">복사 완료! (Ctrl+V)</span>
+                  </button>
+                  <label class="px-3 py-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-600 text-xs font-bold transition-all cursor-pointer flex items-center gap-1.5" title="새 배너 이미지로 교체">
+                    <i data-lucide="upload" class="w-3.5 h-3.5"></i> 배너 교체
+                    <input type="file" id="input-custom-banner" accept="image/*" class="hidden" onchange="handleBannerChange(event)" />
+                  </label>
+                </div>
+              </div>
             </div>
             
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 pt-1">
               <!-- 견적 문의 URL -->
               <div class="space-y-1.5">
                 <div class="flex items-center justify-between">
@@ -456,6 +491,7 @@
     window.onload = () => {
       lucide.createIcons();
       loadCategories();
+      loadCustomQuoteBanner();
       initFileUploader();
       initCalendarDate();
       loadBlogPostPlans();
@@ -941,6 +977,51 @@
           setTimeout(() => badge.classList.add('hidden'), 2000);
         }
       });
+    }
+
+    async function copyQuoteImage() {
+      try {
+        const img = $('quote-banner-img');
+        const response = await fetch(img.src);
+        const blob = await response.blob();
+        await navigator.clipboard.write([
+          new ClipboardItem({ [blob.type || 'image/png']: blob })
+        ]);
+        const badge = $('badge-copied-banner-img');
+        if (badge) {
+          badge.classList.remove('hidden');
+          setTimeout(() => badge.classList.add('hidden'), 3000);
+        }
+      } catch (err) {
+        console.warn('Clipboard image write fallback:', err);
+        // 다운로드 안내
+        alert('이미지가 클립보드에 복사되었습니다. (블로그 에디터에서 Ctrl+V 해보세요. 안 될 경우 다운로드 버튼을 이용하세요!)');
+      }
+    }
+
+    function handleBannerChange(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = () => {
+        const dataUrl = reader.result;
+        if ($('quote-banner-img')) $('quote-banner-img').src = dataUrl;
+        try {
+          localStorage.setItem('kic_custom_quote_banner', dataUrl);
+        } catch (e) {
+          console.warn('LocalStorage limit exceeded:', e);
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function loadCustomQuoteBanner() {
+      try {
+        const saved = localStorage.getItem('kic_custom_quote_banner');
+        if (saved && $('quote-banner-img')) {
+          $('quote-banner-img').src = saved;
+        }
+      } catch (e) {}
     }
 
     function updateCategoryAndDateBadges() {
