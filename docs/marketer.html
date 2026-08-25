@@ -505,10 +505,32 @@
         return yearMatch && monthMatch;
       });
 
+      const todayNow = new Date();
+      const todayZero = new Date(todayNow.getFullYear(), todayNow.getMonth(), todayNow.getDate(), 0, 0, 0);
+
       const totalCount = monthPlans.length;
-      const doneCount = monthPlans.filter(p => p.status === '○').length;
-      const reservedCount = monthPlans.filter(p => p.status === '△').length;
-      const pendingCount = totalCount - doneCount - reservedCount;
+      let doneCount = 0;
+      let reservedCount = 0;
+      let pendingCount = 0;
+
+      monthPlans.forEach(p => {
+        let st = p.status;
+        const dMatch = String(p.date || p.fullDate || '').match(/(\d{1,2})[-.](\d{1,2})/);
+        if (st === '△' && dMatch) {
+          const m = parseInt(dMatch[1], 10);
+          const d = parseInt(dMatch[2], 10);
+          const yMatch = String(p.year || p.fullDate || '').match(/\d{4}/);
+          const y = yMatch ? parseInt(yMatch[0], 10) : currentCalYear;
+          const pDt = new Date(y, m - 1, d, 0, 0, 0);
+          if (pDt.getTime() <= todayZero.getTime()) {
+            st = '○';
+          }
+        }
+
+        if (st === '○') doneCount++;
+        else if (st === '△') reservedCount++;
+        else pendingCount++;
+      });
 
       $('cal-summary-chips').innerHTML = `
         <span class="bg-slate-100 text-slate-700 px-2 py-0.5 rounded-md">총 ${totalCount}건</span>
@@ -567,13 +589,21 @@
           const isSelected = selectedPlan && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
+          // 포스팅 일자가 오늘이거나 과거인 예약(△) 건은 자동으로 완료(○) 처리
+          let effectiveStatus = plan.status;
+          const cellDate = new Date(currentCalYear, currentCalMonth, day, 0, 0, 0);
+          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
+          if (effectiveStatus === '△' && cellDate.getTime() <= todayStart.getTime()) {
+            effectiveStatus = '○';
+          }
+
           let cardStyle = 'bg-blue-50/70 border-blue-200 text-blue-900 hover:bg-blue-100/70';
           let badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" title="작성 예정"></span>';
 
-          if (plan.status === '○') {
+          if (effectiveStatus === '○') {
             cardStyle = 'bg-emerald-50/70 border-emerald-200 text-emerald-900 hover:bg-emerald-100/70';
             badgeHtml = '<span class="w-2 h-2 rounded-full bg-emerald-500 flex-shrink-0 shadow-sm" title="포스팅 완료(○)"></span>';
-          } else if (plan.status === '△') {
+          } else if (effectiveStatus === '△') {
             cardStyle = 'bg-amber-50/70 border-amber-200 text-amber-900 hover:bg-amber-100/70';
             badgeHtml = '<span class="w-2 h-2 rounded-full bg-amber-500 flex-shrink-0 shadow-sm" title="예약 발행(△)"></span>';
           }

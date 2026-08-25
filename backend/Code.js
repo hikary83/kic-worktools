@@ -1522,17 +1522,26 @@ function formatPlanDateObject(val) {
   };
 }
 
-function parsePlanDate(yearStr, dateStr) {
+function isDateTodayOrPast(yearStr, dateStr) {
   try {
     const yearMatch = String(yearStr || '').match(/\d{4}/);
     const year = yearMatch ? parseInt(yearMatch[0], 10) : new Date().getFullYear();
     const dateMatch = String(dateStr || '').match(/(\d{1,2})[-.](\d{1,2})/);
-    if (!dateMatch) return null;
+    if (!dateMatch) return false;
     const month = parseInt(dateMatch[1], 10);
     const day = parseInt(dateMatch[2], 10);
-    return new Date(year, month - 1, day, 23, 59, 59);
+    
+    // 포스팅 날짜 자정(00:00:00) 기준
+    const planDate = new Date(year, month - 1, day, 0, 0, 0);
+    
+    // 오늘 날짜 자정(00:00:00) 기준
+    const now = new Date();
+    const todayStart = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 0, 0, 0);
+    
+    // 포스팅 날짜가 오늘과 같거나 과거이면 즉시 완료(○)
+    return planDate.getTime() <= todayStart.getTime();
   } catch (e) {
-    return null;
+    return false;
   }
 }
 
@@ -1682,8 +1691,7 @@ function getBlogPostPlans() {
         const dateObj = formatPlanDateObject(rawDate);
 
         if (status === '△') {
-          const planDate = parsePlanDate(dateObj.year, dateObj.date);
-          if (planDate && planDate <= now) {
+          if (isDateTodayOrPast(dateObj.year, dateObj.date)) {
             status = '○';
           }
         }
@@ -1723,8 +1731,7 @@ function getBlogPostPlans() {
         if (monthVal) currentMonth = monthVal;
 
         if (status === '△') {
-          const planDate = parsePlanDate(currentYear, dateVal);
-          if (planDate && planDate <= now) {
+          if (isDateTodayOrPast(currentYear, dateVal)) {
             status = '○';
           }
         }
