@@ -657,16 +657,16 @@
 
         cell.className = `min-h-[105px] bg-white rounded-xl border ${isNewSelectedDay ? 'border-blue-500 ring-2 ring-blue-300 shadow-md' : (isToday ? 'border-blue-400 ring-2 ring-blue-100' : 'border-slate-100')} p-2 flex flex-col justify-between hover:border-blue-300 hover:shadow-sm transition-all cursor-pointer group`;
 
-        // 날짜 헤더 (+ 추가 아이콘 포함)
+        // 날짜 헤더 (+ 추가 아이콘 포함, 줄바꿈 완전 방지)
         const header = document.createElement('div');
-        header.className = 'flex items-center justify-between text-xs mb-1';
+        header.className = 'flex items-center justify-between text-xs mb-1 min-w-0';
         header.innerHTML = `
-          <div class="flex items-center gap-1">
+          <div class="flex items-center gap-1.5 whitespace-nowrap flex-shrink-0">
             <span class="font-extrabold ${dayColor}">${day}</span>
-            ${isToday ? '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 px-1.5 py-0.2 rounded">오늘</span>' : ''}
+            ${isToday ? '<span class="text-[9px] font-extrabold text-blue-600 bg-blue-50 border border-blue-200/60 px-1.5 py-0.5 rounded leading-none whitespace-nowrap flex-shrink-0">오늘</span>' : ''}
           </div>
-          <span class="text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center gap-0.5" title="이 날짜에 새 글 배정하기">
-            <i data-lucide="plus" class="w-3 h-3"></i> 새 일정
+          <span class="text-[10px] text-blue-500 font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-4 h-4 rounded-full bg-blue-50 hover:bg-blue-100 flex-shrink-0" title="이 날짜에 새 글 배정하기">
+            <i data-lucide="plus" class="w-3 h-3"></i>
           </span>
         `;
         cell.appendChild(header);
