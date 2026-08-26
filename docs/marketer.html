@@ -1377,10 +1377,13 @@
       if (functionName === 'updateBlogPostStatus') {
         return callGASApi('updateBlogPostStatus', args[0]);
       }
+      if (functionName === 'updateBlogPostUrl') {
+        return callGASApi('updateBlogPostUrl', args[0]);
+      }
       if (functionName === 'addBlogPostPlan') {
         return callGASApi('addBlogPostPlan', args[0]);
       }
-      throw new Error('Unsupported server function: ' + functionName);
+      return callGASApi(functionName, args[0]);
     }
 
     function copyQuoteField(text, badgeId) {
