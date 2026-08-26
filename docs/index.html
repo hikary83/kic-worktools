@@ -843,7 +843,11 @@
       document.getElementById('kpi-pending').innerText = stats.pending || 0;
       document.getElementById('kpi-done').innerText = stats.done || 0;
 
-      renderIssueSections(stats, true);
+      // 기존 사용자가 펼쳐둔 상태(UI State)를 완벽 보존
+      const isDoneHidden = document.getElementById('done-current-container') ? document.getElementById('done-current-container').classList.contains('hidden') : true;
+      const isPastHidden = document.getElementById('pending-past-container') ? document.getElementById('pending-past-container').classList.contains('hidden') : true;
+
+      renderIssueSections(stats, isCached, isCached ? null : { isDoneHidden, isPastHidden });
       updateCharts(stats);
 
       // 최신 서버 데이터일 때 로컬 스토리지에 캐시 보관
@@ -937,7 +941,7 @@
         return (items || []).filter(item => matchesGlobalSearch(item, q));
     }
 
-    function renderIssueSections(stats, shouldCollapseFoldableSections) {
+    function renderIssueSections(stats, shouldCollapseFoldableSections, statePreserve = null) {
         if (!stats) return;
         const pendingCurrent = filterIssuesByGlobalSearch(stats.pendingCurrent || []);
         const completedCurrent = filterIssuesByGlobalSearch(stats.completedCurrent || []);
@@ -957,7 +961,13 @@
 
         updateGlobalSearchUi(resultCount, originalCount);
 
-        if (shouldCollapseFoldableSections && !isSearching) {
+        if (statePreserve) {
+          if (statePreserve.isDoneHidden) collapseSection('done-current-container', 'btn-toggle-done');
+          else expandSection('done-current-container', 'btn-toggle-done');
+
+          if (statePreserve.isPastHidden) collapseSection('pending-past-container', 'btn-toggle-past');
+          else expandSection('pending-past-container', 'btn-toggle-past');
+        } else if (shouldCollapseFoldableSections && !isSearching) {
           collapseSection('done-current-container', 'btn-toggle-done');
           collapseSection('pending-past-container', 'btn-toggle-past');
         } else if (isSearching) {
