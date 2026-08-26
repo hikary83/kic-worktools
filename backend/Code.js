@@ -1756,9 +1756,9 @@ function getBlogPostPlans() {
     const headers = values[0].map(h => String(h || '').trim());
     
     // 컬럼 인덱스 스마트 탐지 (단일 컬럼 vs 구버전 9열 분리 컬럼)
-    const isSingleDateCol = headers.includes("포스팅 일자") || headers.includes("포스팅일자") || headers.includes("일자");
+    const isLegacy9Col = headers.includes("년도") || headers.includes("연도") || (headers.includes("월") && (headers.includes("일") || headers.includes("일자")));
+    const isSingleDateCol = !isLegacy9Col;
     const plans = [];
-    const now = new Date();
 
     if (isSingleDateCol) {
       let dateColIdx = headers.findIndex(h => h.includes("일자") || h.includes("날짜"));
@@ -1866,11 +1866,12 @@ function updateBlogPostStatus(data) {
   const newStatus = (data.status !== undefined && data.status !== null) ? String(data.status).trim() : "";
   
   // 헤더에서 '포스팅 여부' 및 '포스팅 URL' 열 찾기
-  const lastCol = Math.max(sheet.getLastColumn(), 8);
+  const lastCol = Math.max(sheet.getLastColumn(), 10);
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
   let statusCol = headers.findIndex(h => h.includes("여부") || h.includes("상태")) + 1;
   if (statusCol <= 0) {
-    statusCol = (headers.includes("포스팅 일자") || headers.includes("포스팅일자")) ? 7 : 9;
+    const isLegacy9Col = headers.includes("년도") || headers.includes("연도") || (headers.includes("월") && (headers.includes("일") || headers.includes("일자")));
+    statusCol = isLegacy9Col ? 9 : 7;
   }
 
   // 열이 부족할 경우 자동 확장
