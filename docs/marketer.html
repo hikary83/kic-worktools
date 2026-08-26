@@ -769,19 +769,7 @@
       let pendingCount = 0;
 
       monthPlans.forEach(p => {
-        let st = p.status;
-        const dMatch = String(p.date || p.fullDate || '').match(/(\d{1,2})[-.](\d{1,2})/);
-        if (st === '△' && dMatch) {
-          const m = parseInt(dMatch[1], 10);
-          const d = parseInt(dMatch[2], 10);
-          const yMatch = String(p.year || p.fullDate || '').match(/\d{4}/);
-          const y = yMatch ? parseInt(yMatch[0], 10) : currentCalYear;
-          const pDt = new Date(y, m - 1, d, 0, 0, 0);
-          if (pDt.getTime() <= todayZero.getTime()) {
-            st = '○';
-          }
-        }
-
+        const st = p.status;
         if (st === '○') doneCount++;
         else if (st === '△') reservedCount++;
         else pendingCount++;
@@ -851,14 +839,7 @@
           const isSelected = selectedPlan && !selectedPlan.isNew && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
-          // 포스팅 일자가 오늘이거나 과거인 예약(△) 건은 자동으로 완료(○) 처리
           let effectiveStatus = plan.status;
-          const cellDate = new Date(currentCalYear, currentCalMonth, day, 0, 0, 0);
-          const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate(), 0, 0, 0);
-          if (effectiveStatus === '△' && cellDate.getTime() <= todayStart.getTime()) {
-            effectiveStatus = '○';
-          }
-
           let cardStyle = 'bg-blue-50/70 border-blue-200 text-blue-900 hover:bg-blue-100/70';
           let badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" title="작성 예정"></span>';
 

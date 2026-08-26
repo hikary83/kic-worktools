@@ -1792,12 +1792,6 @@ function getBlogPostPlans() {
 
         const dateObj = formatPlanDateObject(rawDate);
 
-        if (status === '△') {
-          if (isDateTodayOrPast(dateObj.year, dateObj.date)) {
-            status = '○';
-          }
-        }
-
         plans.push({
           row: rowNumber,
           no: no,
@@ -1834,12 +1828,6 @@ function getBlogPostPlans() {
         if (yearVal) currentYear = yearVal;
         if (monthVal) currentMonth = monthVal;
 
-        if (status === '△') {
-          if (isDateTodayOrPast(currentYear, dateVal)) {
-            status = '○';
-          }
-        }
-
         if (topic || dateVal || category) {
           plans.push({
             row: rowNumber,
@@ -1874,7 +1862,8 @@ function updateBlogPostStatus(data) {
     throw new Error("유효하지 않은 행 번호입니다: " + data.row);
   }
 
-  const newStatus = data.status || "○";
+  // 상태값이 빈 문자열이어도 그대로 저장되도록 보장
+  const newStatus = (data.status !== undefined && data.status !== null) ? String(data.status).trim() : "";
   
   // 헤더에서 '포스팅 여부' 및 '포스팅 URL' 열 찾기
   const lastCol = Math.max(sheet.getLastColumn(), 8);
