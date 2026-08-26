@@ -461,6 +461,9 @@ function doPost(e) {
     } else if (action === 'updateBlogPostUrl') {
       const stats = updateBlogPostUrl(data);
       result = { success: true, data: stats };
+    } else if (action === 'deleteBlogPostPlan') {
+      const stats = deleteBlogPostPlan(data);
+      result = { success: true, data: stats };
     } else if (action === 'addBlogPostPlan') {
       const stats = addBlogPostPlan(data);
       result = { success: true, data: stats };
@@ -1881,6 +1884,11 @@ function updateBlogPostStatus(data) {
     statusCol = (headers.includes("포스팅 일자") || headers.includes("포스팅일자")) ? 7 : 9;
   }
 
+  // 열이 부족할 경우 자동 확장
+  if (statusCol > sheet.getMaxColumns()) {
+    sheet.insertColumnsAfter(sheet.getMaxColumns(), statusCol - sheet.getMaxColumns());
+  }
+
   sheet.getRange(rowNumber, statusCol).setValue(newStatus);
 
   // postUrl이 함께 전달된 경우 URL 열도 갱신
@@ -1888,8 +1896,10 @@ function updateBlogPostStatus(data) {
     let urlCol = headers.findIndex(h => h.includes("URL") || h.includes("url") || h.includes("링크")) + 1;
     if (urlCol <= 0) {
       urlCol = statusCol + 1;
+      if (urlCol > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
       sheet.getRange(1, urlCol).setValue("포스팅 URL").setBackground("#f1f5f9").setFontWeight("bold").setHorizontalAlignment("center");
     }
+    if (urlCol > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
     sheet.getRange(rowNumber, urlCol).setValue(String(data.postUrl || '').trim());
   }
 
@@ -1918,15 +1928,45 @@ function updateBlogPostUrl(data) {
   if (urlCol <= 0) {
     let statusCol = headers.findIndex(h => h.includes("여부") || h.includes("상태")) + 1;
     urlCol = (statusCol > 0) ? statusCol + 1 : 8;
+    if (urlCol > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), urlCol - sheet.getMaxColumns());
     sheet.getRange(1, urlCol).setValue("포스팅 URL").setBackground("#f1f5f9").setFontWeight("bold").setHorizontalAlignment("center");
   }
 
+  if (urlCol > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
   sheet.getRange(rowNumber, urlCol).setValue(postUrl);
 
   return {
     success: true,
     row: rowNumber,
     postUrl: postUrl
+  };
+}
+
+function deleteBlogPostPlan(data) {
+  const sheet = getBlogPostingSheet();
+  if (!sheet) throw new Error("'블로그포스팅' 시트 탭을 찾을 수 없습니다.");
+
+  const rowNumber = Number(data.row);
+  if (!rowNumber || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    throw new Error("유효하지 않은 행 번호입니다: " + data.row);
+  }
+
+  sheet.deleteRow(rowNumber);
+
+  // No 번호 순차 재부여
+  const totalDataRows = sheet.getLastRow() - 1;
+  if (totalDataRows >= 1) {
+    const numbers = [];
+    for (let i = 1; i <= totalDataRows; i++) {
+      numbers.push([i]);
+    }
+    sheet.getRange(2, 1, totalDataRows, 1).setValues(numbers);
+  }
+
+  return {
+    success: true,
+    row: rowNumber,
+    message: "포스팅 일정이 성공적으로 삭제되었습니다."
   };
 }
 

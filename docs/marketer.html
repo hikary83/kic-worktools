@@ -557,11 +557,16 @@
           </div>
         </div>
 
-        <!-- 2. 포스팅 상태 변경 (원클릭 토글) -->
+        <!-- 2. 포스팅 상태 변경 & 삭제 버튼 (원클릭 토글) -->
         <div class="space-y-2">
-          <label class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
-            <i data-lucide="check-circle" class="w-3.5 h-3.5 text-blue-500"></i> 포스팅 상태 변경
-          </label>
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold text-slate-600 flex items-center gap-1.5">
+              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-blue-500"></i> 포스팅 상태 변경
+            </label>
+            <button onclick="deleteModalPlan()" class="text-xs font-bold text-rose-500 hover:text-rose-700 hover:bg-rose-50 px-2 py-1 rounded-lg transition-all flex items-center gap-1" title="이 포스팅 일정 영구 삭제">
+              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 일정 삭제
+            </button>
+          </div>
           <div class="grid grid-cols-3 gap-2">
             <button id="modal-btn-status-done" onclick="setModalPlanStatus('○')" class="py-2.5 px-3 rounded-xl border text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all">
               <i data-lucide="check-circle" class="w-3.5 h-3.5 text-emerald-500"></i> 완료 (○)
@@ -975,6 +980,10 @@
       currentModalPlan.status = newStatus;
       updateModalStatusButtons(newStatus);
 
+      // 로컬 캐시 갱신
+      const found = blogPlans.find(p => p.row === currentModalPlan.row);
+      if (found) found.status = newStatus;
+
       try {
         await runServerFunction('updateBlogPostStatus', {
           row: currentModalPlan.row,
@@ -985,7 +994,9 @@
       } catch (err) {
         alert('상태 변경 실패: ' + (err.message || String(err)));
         currentModalPlan.status = oldStatus;
+        if (found) found.status = oldStatus;
         updateModalStatusButtons(oldStatus);
+        renderCalendar();
       }
     }
 
@@ -1003,6 +1014,10 @@
           postUrl: newUrl
         });
         currentModalPlan.postUrl = newUrl;
+
+        // 로컬 캐시 갱신
+        const found = blogPlans.find(p => p.row === currentModalPlan.row);
+        if (found) found.postUrl = newUrl;
         
         // 모달 화면 갱신
         const viewBox = $('modal-url-view-box');
@@ -1029,6 +1044,24 @@
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="save" class="w-3.5 h-3.5"></i> URL 저장';
         lucide.createIcons();
+      }
+    }
+
+    async function deleteModalPlan() {
+      if (!currentModalPlan) return;
+      const targetTopic = currentModalPlan.topic || '선택된 일정';
+      const targetDate = currentModalPlan.fullDate || currentModalPlan.date || '';
+      
+      const confirmMsg = `정말 이 포스팅 일정을 완전히 삭제하시겠습니까?\n\n📅 일자: ${targetDate}\n📌 주제: ${targetTopic}\n\n삭제 후에는 구글 시트에서도 즉시 제거됩니다.`;
+      if (!confirm(confirmMsg)) return;
+
+      try {
+        await runServerFunction('deleteBlogPostPlan', { row: currentModalPlan.row });
+        closePlanDetailModal();
+        await loadBlogPostPlans(false);
+        alert('포스팅 일정이 성공적으로 삭제되었습니다.');
+      } catch (err) {
+        alert('일정 삭제 실패: ' + (err.message || String(err)));
       }
     }
 
@@ -1379,6 +1412,9 @@
       }
       if (functionName === 'updateBlogPostUrl') {
         return callGASApi('updateBlogPostUrl', args[0]);
+      }
+      if (functionName === 'deleteBlogPostPlan') {
+        return callGASApi('deleteBlogPostPlan', args[0]);
       }
       if (functionName === 'addBlogPostPlan') {
         return callGASApi('addBlogPostPlan', args[0]);
