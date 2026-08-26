@@ -1009,8 +1009,9 @@
       btn.innerHTML = '<i data-lucide="refresh-cw" class="w-3.5 h-3.5 animate-spin"></i> 저장 중...';
 
       try {
-        await runServerFunction('updateBlogPostUrl', {
+        await runServerFunction('updateBlogPostStatus', {
           row: currentModalPlan.row,
+          status: currentModalPlan.status || '○',
           postUrl: newUrl
         });
         currentModalPlan.postUrl = newUrl;
