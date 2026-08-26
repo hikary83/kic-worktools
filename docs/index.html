@@ -2458,17 +2458,17 @@
             return;
         }
 
-        // ✨ 하이웍스 게시판 에디터 100% 호환 sans-serif 14px 서식 생성
+        // ✨ 하이웍스 게시판 에디터 100% 호환 sans-serif 13px 줄간격 1 서식 생성
         const lines = text.split('\n');
         const htmlParagraphs = lines.map(line => {
             const trimmed = line.trim();
             if (!trimmed) {
-                return '<p style="font-family: sans-serif; font-size: 14px; line-height: 1.6; margin: 0 0 6px 0; color: #1e293b;"><br></p>';
+                return '<p style="font-family: sans-serif; font-size: 13px; line-height: 1.0; margin: 0; color: #1e293b;"><br></p>';
             }
-            return `<p style="font-family: sans-serif; font-size: 14px; line-height: 1.6; margin: 0 0 6px 0; color: #1e293b;">${escapeHtml(line)}</p>`;
+            return `<p style="font-family: sans-serif; font-size: 13px; line-height: 1.0; margin: 0; color: #1e293b;">${escapeHtml(line)}</p>`;
         }).join('');
 
-        const formattedHtml = `<div style="font-family: sans-serif; font-size: 14px; line-height: 1.6; color: #1e293b;">${htmlParagraphs}</div>`;
+        const formattedHtml = `<div style="font-family: sans-serif; font-size: 13px; line-height: 1.0; color: #1e293b;">${htmlParagraphs}</div>`;
 
         try {
             const blobHtml = new Blob([formattedHtml], { type: 'text/html' });
@@ -2488,9 +2488,9 @@
             }
         }
         result.value = text;
-        status.textContent = '답변이 서식(sans-serif, 14px)과 함께 복사되었습니다.';
+        status.textContent = '답변이 서식(sans-serif, 13px, 줄간격 1)과 함께 복사되었습니다.';
         status.className = 'text-[11px] text-emerald-600 mt-0.5 font-bold';
-        showToast('하이웍스 맞춤 서식(sans-serif, 14px)으로 복사되었습니다!', 'success');
+        showToast('하이웍스 맞춤 서식(sans-serif, 13px, 줄간격 1)으로 복사되었습니다!', 'success');
     }
 
     function submitEditForm() {
