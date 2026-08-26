@@ -358,7 +358,7 @@
           <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
             <div>
               <div class="flex items-center gap-2 text-sm font-extrabold text-blue-800"><i class="fas fa-camera"></i> 게시판 캡처 자동 이관</div>
-              <p class="mt-1 text-xs text-blue-700 leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. 붙여넣으면 AI가 자동 분석하여 아래 등록 폼을 채웁니다.</p>
+              <p class="mt-1 text-xs text-blue-700 leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. (💡 상단 <b>브라우저 주소창(URL)까지 함께 캡처</b>하시면 원문 링크까지 자동으로 채워집니다!)</p>
             </div>
             <span class="shrink-0 text-[11px] font-bold text-blue-700 bg-white border border-blue-200 rounded-full px-2.5 py-1">최대 3장</span>
           </div>
@@ -2562,6 +2562,7 @@
         if (data.type && setSelectValueIfExists('add-type', data.type)) filled.push('add-type');
         if (data.priority && setSelectValueIfExists('add-priority', data.priority)) filled.push('add-priority');
         if (data.menu) { document.getElementById('add-menu').value = data.menu; filled.push('add-menu'); }
+        if (data.sourceLink) { document.getElementById('add-source-link').value = data.sourceLink; filled.push('add-source-link'); }
         if (data.title) { document.getElementById('add-title').value = data.title; filled.push('add-title'); }
         if (data.details) { document.getElementById('add-details').value = data.details; filled.push('add-details'); }
 

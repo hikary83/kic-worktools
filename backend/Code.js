@@ -674,6 +674,7 @@ function analyzeHelpdeskCapture(payload) {
   "type": "오류|데이터 수정|단순 문의|기능 개선|기타|빈 문자열",
   "priority": "낮음|보통|높음|긴급",
   "menu": "발생 메뉴 또는 빈 문자열",
+  "sourceLink": "캡처 상단 브라우저 주소창(URL bar)이나 본문에 표시된 웹 URL 전체(http:// 또는 https://...). 확인할 수 없으면 빈 문자열",
   "title": "게시판 제목 영역에 표시된 제목 원문 그대로. 확인할 수 없으면 빈 문자열",
   "details": "요청 본문을 사실 위주로 정리한 상세 내용",
   "warnings": ["확인이 필요한 항목이 있으면 짧게 기재"]
@@ -681,7 +682,8 @@ function analyzeHelpdeskCapture(payload) {
 
 [판단 규칙]
 - 캡처에 실제로 보이는 내용과 문맥만 사용하고, 사람 이름/날짜/메뉴/업체명/번호를 임의로 만들지 마세요.
-- 게시판의 원 요청글을 중심으로 읽고, 사이트 메뉴/브라우저 UI/서명/광고성 영역은 제외하세요.
+- 브라우저 상단 주소창(URL Bar)이나 본문에 게시글 URL(예: https://boards.office.hiworks.com/...)이 보이면 그 URL 전체를 sourceLink에 정확히 기재하세요. 보이지 않거나 잘려서 알 수 없으면 빈 문자열로 두세요.
+- 게시판의 원 요청글을 중심으로 읽고, 사이트 메뉴/서명/광고성 영역은 제외하세요.
 - 댓글이나 답변이 같이 보이면 원 요청 내용과 구분하세요. 댓글 내용을 요청 본문처럼 합치지 마세요.
 - 시스템 구분과 유형은 요청의 의미를 보고 가장 가까운 항목을 추천할 수 있습니다.
 - 긴급도는 명확한 긴급 표현이 없으면 "보통"으로 하세요.
@@ -830,6 +832,7 @@ function normalizeHelpdeskCaptureResult(data) {
     type: enumValue(data.type, allowedTypes, ''),
     priority: enumValue(data.priority, allowedPriorities, '보통'),
     menu: clean(data.menu, 150),
+    sourceLink: clean(data.sourceLink, 500),
     // 제목은 캡처 원문을 축약하지 않도록 기존 120자 절단을 적용하지 않습니다.
     title: clean(data.title),
     details: clean(data.details, 4000),
