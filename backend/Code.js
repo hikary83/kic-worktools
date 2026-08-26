@@ -458,6 +458,9 @@ function doPost(e) {
     } else if (action === 'updateBlogPostStatus') {
       const stats = updateBlogPostStatus(data);
       result = { success: true, data: stats };
+    } else if (action === 'updateBlogPostUrl') {
+      const stats = updateBlogPostUrl(data);
+      result = { success: true, data: stats };
     } else if (action === 'addBlogPostPlan') {
       const stats = addBlogPostPlan(data);
       result = { success: true, data: stats };
@@ -1767,6 +1770,8 @@ function getBlogPostPlans() {
       if (noteColIdx === -1) noteColIdx = 5;
       let statusColIdx = headers.findIndex(h => h.includes("여부") || h.includes("상태"));
       if (statusColIdx === -1) statusColIdx = 6;
+      let urlColIdx = headers.findIndex(h => h.includes("URL") || h.includes("url") || h.includes("링크"));
+      if (urlColIdx === -1) urlColIdx = 7;
 
       for (let i = 1; i < values.length; i++) {
         const row = values[i];
@@ -1778,6 +1783,7 @@ function getBlogPostPlans() {
         const keywords = String(row[kwColIdx] || '').trim();
         const note = String(row[noteColIdx] || '').trim();
         let status = String(row[statusColIdx] || '').trim();
+        const postUrl = urlColIdx < row.length ? String(row[urlColIdx] || '').trim() : '';
 
         if (!topic && !rawDate && !category) continue;
 
@@ -1800,7 +1806,8 @@ function getBlogPostPlans() {
           topic: topic,
           keywords: keywords,
           note: note,
-          status: status
+          status: status,
+          postUrl: postUrl
         });
       }
     } else {
@@ -1819,6 +1826,7 @@ function getBlogPostPlans() {
         const keywords = row[6] !== undefined ? String(row[6]).trim() : "";
         const note = row[7] !== undefined ? String(row[7]).trim() : "";
         let status = row[8] !== undefined ? String(row[8]).trim() : "";
+        const postUrl = row[9] !== undefined ? String(row[9]).trim() : "";
 
         if (yearVal) currentYear = yearVal;
         if (monthVal) currentMonth = monthVal;
@@ -1840,7 +1848,8 @@ function getBlogPostPlans() {
             topic: topic,
             keywords: keywords,
             note: note,
-            status: status
+            status: status,
+            postUrl: postUrl
           });
         }
       }
@@ -1864,8 +1873,8 @@ function updateBlogPostStatus(data) {
 
   const newStatus = data.status || "○";
   
-  // 헤더에서 '포스팅 여부' 열 찾기 (단일 날짜 구조는 7열, 구버전은 9열)
-  const lastCol = sheet.getLastColumn();
+  // 헤더에서 '포스팅 여부' 및 '포스팅 URL' 열 찾기
+  const lastCol = Math.max(sheet.getLastColumn(), 8);
   const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
   let statusCol = headers.findIndex(h => h.includes("여부") || h.includes("상태")) + 1;
   if (statusCol <= 0) {
@@ -1874,10 +1883,50 @@ function updateBlogPostStatus(data) {
 
   sheet.getRange(rowNumber, statusCol).setValue(newStatus);
 
+  // postUrl이 함께 전달된 경우 URL 열도 갱신
+  if (data.postUrl !== undefined) {
+    let urlCol = headers.findIndex(h => h.includes("URL") || h.includes("url") || h.includes("링크")) + 1;
+    if (urlCol <= 0) {
+      urlCol = statusCol + 1;
+      sheet.getRange(1, urlCol).setValue("포스팅 URL").setBackground("#f1f5f9").setFontWeight("bold").setHorizontalAlignment("center");
+    }
+    sheet.getRange(rowNumber, urlCol).setValue(String(data.postUrl || '').trim());
+  }
+
   return {
     success: true,
     row: rowNumber,
-    status: newStatus
+    status: newStatus,
+    postUrl: data.postUrl !== undefined ? data.postUrl : null
+  };
+}
+
+function updateBlogPostUrl(data) {
+  const sheet = getBlogPostingSheet();
+  if (!sheet) throw new Error("'블로그포스팅' 시트 탭을 찾을 수 없습니다.");
+
+  const rowNumber = Number(data.row);
+  if (!rowNumber || rowNumber < 2 || rowNumber > sheet.getLastRow()) {
+    throw new Error("유효하지 않은 행 번호입니다: " + data.row);
+  }
+
+  const postUrl = String(data.postUrl || '').trim();
+  const lastCol = Math.max(sheet.getLastColumn(), 8);
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
+  
+  let urlCol = headers.findIndex(h => h.includes("URL") || h.includes("url") || h.includes("링크")) + 1;
+  if (urlCol <= 0) {
+    let statusCol = headers.findIndex(h => h.includes("여부") || h.includes("상태")) + 1;
+    urlCol = (statusCol > 0) ? statusCol + 1 : 8;
+    sheet.getRange(1, urlCol).setValue("포스팅 URL").setBackground("#f1f5f9").setFontWeight("bold").setHorizontalAlignment("center");
+  }
+
+  sheet.getRange(rowNumber, urlCol).setValue(postUrl);
+
+  return {
+    success: true,
+    row: rowNumber,
+    postUrl: postUrl
   };
 }
 
@@ -1896,21 +1945,22 @@ function addBlogPostPlan(data) {
   const keywords = String(data.keywords || '').trim();
   const note = String(data.note || '').trim();
   const status = String(data.status || '○').trim();
+  const postUrl = String(data.postUrl || '').trim();
 
   // 날짜 정규화
   const dateObj = formatPlanDateObject(dateVal);
   const fullDate = dateObj.fullDate;
 
   if (isSingleDateCol) {
-    // 7열 구조: No, 포스팅 일자, 카테고리, 주제, 핵심 키워드, 비고, 포스팅 여부
+    // 8열 구조: No, 포스팅 일자, 카테고리, 주제, 핵심 키워드, 비고, 포스팅 여부, 포스팅 URL
     const newRowNumber = lastRow + 1;
-    const newRow = [newRowNumber - 1, fullDate, category, topic, keywords, note, status];
+    const newRow = [newRowNumber - 1, fullDate, category, topic, keywords, note, status, postUrl];
     sheet.appendRow(newRow);
 
     // 포스팅 일자(2번째 열) 기준 오름차순 정렬
     const totalDataRows = sheet.getLastRow() - 1;
     if (totalDataRows > 1) {
-      const dataRange = sheet.getRange(2, 1, totalDataRows, 7);
+      const dataRange = sheet.getRange(2, 1, totalDataRows, 8);
       dataRange.sort({ column: 2, ascending: true });
 
       // 정렬 후 No(1열) 번호 1부터 순차 재부여
@@ -1927,7 +1977,7 @@ function addBlogPostPlan(data) {
     const mStr = ym ? `${parseInt(ym[2], 10)}월` : "1월";
     const dStr = dateObj.date;
     const newRowNumber = lastRow + 1;
-    sheet.appendRow([newRowNumber - 1, yStr, mStr, dStr, category, topic, keywords, note, status]);
+    sheet.appendRow([newRowNumber - 1, yStr, mStr, dStr, category, topic, keywords, note, status, postUrl]);
   }
 
   return {
