@@ -808,13 +808,23 @@
 
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
-      if (!toast) return alert(message);
-      toast.className = 'fixed top-5 right-5 z-[9999] px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all duration-300 ' +
-        (type === 'error' ? 'bg-red-600 text-white' : type === 'info' ? 'bg-slate-800 text-white' : 'bg-green-600 text-white');
-      toast.innerText = message;
+      if (!toast) return;
+      const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
+      const bgClass = type === 'error'
+        ? 'bg-rose-600/95 text-white border border-rose-400 shadow-rose-900/20'
+        : type === 'info'
+        ? 'bg-slate-900/95 text-white border border-slate-700 shadow-slate-900/30'
+        : 'bg-emerald-600/95 text-white border border-emerald-400 shadow-emerald-900/20';
+
+      toast.className = `fixed top-6 right-6 z-[99999] flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md ${bgClass}`;
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
       toast.classList.remove('hidden');
+
       clearTimeout(window.__toastTimer);
-      window.__toastTimer = setTimeout(() => toast.classList.add('hidden'), 3500);
+      window.__toastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-[-10px]', 'opacity-0');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 2500);
     }
 
     function normalizeSearchText(value) {
@@ -1979,7 +1989,7 @@
         const btn = document.getElementById('btn-generate-ai');
         const chatSection = document.getElementById('ai-chat-section');
 
-        if(!window.currentStats) return alert('데이터 로딩이 완료되지 않았습니다.');
+        if(!window.currentStats) return showToast('데이터 로딩이 완료되지 않았습니다.', 'error');
         aiResultContainer.innerHTML = '';
         window.lastAiReportText = '';
         const copyBtn = document.getElementById('btn-copy-ai');
@@ -2233,7 +2243,7 @@
             btn.innerHTML = originalText;
             btn.disabled = false;
         }).catch(e => {
-            alert('설정 저장 실패: ' + e.message);
+            showToast('설정 저장 실패: ' + e.message, 'error');
             btn.innerHTML = originalText;
             btn.disabled = false;
         });
@@ -2323,14 +2333,14 @@
     function generateEditAiReply() {
         const draftAnswer = document.getElementById('edit-action').value.trim();
         if (!draftAnswer) {
-            alert('먼저 처리 내용 기록에 실제 답변의 핵심 내용을 입력해 주세요.');
+            showToast('먼저 처리 내용 기록에 실제 답변의 핵심 내용을 입력해 주세요.', 'error');
             document.getElementById('edit-action').focus();
             return;
         }
 
         const requestText = buildEditAiRequestText();
         if (!requestText) {
-            alert('제목 또는 상세 내용이 있어야 AI 답변을 생성할 수 있습니다.');
+            showToast('제목 또는 상세 내용이 있어야 AI 답변을 생성할 수 있습니다.', 'error');
             return;
         }
 
@@ -2677,7 +2687,7 @@
         const branch = document.getElementById('add-branch').value;
         const title = document.getElementById('add-title').value;
         const details = document.getElementById('add-details').value;
-        if(!date || !branch || !title || !details) return alert('필수 항목(*)을 입력하세요.');
+        if(!date || !branch || !title || !details) return showToast('필수 항목(*)을 모두 입력하세요.', 'error');
         const menu = document.getElementById('add-menu').value;
         const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details };
         closeAddModal();
@@ -2698,6 +2708,32 @@
             showToast('등록 실패: ' + e.message, 'error');
         });
     }
+
+    // ✨ ESC 키 및 바깥 배경 클릭 시 모달 즉시 닫기
+    function closeAllActiveModals() {
+      const modals = [
+        { id: 'addModal', close: closeAddModal },
+        { id: 'editModal', close: closeEditModal },
+        { id: 'settingsModal', close: closeSettingsModal }
+      ];
+      modals.forEach(m => {
+        const el = document.getElementById(m.id);
+        if (el && !el.classList.contains('hidden')) m.close();
+      });
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' || e.key === 'Esc') closeAllActiveModals();
+    });
+
+    ['addModal', 'editModal', 'settingsModal'].forEach(modalId => {
+      const el = document.getElementById(modalId);
+      if (el) {
+        el.addEventListener('click', e => {
+          if (e.target === el) closeAllActiveModals();
+        });
+      }
+    });
   </script>
     </div>
   </main>

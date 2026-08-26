@@ -720,7 +720,7 @@
         renderCalendar();
       } catch (e) {
         console.error('Failed to load blog plans:', e);
-        alert('시트 일정 불러오기 실패: ' + (e.message || String(e)));
+        showToast('시트 일정 불러오기 실패: ' + (e.message || String(e)), 'error');
       } finally {
         if (btn) {
           const endIcon = btn.querySelector('svg, i');
@@ -1052,7 +1052,7 @@
         });
         renderCalendar();
       } catch (err) {
-        alert('상태 변경 실패: ' + (err.message || String(err)));
+        showToast('상태 변경 실패: ' + (err.message || String(err)), 'error');
         currentModalPlan.status = oldStatus;
         if (found) found.status = oldStatus;
         updateModalStatusButtons(oldStatus);
@@ -1098,9 +1098,9 @@
         }
 
         renderCalendar();
-        alert('포스팅 URL이 성공적으로 저장되었습니다!');
+        showToast('포스팅 URL이 성공적으로 저장되었습니다!', 'success');
       } catch (err) {
-        alert('URL 저장 실패: ' + (err.message || String(err)));
+        showToast('URL 저장 실패: ' + (err.message || String(err)), 'error');
       } finally {
         btn.disabled = false;
         btn.innerHTML = '<i data-lucide="save" class="w-3.5 h-3.5"></i> URL 저장';
@@ -1120,9 +1120,9 @@
         await runServerFunction('deleteBlogPostPlan', { row: currentModalPlan.row });
         closePlanDetailModal();
         await loadBlogPostPlans(false);
-        alert('포스팅 일정이 성공적으로 삭제되었습니다.');
+        showToast('포스팅 일정이 성공적으로 삭제되었습니다.', 'success');
       } catch (err) {
-        alert('일정 삭제 실패: ' + (err.message || String(err)));
+        showToast('일정 삭제 실패: ' + (err.message || String(err)), 'error');
       }
     }
 
@@ -1281,11 +1281,11 @@
             status: statusSymbol
           });
 
-          alert(`구글 시트 '블로그포스팅'에 [${postDate}] 일정이 [${statusName}] 상태로 신규 등록되고 포스팅 일자순으로 정렬되었습니다! ✨`);
+          showToast(`[${postDate}] 일정이 [${statusName}] 상태로 신규 등록되었습니다! ✨`, 'success');
           selectedPlan = null;
           await loadBlogPostPlans();
         } catch (e) {
-          alert('시트 신규 등록 실패: ' + (e.message || String(e)));
+          showToast('시트 신규 등록 실패: ' + (e.message || String(e)), 'error');
         }
         return;
       }
@@ -1301,9 +1301,9 @@
         renderCalendar();
         selectPlan(selectedPlan);
 
-        alert(`구글 시트 '블로그포스팅'의 No.${selectedPlan.no} (${selectedPlan.date}) 일정이 [${statusName}] 상태로 실시간 저장되었습니다!`);
+        showToast(`No.${selectedPlan.no} (${selectedPlan.date}) 일정이 [${statusName}] 상태로 저장되었습니다!`, 'success');
       } catch (e) {
-        alert('시트 상태 저장 실패: ' + (e.message || String(e)));
+        showToast('시트 상태 저장 실패: ' + (e.message || String(e)), 'error');
       }
     }
 
@@ -1338,7 +1338,7 @@
       const val = input.value.trim();
       if (!val) return;
       if (categories.includes(val)) {
-        alert('이미 존재하는 카테고리 이름입니다.');
+        showToast('이미 존재하는 카테고리 이름입니다.', 'error');
         return;
       }
       categories.push(val);
@@ -1512,7 +1512,7 @@
       } catch (err) {
         console.warn('Clipboard image write fallback:', err);
         // 다운로드 안내
-        alert('이미지가 클립보드에 복사되었습니다. (블로그 에디터에서 Ctrl+V 해보세요. 안 될 경우 다운로드 버튼을 이용하세요!)');
+        showToast('이미지가 클립보드에 복사되었습니다! (에디터에서 Ctrl+V)', 'success');
       }
     }
 
@@ -1946,11 +1946,59 @@
         await navigator.clipboard.write(data);
         $('badge-copied-rich').classList.remove('hidden');
         setTimeout(() => $('badge-copied-rich').classList.add('hidden'), 2000);
+        showToast('네이버 블로그 서식으로 복사되었습니다! (에디터에서 Ctrl+V)', 'success');
       } catch (e) {
         console.error('Failed to copy rich text:', e);
         copyPlainBlogText();
       }
     }
+
+    // ✨ 모던 플로팅 토스트 알림
+    function showToast(message, type = 'success') {
+      let toast = $('app-toast');
+      if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'app-toast';
+        document.body.appendChild(toast);
+      }
+      const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
+      const bgClass = type === 'error'
+        ? 'bg-rose-600/95 text-white border border-rose-400 shadow-rose-900/20'
+        : type === 'info'
+        ? 'bg-slate-900/95 text-white border border-slate-700 shadow-slate-900/30'
+        : 'bg-emerald-600/95 text-white border border-emerald-400 shadow-emerald-900/20';
+
+      toast.className = `fixed top-6 right-6 z-[999999] flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md ${bgClass}`;
+      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      toast.classList.remove('hidden');
+
+      clearTimeout(window.__marketerToastTimer);
+      window.__marketerToastTimer = setTimeout(() => {
+        toast.classList.add('translate-y-[-10px]', 'opacity-0');
+        setTimeout(() => toast.classList.add('hidden'), 300);
+      }, 2500);
+    }
+
+    // ✨ ESC 키 및 바깥 배경 클릭 시 모달 즉시 닫기
+    function closeAllActiveModals() {
+      if (typeof closePlanDetailModal === 'function') closePlanDetailModal();
+      if (typeof closePlanAddModal === 'function') closePlanAddModal();
+      if (typeof closeCategoryModal === 'function') closeCategoryModal();
+      if (typeof closeGuideModal === 'function') closeGuideModal();
+    }
+
+    document.addEventListener('keydown', e => {
+      if (e.key === 'Escape' || e.key === 'Esc') closeAllActiveModals();
+    });
+
+    ['modal-plan-edit', 'modal-plan-add', 'modal-manage-categories', 'modal-guide'].forEach(id => {
+      const el = $(id);
+      if (el) {
+        el.addEventListener('click', e => {
+          if (e.target === el) closeAllActiveModals();
+        });
+      }
+    });
   </script>
 </body>
 </html>
