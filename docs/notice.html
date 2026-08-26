@@ -253,14 +253,16 @@
   </style>
 
   <style>
-    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif;display:flex;flex-direction:column}
     .kic-lnb *{box-sizing:border-box}
-    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18);flex:0 0 auto}
     .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
     .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
     .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
-    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-nav{padding:14px 10px;flex:1 1 auto;overflow-y:auto}
+    .kic-lnb-bottom{padding:12px 10px;border-top:1px solid rgba(148,163,184,.18);margin-top:auto;flex:0 0 auto}
     .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-bottom .kic-lnb-link{margin-bottom:0}
     .kic-lnb-link:hover{background:#1e293b;color:#fff}
     .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
     .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
@@ -275,13 +277,14 @@
     body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
     body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
     body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-bottom{padding:12px 8px}
     body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px}
     body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
     body.kic-lnb-collapsed .kic-lnb-link{position:relative}
     body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
     @media(max-width:900px){body.kic-lnb-collapsed .kic-lnb{width:auto}.kic-lnb-toggle{display:none}body.kic-lnb-collapsed .kic-tool-offset{margin-left:0}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
 
-    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto;padding:10px 14px}.kic-lnb-link{flex:0 0 auto;margin-bottom:0}.kic-tool-offset{margin-left:0}}
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto;display:block}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto;padding:10px 14px}.kic-lnb-link{flex:0 0 auto;margin-bottom:0}.kic-lnb-bottom{display:none}.kic-tool-offset{margin-left:0}}
   </style>
 
   <style>body.kic-with-lnb{padding-left:244px!important}body.kic-lnb-collapsed.kic-with-lnb{padding-left:76px!important}@media(max-width:900px){body.kic-with-lnb,body.kic-lnb-collapsed.kic-with-lnb{padding-left:0!important}.topbar{margin:12px auto 12px!important;width:calc(100% - 24px)!important}}</style>
@@ -301,6 +304,9 @@
       <a class="kic-lnb-link" data-title="필증 출력 확인" href="print.html"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
       <a class="kic-lnb-link" data-title="블로그 마케터" href="marketer.html"><span class="kic-lnb-ico">✍️</span><span class="kic-lnb-text">블로그 마케터</span></a>
     </nav>
+    <div class="kic-lnb-bottom">
+      <a class="kic-lnb-link" data-title="시스템 설정" target="_blank" rel="noopener noreferrer" href="https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit"><span class="kic-lnb-ico">⚙️</span><span class="kic-lnb-text">시스템 설정</span></a>
+    </div>
   </aside>
 
   <div class="topbar">
