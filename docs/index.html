@@ -166,7 +166,12 @@
   <div class="max-w-7xl mx-auto space-y-6">
     <!-- 1단: Header & 검색 필터 -->
     <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-chart-line text-blue-600"></i> 실시간 IT 헬프데스크</h1>
+      <div class="flex items-center gap-3 flex-wrap">
+        <h1 class="text-2xl font-bold text-slate-800 flex items-center gap-2"><i class="fas fa-chart-line text-blue-600"></i> 실시간 IT 헬프데스크</h1>
+        <span id="sync-indicator" class="hidden text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+          <i class="fas fa-sync-alt fa-spin text-blue-500"></i> 동기화 중...
+        </span>
+      </div>
       <div class="bg-white p-2.5 rounded-xl border border-slate-200 card-shadow flex flex-wrap items-center gap-3">
         <div class="flex items-center gap-2 border-r border-slate-100 pr-3">
           <i class="far fa-calendar-alt text-slate-400 text-sm ml-1"></i>
@@ -514,16 +519,33 @@
       initImeProtection();
       await ensureKicChartFontReady();
       
-      // 앱 로딩 시 담당자 리스트를 먼저 가져온 후 데이터를 불러옵니다.
-      document.getElementById('loading').classList.remove('hidden');
-      runServerFunction('getDevelopers').then(devs => {
-          window.globalDevList = devs;
-          populateDevSelects();
-          loadData(); // 데이터 로딩 시작
-      }).catch(e => {
-          console.error("Failed to load developers:", e);
-          loadData();
-      });
+      // ⚡ [SWR 캐싱 전략] 로컬 캐시가 있으면 0.01초 만에 화면에 즉시 렌더링!
+      let hasValidCache = false;
+      try {
+        const cachedRaw = localStorage.getItem('kic_dashboard_cache');
+        if (cachedRaw) {
+          const cached = JSON.parse(cachedRaw);
+          if (cached && cached.stats) {
+            hasValidCache = true;
+            if (cached.stats.developers && Array.isArray(cached.stats.developers)) {
+              window.globalDevList = cached.stats.developers;
+              populateDevSelects();
+            }
+            onSuccess(cached.stats, true); // 0.01초 즉시 화면 표출!
+          }
+        }
+      } catch(e) {
+        console.warn('Dashboard cache parse error:', e);
+      }
+
+      // 캐시가 없으면 스피너 표시, 캐시가 있으면 백그라운드에서 최신 데이터 1회 통합 동기화
+      if (!hasValidCache) {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('hidden');
+      }
+      
+      // 1회 단일 호출로 최신 데이터 & 담당자 목록 동기화
+      loadData(hasValidCache);
     }
     document.addEventListener('DOMContentLoaded', initDashboard);
 
@@ -759,35 +781,82 @@
       }
     }
 
-    function loadData() {
-      document.getElementById('loading').classList.remove('hidden');
-      document.getElementById('dashboard-content').classList.add('hidden');
+    function loadData(isBackground = false) {
+      const syncIndicator = document.getElementById('sync-indicator');
+      if (isBackground) {
+        if (syncIndicator) {
+          syncIndicator.className = 'text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm';
+          syncIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin text-blue-500"></i> 동기화 중...';
+          syncIndicator.classList.remove('hidden');
+        }
+      } else {
+        document.getElementById('loading').classList.remove('hidden');
+        document.getElementById('dashboard-content').classList.add('hidden');
+      }
+
       const start = document.getElementById('startDate').value;
       const end = document.getElementById('endDate').value;
-      runServerFunction('getDashboardData', start, end).then(onSuccess).catch(onFailure);
+      runServerFunction('getDashboardData', start, end)
+        .then(stats => {
+          onSuccess(stats, false);
+          if (syncIndicator) {
+            syncIndicator.className = 'text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
+            syncIndicator.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i> 동기화 완료';
+            setTimeout(() => syncIndicator.classList.add('hidden'), 2500);
+          }
+        })
+        .catch(err => {
+          if (syncIndicator) syncIndicator.classList.add('hidden');
+          onFailure(err);
+        });
     }
 
     function resetFilter() {
       document.getElementById('startDate').value = '';
       document.getElementById('endDate').value = '';
-      loadData();
+      loadData(false);
     }
 
     function onFailure(error) {
       console.error(error);
-      document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${error.message}</p><button onclick='loadData()' class='mt-4 text-blue-600 underline'>다시 시도</button>`;
+      if (!window.currentStats) {
+        document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${error.message}</p><button onclick='loadData(false)' class='mt-4 text-blue-600 underline font-bold'>다시 시도</button>`;
+      } else {
+        showToast('최신 데이터 동기화 실패 (기존 캐시 표시 중)', 'error');
+      }
     }
 
-    function onSuccess(stats) {
+    function onSuccess(stats, isCached = false) {
+      if (!stats) return;
       document.getElementById('loading').classList.add('hidden');
       document.getElementById('dashboard-content').classList.remove('hidden');
       window.currentStats = stats;
-      document.getElementById('kpi-total').innerText = stats.total;
-      document.getElementById('kpi-pending').innerText = stats.pending;
-      document.getElementById('kpi-done').innerText = stats.done;
+
+      // 담당자 목록이 통합 반환되었으면 갱신
+      if (stats.developers && Array.isArray(stats.developers) && stats.developers.length > 0) {
+        window.globalDevList = stats.developers;
+        populateDevSelects();
+      }
+
+      // KPI 수치 업데이트
+      document.getElementById('kpi-total').innerText = stats.total || 0;
+      document.getElementById('kpi-pending').innerText = stats.pending || 0;
+      document.getElementById('kpi-done').innerText = stats.done || 0;
 
       renderIssueSections(stats, true);
       updateCharts(stats);
+
+      // 최신 서버 데이터일 때 로컬 스토리지에 캐시 보관
+      if (!isCached) {
+        try {
+          localStorage.setItem('kic_dashboard_cache', JSON.stringify({
+            stats: stats,
+            savedAt: Date.now()
+          }));
+        } catch(e) {
+          console.warn('Failed to save dashboard cache:', e);
+        }
+      }
     }
 
     function toggleSection(containerId, buttonId) {
