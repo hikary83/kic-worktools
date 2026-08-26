@@ -764,6 +764,43 @@
       return s;
     }
 
+    // 📅 플랜 날짜 객체 파싱 (연, 월, 일)
+    function parsePlanDate(plan) {
+      if (!plan) return null;
+      const str = `${plan.fullDate || ''} ${plan.date || ''} ${plan.year || ''} ${plan.month || ''}`;
+      const m1 = str.match(/(\d{4})[-./](\d{1,2})[-./](\d{1,2})/);
+      if (m1) {
+        return new Date(parseInt(m1[1], 10), parseInt(m1[2], 10) - 1, parseInt(m1[3], 10));
+      }
+      const m2 = str.match(/(\d{1,2})[.](\d{1,2})/);
+      if (m2) {
+        let year = currentCalYear;
+        const ym = str.match(/(\d{4})년?/);
+        if (ym) year = parseInt(ym[1], 10);
+        return new Date(year, parseInt(m2[1], 10) - 1, parseInt(m2[2], 10));
+      }
+      return null;
+    }
+
+    // ⏳ 예약(△) 건의 경우 날짜가 지나면(과거) 자동으로 완료(○)로 간주하는 스마트 상태 판별기
+    function getEffectivePlanStatus(plan) {
+      if (!plan) return '';
+      const norm = normalizePlanStatus(plan.status);
+      if (norm === '○') return '○';
+      if (norm === '△') {
+        const pDate = parsePlanDate(plan);
+        if (pDate) {
+          const todayZero = new Date();
+          todayZero.setHours(0, 0, 0, 0);
+          if (pDate < todayZero) {
+            return '○'; // 예약 날짜가 지났으므로 자동 완료(○) 처리!
+          }
+        }
+        return '△'; // 오늘 또는 미래 일정이면 예약(△) 유지
+      }
+      return norm; // 미작성이면 그대로 미작성
+    }
+
     // 📅 캘린더 렌더링 엔진
     function renderCalendar() {
       // 드롭다운 값 동기화
@@ -798,16 +835,13 @@
         return yearMatch && monthMatch;
       });
 
-      const todayNow = new Date();
-      const todayZero = new Date(todayNow.getFullYear(), todayNow.getMonth(), todayNow.getDate(), 0, 0, 0);
-
       const totalCount = monthPlans.length;
       let doneCount = 0;
       let reservedCount = 0;
       let pendingCount = 0;
 
       monthPlans.forEach(p => {
-        const st = normalizePlanStatus(p.status);
+        const st = getEffectivePlanStatus(p);
         if (st === '○') doneCount++;
         else if (st === '△') reservedCount++;
         else pendingCount++;
@@ -877,7 +911,7 @@
           const isSelected = selectedPlan && !selectedPlan.isNew && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
-          let effectiveStatus = normalizePlanStatus(plan.status);
+          let effectiveStatus = getEffectivePlanStatus(plan);
           let cardStyle = 'bg-blue-50/70 border-blue-200 text-blue-900 hover:bg-blue-100/70';
           let badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" title="작성 예정"></span>';
 
@@ -942,8 +976,8 @@
       $('modal-plan-category').textContent = plan.category || '카테고리 미지정';
       $('modal-plan-topic').textContent = plan.topic || '주제 미지정';
       
-      // 상태 버튼 하이라이트
-      updateModalStatusButtons(plan.status);
+      // 상태 버튼 하이라이트 (날짜 지난 예약 건은 자동 완료로 하이라이트)
+      updateModalStatusButtons(getEffectivePlanStatus(plan));
 
       // URL 박스 렌더링
       const url = plan.postUrl || '';
@@ -1120,10 +1154,11 @@
       if (bannerText) bannerText.textContent = `선택된 포스팅: No.${plan.no} [${plan.date}] ${plan.topic}`;
 
       if (bannerBadge) {
-        if (plan.status === '○') {
+        const effStatus = getEffectivePlanStatus(plan);
+        if (effStatus === '○') {
           bannerBadge.textContent = '포스팅 완료 (○)';
           bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
-        } else if (plan.status === '△') {
+        } else if (effStatus === '△') {
           bannerBadge.textContent = '예약 발행됨 (△)';
           bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
         } else {
