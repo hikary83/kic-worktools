@@ -72,49 +72,60 @@
       background-color: #f8fafc;
       font-weight: 700;
     }
+    .kic-lnb{position:fixed;left:0;top:0;bottom:0;width:244px;background:#0f172a;color:#e5e7eb;z-index:99999;box-shadow:6px 0 18px rgba(15,23,42,.16);font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif}
+    .kic-lnb *{box-sizing:border-box}
+    .kic-lnb-brand{height:86px;padding:18px 18px 14px;display:flex;align-items:center;gap:12px;border-bottom:1px solid rgba(148,163,184,.18)}
+    .kic-lnb-logo{width:42px;height:42px;border-radius:14px;background:#2563eb;color:#fff;display:flex;align-items:center;justify-content:center;font-size:20px;box-shadow:0 12px 22px rgba(37,99,235,.28)}
+    .kic-lnb-title{font-size:16px;font-weight:900;color:#fff;letter-spacing:-.4px;line-height:1.15}
+    .kic-lnb-sub{font-size:11px;font-weight:700;color:#94a3b8;margin-top:4px}
+    .kic-lnb-nav{padding:14px 10px}
+    .kic-lnb-link{display:flex;align-items:center;gap:12px;height:48px;padding:0 14px;border-radius:12px;color:#cbd5e1;text-decoration:none;font-size:14px;font-weight:900;margin-bottom:8px;border:1px solid transparent;transition:.14s background,.14s color,.14s border-color}
+    .kic-lnb-link:hover{background:#1e293b;color:#fff}
+    .kic-lnb-link.kic-active{background:#2563eb;color:#fff;border-color:#93c5fd;box-shadow:0 0 0 2px rgba(255,255,255,.08) inset}
+    .kic-lnb-ico{width:20px;text-align:center;font-size:15px;line-height:1}
+    .kic-tool-offset{min-height:100vh;margin-left:244px;background:#f8fafc}
+
+    .kic-lnb-toggle{margin-left:auto;width:34px;height:34px;border:1px solid rgba(148,163,184,.28);border-radius:10px;background:rgba(255,255,255,.06);color:#cbd5e1;display:flex;align-items:center;justify-content:center;cursor:pointer;font-weight:900}
+    .kic-lnb-toggle:hover{background:#1e293b;color:#fff}
+    body.kic-lnb-collapsed .kic-lnb{width:76px}
+    body.kic-tool-offset{min-height:100vh;margin-left:244px;background:#f8fafc}
+    body.kic-lnb-collapsed .kic-tool-offset{margin-left:76px}
+    body.kic-lnb-collapsed .kic-lnb-brand{height:112px;padding:12px 8px;justify-content:flex-start;flex-direction:column;gap:8px}
+    body.kic-lnb-collapsed .kic-lnb-logo{width:40px;height:40px;border-radius:13px;font-size:18px;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-brand-text,body.kic-lnb-collapsed .kic-lnb-text{display:none}
+    body.kic-lnb-collapsed .kic-lnb-toggle{position:static;margin:0;width:34px;height:34px;border-radius:11px;font-size:14px;background:#1e293b;color:#e5e7eb;flex:0 0 auto}
+    body.kic-lnb-collapsed .kic-lnb-nav{padding:12px 8px 14px}
+    body.kic-lnb-collapsed .kic-lnb-link{justify-content:center;padding:0;height:48px}
+    body.kic-lnb-collapsed .kic-lnb-ico{width:auto;font-size:18px}
+    body.kic-lnb-collapsed .kic-lnb-link{position:relative}
+    body.kic-lnb-collapsed .kic-lnb-link:hover::after{content:attr(data-title);position:absolute;left:62px;top:50%;transform:translateY(-50%);white-space:nowrap;background:#111827;color:#fff;border-radius:8px;padding:8px 10px;font-size:12px;box-shadow:0 10px 24px rgba(15,23,42,.22);z-index:100000}
+    @media(max-width:900px){body.kic-lnb-collapsed .kic-lnb{width:auto}.kic-lnb-toggle{display:none}body.kic-lnb-collapsed .kic-tool-offset{margin-left:0}.kic-lnb-brand-text,.kic-lnb-text{display:block!important}}
+
+    @media(max-width:900px){.kic-lnb{position:relative;width:auto;height:auto}.kic-lnb-brand{height:auto}.kic-lnb-nav{display:flex;gap:8px;overflow:auto;padding:10px 14px}.kic-lnb-link{flex:0 0 auto;margin-bottom:0}.kic-tool-offset{margin-left:0}}
   </style>
 </head>
-<body class="bg-slate-50 text-slate-800 font-sans min-h-screen flex">
+<body class="relative bg-slate-50 text-slate-800 font-sans min-h-screen">
 
-  <!-- 👨‍💻 LNB (사이드바) -->
-  <aside id="sidebar" class="fixed inset-y-0 left-0 z-50 w-64 bg-slate-900 text-slate-300 flex flex-col transition-all duration-300 shadow-xl">
-    <div class="h-20 flex items-center px-6 border-b border-slate-800 justify-between">
-      <div class="flex items-center gap-3 sidebar-brand">
-        <div class="w-10 h-10 rounded-xl bg-blue-600 flex items-center justify-center text-white text-xl font-bold shadow-lg shadow-blue-500/30">▣</div>
-        <div>
-          <h1 class="text-sm font-extrabold text-white leading-tight">KIC 업무 도구</h1>
-          <span class="text-[10px] text-slate-500 font-bold block mt-0.5">IT · CMS Helper</span>
-        </div>
-      </div>
-      <button onclick="toggleSidebar()" class="w-8 h-8 rounded-lg border border-slate-700 bg-slate-800/40 text-slate-400 flex items-center justify-center hover:bg-slate-800 hover:text-white transition-all">☰</button>
+  <aside class="kic-lnb">
+    <div class="kic-lnb-brand">
+      <div class="kic-lnb-logo">▣</div>
+      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div>
+      <button class="kic-lnb-toggle" type="button" onclick="toggleKicLnb()" title="메뉴 접기/펼치기">☰</button>
     </div>
-    
-    <nav class="flex-1 px-3 py-4 space-y-1">
-      <a href="index.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
-        <span class="text-lg">📈</span><span class="sidebar-text">IT 헬프데스크</span>
-      </a>
-      <a href="reply.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
-        <span class="text-lg">💬</span><span class="sidebar-text">IT 헬프데스크 답변</span>
-      </a>
-      <a href="notice.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
-        <span class="text-lg">📢</span><span class="sidebar-text">공지사항 생성</span>
-      </a>
-      <a href="delay.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
-        <span class="text-lg">⏳</span><span class="sidebar-text">교정 지연 안내</span>
-      </a>
-      <a href="print.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold hover:bg-slate-800 hover:text-white transition-all">
-        <span class="text-lg">🏷️</span><span class="sidebar-text">필증 출력 확인</span>
-      </a>
-      <a href="marketer.html" class="flex items-center gap-3 px-4 py-3 rounded-xl text-sm font-bold bg-blue-600 text-white shadow-lg shadow-blue-600/10">
-        <span class="text-lg">✍️</span><span class="sidebar-text">블로그 마케터</span>
-      </a>
+    <nav class="kic-lnb-nav">
+      <a class="kic-lnb-link" data-title="IT 헬프데스크" href="index.html"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
+      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="reply.html"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
+      <a class="kic-lnb-link" data-title="공지사항 생성" href="notice.html"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
+      <a class="kic-lnb-link" data-title="교정 지연 안내" href="delay.html"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
+      <a class="kic-lnb-link" data-title="필증 출력 확인" href="print.html"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
+      <a class="kic-lnb-link kic-active" data-title="블로그 마케터" href="marketer.html"><span class="kic-lnb-ico">✍️</span><span class="kic-lnb-text">블로그 마케터</span></a>
     </nav>
   </aside>
 
   <!-- 📦 메인 콘텐츠 영역 -->
-  <main id="main-content" class="flex-1 pl-64 transition-all duration-300 min-h-screen flex flex-col">
+  <main class="kic-tool-offset">
     <!-- 상단 헤더 -->
-    <header class="bg-white border-b border-slate-200 px-8 py-5 flex items-center justify-between shadow-sm sticky top-0 z-40">
+    <header class="bg-white border-b border-slate-200 px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40">
       <div>
         <h1 class="text-xl font-extrabold text-slate-800 tracking-tight flex items-center gap-2">✍️ 블로그 AI 마케터</h1>
         <p class="text-xs font-semibold text-slate-500 mt-1">네이버 블로그용 최적화 포스팅과 마케팅 이미지 프롬프트 세트를 작성합니다.</p>
@@ -131,7 +142,7 @@
     </header>
 
     <!-- 콘텐츠 본문 -->
-    <div class="p-8 max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start">
+    <div class="p-4 sm:p-8 max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start">
       
       <!-- 📋 STEP 1: 포스팅 일정 선택 캘린더 화면 -->
       <section id="panel-calendar" class="space-y-6">
@@ -1334,15 +1345,13 @@
       $('file-attached-info').classList.add('hidden');
     }
 
-    function toggleSidebar() {
-      const sidebar = $('sidebar');
-      const main = $('main-content');
-      sidebar.classList.toggle('w-64');
-      sidebar.classList.toggle('w-20');
-      main.classList.toggle('pl-64');
-      main.classList.toggle('pl-20');
-      document.querySelectorAll('.sidebar-text').forEach(el => el.classList.toggle('hidden'));
-      document.querySelector('.sidebar-brand').classList.toggle('hidden');
+    function toggleKicLnb() {
+      document.body.classList.toggle('kic-lnb-collapsed');
+      const isCollapsed = document.body.classList.contains('kic-lnb-collapsed');
+      localStorage.setItem('kic_lnb_collapsed', isCollapsed ? 'Y' : 'N');
+    }
+    if (localStorage.getItem('kic_lnb_collapsed') === 'Y') {
+      document.body.classList.add('kic-lnb-collapsed');
     }
 
     function updateStepBadges(step) {
