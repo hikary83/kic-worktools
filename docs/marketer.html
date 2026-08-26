@@ -120,23 +120,22 @@
         <p class="text-xs font-semibold text-slate-500 mt-1">네이버 블로그용 최적화 포스팅과 마케팅 이미지 프롬프트 세트를 작성합니다.</p>
       </div>
       <div id="header-steps" class="hidden sm:flex items-center gap-2 text-xs font-bold text-slate-400 uppercase tracking-widest">
-        <span id="step-badge-1" class="text-slate-800">1. 입력</span>
+        <span id="step-badge-1" class="text-slate-800 font-extrabold cursor-pointer" onclick="goToStep(1)">1. 일정 선택</span>
         <i data-lucide="chevron-right" class="w-3 h-3 text-slate-300"></i>
-        <span id="step-badge-2">2. 초안 작성</span>
+        <span id="step-badge-2" class="cursor-pointer" onclick="goToStep(2)">2. 정보 입력</span>
         <i data-lucide="chevron-right" class="w-3 h-3 text-slate-300"></i>
-        <span id="step-badge-4">3. 마케팅 에셋</span>
+        <span id="step-badge-3" class="cursor-pointer" onclick="if(blogPostText) goToStep(3)">3. 초안 작성</span>
+        <i data-lucide="chevron-right" class="w-3 h-3 text-slate-300"></i>
+        <span id="step-badge-4" class="cursor-pointer" onclick="if(imageAssets.length) goToStep(4)">4. 마케팅 에셋</span>
       </div>
     </header>
 
     <!-- 콘텐츠 본문 -->
     <div class="p-8 max-w-4xl w-full mx-auto flex-1 flex flex-col justify-start">
       
-      <!-- 📋 STEP 1: 입력 화면 -->
-      <section id="panel-input" class="space-y-6">
-        
-        <!-- 📅 구글 시트 연간 플랜 캘린더 카드 -->
-        <div class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
-          <!-- 캘린더 헤더 & 월 이동 -->
+      <!-- 📋 STEP 1: 포스팅 일정 선택 캘린더 화면 -->
+      <section id="panel-calendar" class="space-y-6">
+        <div class="bg-white p-6 sm:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-5">
           <!-- 캘린더 상단 헤더 & 연/월 바로가기 드롭다운 -->
           <div class="flex flex-wrap items-center justify-between gap-3 border-b border-slate-100 pb-4">
             <div class="flex items-center gap-3">
@@ -204,17 +203,32 @@
           </div>
 
           <!-- 달력 일자 그리드 -->
-          <div id="calendar-grid" class="grid grid-cols-7 gap-2 min-h-[220px]">
+          <div id="calendar-grid" class="grid grid-cols-7 gap-2 min-h-[260px]">
             <!-- 동적 일자 셀 렌더링 -->
           </div>
 
-          <!-- 선택된 플랜 정보 알림 바 -->
-          <div id="selected-plan-banner" class="hidden flex items-center justify-between bg-blue-50/70 border border-blue-200/70 p-3.5 rounded-xl text-xs text-blue-900 font-bold">
-            <div class="flex items-center gap-2 truncate">
-              <span class="text-base">📌</span>
-              <span id="selected-plan-text" class="truncate">선택된 포스팅: ...</span>
-            </div>
-            <span id="selected-plan-badge" class="text-[10px] font-extrabold px-2.5 py-1 rounded-full flex-shrink-0"></span>
+          <!-- 하단 빠른 액션 바 -->
+          <div class="pt-4 border-t border-slate-100 flex flex-col sm:flex-row items-center justify-between gap-3">
+            <p class="text-xs text-slate-400 font-semibold">💡 일정을 클릭하면 상세 관리 및 글 작성을 시작할 수 있습니다.</p>
+            <button onclick="startCustomTopicPost()" class="w-full sm:w-auto px-5 py-3 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center justify-center gap-2">
+              <i data-lucide="pen-tool" class="w-4 h-4 text-blue-400"></i> 자유 주제로 직접 작성하기 <i data-lucide="arrow-right" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        </div>
+      </section>
+
+      <!-- 📋 STEP 2: 카테고리 및 주제 정보 입력 화면 -->
+      <section id="panel-input" class="hidden space-y-6">
+        
+        <!-- 상단 네비게이션 & 선택된 플랜 배너 -->
+        <div class="flex flex-wrap items-center justify-between gap-3">
+          <button onclick="goToStep(1)" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> 1단계 캘린더 일정 선택으로
+          </button>
+          <div id="selected-plan-banner" class="hidden flex items-center gap-2 bg-blue-50 border border-blue-200 px-3.5 py-1.5 rounded-xl text-xs text-blue-900 font-bold">
+            <span class="text-sm">📌</span>
+            <span id="selected-plan-text" class="truncate max-w-xs sm:max-w-md">선택된 포스팅: ...</span>
+            <span id="selected-plan-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0"></span>
           </div>
         </div>
 
@@ -265,16 +279,16 @@
           </div>
 
           <button id="btn-generate" onclick="generateBlogPost()" class="w-full py-4 rounded-xl bg-blue-600 text-white text-sm font-extrabold hover:bg-blue-700 active:scale-[0.99] shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all flex items-center justify-center gap-2">
-            <i data-lucide="send" class="w-4 h-4"></i> 포스팅 생성하기
+            <i data-lucide="sparkles" class="w-4 h-4"></i> AI 본문 초안 작성하기 (3단계 이동) <i data-lucide="arrow-right" class="w-4 h-4"></i>
           </button>
         </div>
       </section>
 
-      <!-- 📋 STEP 2/3: 초안 작성 및 피드백 화면 -->
+      <!-- 📋 STEP 3: 초안 작성 및 피드백 화면 -->
       <section id="panel-generation" class="hidden space-y-6">
         <div class="flex flex-wrap items-center justify-between gap-3">
           <button onclick="goBackToInput()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
-            <i data-lucide="arrow-left" class="w-4 h-4"></i> 뒤로가기
+            <i data-lucide="arrow-left" class="w-4 h-4"></i> 2단계 정보 입력으로
           </button>
           <div class="flex flex-wrap items-center gap-2">
             <button id="btn-mark-posted-step2" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-white text-xs font-extrabold transition-all shadow-sm flex items-center gap-1.5">
@@ -362,7 +376,7 @@
         <div class="flex flex-wrap items-center justify-between gap-3">
           <div class="flex items-center gap-3 flex-wrap">
             <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-slate-500 hover:text-slate-800 font-bold transition-all">
-              <i data-lucide="arrow-left" class="w-4 h-4"></i> 포스팅 편집으로 돌아가기
+              <i data-lucide="arrow-left" class="w-4 h-4"></i> 3단계 초안 편집으로
             </button>
             <span id="assets-category-badge" class="text-xs font-extrabold text-blue-700 bg-blue-50 border border-blue-200 px-3 py-1 rounded-lg flex items-center gap-1.5 shadow-sm">
               <i data-lucide="folder" class="w-3.5 h-3.5 text-blue-500"></i>
@@ -1054,7 +1068,7 @@
       selectPlan(plan);
     }
 
-    // 📌 플랜 선택 및 폼 자동 완성
+    // 📌 플랜 선택 및 폼 자동 완성 -> 2단계 정보 입력으로 이동
     function selectPlan(plan) {
       if (!plan) return;
       selectedPlan = plan;
@@ -1077,26 +1091,33 @@
       const bannerText = $('selected-plan-text');
       const bannerBadge = $('selected-plan-badge');
 
-      banner.classList.remove('hidden');
-      bannerText.textContent = `선택된 포스팅: No.${plan.no} [${plan.date}] ${plan.topic}`;
+      if (banner) banner.classList.remove('hidden');
+      if (bannerText) bannerText.textContent = `선택된 포스팅: No.${plan.no} [${plan.date}] ${plan.topic}`;
 
-      if (plan.status === '○') {
-        bannerBadge.textContent = '포스팅 완료 (○)';
-        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
-      } else if (plan.status === '△') {
-        bannerBadge.textContent = '예약 발행됨 (△)';
-        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
-      } else {
-        bannerBadge.textContent = '작성 예정';
-        bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
+      if (bannerBadge) {
+        if (plan.status === '○') {
+          bannerBadge.textContent = '포스팅 완료 (○)';
+          bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-emerald-100 text-emerald-800 border border-emerald-200';
+        } else if (plan.status === '△') {
+          bannerBadge.textContent = '예약 발행됨 (△)';
+          bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-amber-100 text-amber-800 border border-amber-200';
+        } else {
+          bannerBadge.textContent = '작성 예정';
+          bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
+        }
       }
 
-      // 4. 캘린더 선택 하이라이트 재렌더링 및 뱃지 동기화
+      // 4. 뱃지 동기화 및 2단계로 전환
       updateCategoryAndDateBadges();
-      renderCalendar();
+      goToStep(2);
+    }
 
-      // 5. 폼으로 부드럽게 스크롤
-      $('select-category').scrollIntoView({ behavior: 'smooth', block: 'center' });
+    function startCustomTopicPost() {
+      selectedPlan = null;
+      const banner = $('selected-plan-banner');
+      if (banner) banner.classList.add('hidden');
+      updateCategoryAndDateBadges();
+      goToStep(2);
     }
 
     function matchAndSelectCategory(catCode) {
@@ -1164,10 +1185,7 @@
       bannerBadge.className = 'text-[10px] font-extrabold px-2 py-0.5 rounded-full bg-blue-100 text-blue-800 border border-blue-200';
 
       updateCategoryAndDateBadges();
-      renderCalendar();
-
-      // 폼으로 부드럽게 스크롤
-      $('select-category').scrollIntoView({ behavior: 'smooth', block: 'center' });
+      goToStep(2);
     }
 
     // ✅ 원클릭 포스팅 상태 저장 (○ 완료 또는 △ 예약)
@@ -1315,42 +1333,42 @@
 
     function updateStepBadges(step) {
       currentStep = step;
-      ['step-badge-1', 'step-badge-2', 'step-badge-4'].forEach(id => {
+      ['step-badge-1', 'step-badge-2', 'step-badge-3', 'step-badge-4'].forEach((id, idx) => {
         const el = $(id);
-        if (el) el.className = 'text-slate-400';
+        if (el) {
+          if (idx + 1 === step) {
+            el.className = 'text-blue-600 font-black cursor-pointer';
+          } else if (idx + 1 < step) {
+            el.className = 'text-slate-700 font-bold cursor-pointer';
+          } else {
+            el.className = 'text-slate-400 font-medium cursor-pointer';
+          }
+        }
       });
       
+      const pCal = $('panel-calendar');
       const pInput = $('panel-input');
       const pGen = $('panel-generation');
       const pAssets = $('panel-assets');
 
-      if (step === 1) {
-        if ($('step-badge-1')) $('step-badge-1').className = 'text-slate-800 font-extrabold';
-        if (pInput) { pInput.style.setProperty('display', 'block', 'important'); pInput.classList.remove('hidden'); }
-        if (pGen) { pGen.style.setProperty('display', 'none', 'important'); pGen.classList.add('hidden'); }
-        if (pAssets) { pAssets.style.setProperty('display', 'none', 'important'); pAssets.classList.add('hidden'); }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (step === 2) {
-        if ($('step-badge-2')) $('step-badge-2').className = 'text-slate-800 font-extrabold';
-        if (pInput) { pInput.style.setProperty('display', 'none', 'important'); pInput.classList.add('hidden'); }
-        if (pGen) { pGen.style.setProperty('display', 'block', 'important'); pGen.classList.remove('hidden'); }
-        if (pAssets) { pAssets.style.setProperty('display', 'none', 'important'); pAssets.classList.add('hidden'); }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      } else if (step === 4) {
-        if ($('step-badge-4')) $('step-badge-4').className = 'text-slate-800 font-extrabold';
-        if (pInput) { pInput.style.setProperty('display', 'none', 'important'); pInput.classList.add('hidden'); }
-        if (pGen) { pGen.style.setProperty('display', 'none', 'important'); pGen.classList.add('hidden'); }
-        if (pAssets) { pAssets.style.setProperty('display', 'block', 'important'); pAssets.classList.remove('hidden'); }
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-      }
+      if (pCal) { pCal.style.setProperty('display', step === 1 ? 'block' : 'none', 'important'); pCal.classList.toggle('hidden', step !== 1); }
+      if (pInput) { pInput.style.setProperty('display', step === 2 ? 'block' : 'none', 'important'); pInput.classList.toggle('hidden', step !== 2); }
+      if (pGen) { pGen.style.setProperty('display', step === 3 ? 'block' : 'none', 'important'); pGen.classList.toggle('hidden', step !== 3); }
+      if (pAssets) { pAssets.style.setProperty('display', step === 4 ? 'block' : 'none', 'important'); pAssets.classList.toggle('hidden', step !== 4); }
+
+      window.scrollTo({ top: 0, behavior: 'smooth' });
+    }
+
+    function goToStep(step) {
+      updateStepBadges(step);
     }
 
     function goBackToInput() {
-      updateStepBadges(1);
+      updateStepBadges(2);
     }
 
     function goBackToDraft() {
-      updateStepBadges(2);
+      updateStepBadges(3);
     }
 
     function startNewPost() {
@@ -1366,7 +1384,7 @@
       const banner = $('selected-plan-banner');
       if (banner) banner.classList.add('hidden');
 
-      // 3. 1단계 입력 화면으로 전환
+      // 3. 1단계 캘린더 화면으로 전환
       updateStepBadges(1);
 
       // 4. 시트 최신 플랜 재로드하여 캘린더 동기화
@@ -1537,7 +1555,7 @@
       errorDiv.classList.add('hidden');
       imageAssets = []; // 새 초안 생성 시 기존 에셋 캐시 초기화
       updateCategoryAndDateBadges();
-      updateStepBadges(2);
+      updateStepBadges(3);
 
       const rendered = $('rendered-markdown');
       const btnGen = $('btn-generate');
