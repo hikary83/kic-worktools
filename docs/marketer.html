@@ -740,6 +740,19 @@
       renderCalendar();
     }
 
+    // 🔍 상태값 정규화 (영문 O/o, 숫자 0, 한글 완료, 특수문자 ○ 등 모두 호환)
+    function normalizePlanStatus(val) {
+      if (!val) return '';
+      const s = String(val).trim();
+      if (['○', 'O', 'o', '0', '완료', 'done', 'v', 'V', 'y', 'Y'].includes(s) || s.includes('완료') || s === '○' || s.toUpperCase() === 'O') {
+        return '○';
+      }
+      if (['△', '▲', '예약', 'reserve'].includes(s) || s.includes('예약')) {
+        return '△';
+      }
+      return s;
+    }
+
     // 📅 캘린더 렌더링 엔진
     function renderCalendar() {
       // 드롭다운 값 동기화
@@ -783,7 +796,7 @@
       let pendingCount = 0;
 
       monthPlans.forEach(p => {
-        const st = p.status;
+        const st = normalizePlanStatus(p.status);
         if (st === '○') doneCount++;
         else if (st === '△') reservedCount++;
         else pendingCount++;
@@ -853,7 +866,7 @@
           const isSelected = selectedPlan && !selectedPlan.isNew && selectedPlan.row === plan.row;
           const planCard = document.createElement('div');
           
-          let effectiveStatus = plan.status;
+          let effectiveStatus = normalizePlanStatus(plan.status);
           let cardStyle = 'bg-blue-50/70 border-blue-200 text-blue-900 hover:bg-blue-100/70';
           let badgeHtml = '<span class="w-2 h-2 rounded-full bg-blue-400 flex-shrink-0" title="작성 예정"></span>';
 
@@ -950,7 +963,8 @@
       currentModalPlan = null;
     }
 
-    function updateModalStatusButtons(status) {
+    function updateModalStatusButtons(rawStatus) {
+      const status = normalizePlanStatus(rawStatus);
       const btnDone = $('modal-btn-status-done');
       const btnReserve = $('modal-btn-status-reserve');
       const btnNone = $('modal-btn-status-none');

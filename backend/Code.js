@@ -1743,6 +1743,18 @@ function migrateBlogPostingSheet() {
   return { success: true, count: newRows.length - 1, message: "성공적으로 '포스팅 일자' 단일 컬럼으로 통합 변환되었습니다!" };
 }
 
+function normalizePlanStatus(val) {
+  if (!val) return '';
+  const s = String(val).trim();
+  if (['○', 'O', 'o', '0', '완료', 'done', 'v', 'V', 'y', 'Y'].includes(s) || s.includes('완료') || s === '○' || s.toUpperCase() === 'O') {
+    return '○';
+  }
+  if (['△', '▲', '예약', 'reserve'].includes(s) || s.includes('예약')) {
+    return '△';
+  }
+  return s;
+}
+
 function getBlogPostPlans() {
   try {
     const sheet = getBlogPostingSheet();
@@ -1785,7 +1797,8 @@ function getBlogPostPlans() {
         const topic = String(row[topicColIdx] || '').trim();
         const keywords = String(row[kwColIdx] || '').trim();
         const note = String(row[noteColIdx] || '').trim();
-        let status = String(row[statusColIdx] || '').trim();
+        let rawStatus = String(row[statusColIdx] || '').trim();
+        const status = normalizePlanStatus(rawStatus);
         const postUrl = urlColIdx < row.length ? String(row[urlColIdx] || '').trim() : '';
 
         if (!topic && !rawDate && !category) continue;
@@ -1822,7 +1835,8 @@ function getBlogPostPlans() {
         const topic = row[5] !== undefined ? String(row[5]).trim() : "";
         const keywords = row[6] !== undefined ? String(row[6]).trim() : "";
         const note = row[7] !== undefined ? String(row[7]).trim() : "";
-        let status = row[8] !== undefined ? String(row[8]).trim() : "";
+        let rawStatus = row[8] !== undefined ? String(row[8]).trim() : "";
+        const status = normalizePlanStatus(rawStatus);
         const postUrl = row[9] !== undefined ? String(row[9]).trim() : "";
 
         if (yearVal) currentYear = yearVal;
