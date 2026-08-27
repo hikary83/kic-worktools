@@ -83,12 +83,11 @@
       border: 1px solid rgba(239, 68, 68, 0.2) !important;
     }
     .app {
-      max-width: 1440px;
-      margin: 0 auto 28px;
-      padding: 0 22px;
-      display: grid;
-      grid-template-columns: 420px 1fr;
-      gap: 20px;
+      max-width: 1600px !important;
+      padding: 24px 32px 32px !important;
+      grid-template-columns: 460px 1fr !important;
+      gap: 24px !important;
+      margin: 0 auto !important;
     }
     .panel {
       background: var(--surface-card) !important;
@@ -97,19 +96,19 @@
       box-shadow: var(--shadow-card) !important;
     }
     .editor {
-      padding: 20px;
-      height: calc(100vh - 140px);
+      padding: 22px !important;
+      height: calc(100vh - 120px) !important;
       overflow: auto;
       position: sticky;
-      top: 20px;
+      top: 84px !important;
     }
     .previewPanel {
-      padding: 20px;
+      padding: 24px !important;
       background: #1C1C1C !important;
       border: 1px solid var(--border-main) !important;
       border-radius: 24px !important;
       overflow: auto;
-      min-height: calc(100vh - 140px);
+      min-height: calc(100vh - 120px) !important;
     }
     .hint {
       background: rgba(16, 163, 127, 0.08) !important;
@@ -252,13 +251,13 @@
     .thumb-board .paper.d{right:36px;bottom:18px;width:56px;height:12px;background:#f3a35d;border-radius:8px}
     .thumb-board .string{position:absolute;left:80px;top:-18px;width:2px;height:30px;background:rgba(255,255,255,.8)}
     .thumb-board .hook{position:absolute;left:61px;top:-18px;width:40px;height:22px;border:5px solid rgba(255,255,255,.75);border-bottom:0;border-left-color:transparent;border-right-color:transparent;border-radius:30px 30px 0 0}
-    @media(max-width:980px){.app{grid-template-columns:1fr}.editor{height:auto;position:static}.previewWrap{transform:scale(.58);transform-origin:top center;height:610px}}
+    @media(max-width:980px){.app{grid-template-columns:1fr!important;padding:16px!important}.editor{height:auto!important;position:static!important}.previewWrap{transform:scale(.58);transform-origin:top center;height:610px}}
   </style>
 
   <link href="css/kic-theme.css" rel="stylesheet" />
   <script src="js/kic-common.js"></script>
 </head>
-<body class="kic-tool-offset">
+<body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] min-h-screen transition-colors duration-200">
 
   <aside class="kic-lnb">
     <div class="kic-lnb-brand">
@@ -282,12 +281,23 @@
     </div>
   </aside>
 
-  <header class="topbar">
-    <div><h1>⏳ 교정 지연 안내</h1><p>일부 품목 교정 지연 안내 팝업 이미지와 썸네일을 생성합니다.</p></div>
-    <div class="btns"><button class="btn gray" id="btnSample">샘플</button><button class="btn blue" id="btnThumbDownload">썸네일 다운로드</button><button class="btn green" id="btnDownload">PNG 다운로드</button></div>
-  </header>
-  <main class="app">
-    <aside class="panel editor">
+  <!-- 📦 메인 콘텐츠 영역 -->
+  <main class="kic-tool-offset">
+    <!-- 상단 헤더 (reply.html 규격 통일) -->
+    <header class="bg-white dark:bg-[#2F2F2F] border-b border-slate-200 dark:border-[#424242] px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40 transition-colors">
+      <div>
+        <h1 class="text-xl font-extrabold text-slate-900 dark:text-[#ECECEC] tracking-tight flex items-center gap-2">⏳ 교정 지연 안내</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1">일부 품목 교정 지연 안내 팝업 이미지와 썸네일을 생성합니다.</p>
+      </div>
+      <div class="flex items-center gap-2.5 flex-wrap">
+        <button id="btnSample" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#262626] text-slate-600 dark:text-[#B4B4B4] text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#383838] transition-all">샘플</button>
+        <button id="btnThumbDownload" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5"><i class="fas fa-image"></i> 썸네일 다운로드</button>
+        <button id="btnDownload" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5"><i class="fas fa-download"></i> PNG 다운로드</button>
+      </div>
+    </header>
+
+    <div class="app">
+      <aside class="panel editor">
       <div class="hint"><b>사용 방법</b><br>빨간 박스로 표시했던 영역만 입력하면 오른쪽 미리보기가 바뀝니다. 긴 문구는 줄바꿈하지 않고 자동으로 글자 크기와 자간을 줄여 맞춥니다.</div>
 
       <div class="section-title">컬러 선택</div>
@@ -349,6 +359,7 @@
         </div>
       </div>
     </section>
+    </div>
   </main>
   <script>
 
