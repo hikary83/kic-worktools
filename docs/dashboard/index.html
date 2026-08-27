@@ -1103,6 +1103,7 @@
       [["Prep",data.prep],["Near",data.near],["Overdue",data.overdue]].forEach(([key,n]) => { $("bar"+key).style.width=`${n/max*100}%`; setText("value"+key,nf.format(n)); });
       setText("calibrationTotal",`관리 대상 ${nf.format(data.prep+data.near+data.overdue)}대`);
       renderCustomerTable(); renderStaffTable(); initializePeriodControls();
+      saveLocalCache(data, basisDate);
     }
 
     function showError(messages) {
@@ -1359,22 +1360,65 @@
       }
     });
 
+    // 💾 IndexedDB 로컬 캐시 매니저 (새로고침 즉시 복원)
+    const DB_NAME = "CWIZ_Dashboard_DB";
+    const DB_VERSION = 1;
+    const STORE_NAME = "latest_data";
+
+    function openDb() {
+      return new Promise((resolve, reject) => {
+        const req = indexedDB.open(DB_NAME, DB_VERSION);
+        req.onupgradeneeded = () => {
+          const db = req.result;
+          if (!db.objectStoreNames.contains(STORE_NAME)) {
+            db.createObjectStore(STORE_NAME);
+          }
+        };
+        req.onsuccess = () => resolve(req.result);
+        req.onerror = () => reject(req.error);
+      });
+    }
+
+    async function saveLocalCache(computedData, basisDate) {
+      try {
+        const db = await openDb();
+        const tx = db.transaction(STORE_NAME, "readwrite");
+        tx.objectStore(STORE_NAME).put({ data: computedData, basisDate, savedAt: new Date().toISOString() }, "current");
+      } catch (e) {
+        console.warn("Local cache save failed:", e);
+      }
+    }
+
+    async function loadLocalCache() {
+      try {
+        const db = await openDb();
+        return new Promise((resolve) => {
+          const tx = db.transaction(STORE_NAME, "readonly");
+          const req = tx.objectStore(STORE_NAME).get("current");
+          req.onsuccess = () => resolve(req.result || null);
+          req.onerror = () => resolve(null);
+        });
+      } catch (e) {
+        return null;
+      }
+    }
+
     async function loadEmbeddedData(showManualNoticeIfMissing = false) {
       let fileMap = {
-        applications: "data/이용신청.xlsx",
-        customers: "data/고객사현황.xlsx",
-        instruments: "data/고객사계측기현황.xlsx",
-        activities: "data/데이터변경이력.xlsx",
-        access: "data/보안접속이력.xlsx"
+        applications: "./data/이용신청.xlsx",
+        customers: "./data/고객사현황.xlsx",
+        instruments: "./data/고객사계측기현황.xlsx",
+        activities: "./data/데이터변경이력.xlsx",
+        access: "./data/보안접속이력.xlsx"
       };
 
       try {
-        const manifestRes = await fetch("data/manifest.json", { cache: "no-cache" });
+        const manifestRes = await fetch(`./data/manifest.json?t=${Date.now()}`, { cache: "no-cache" });
         if (manifestRes.ok) {
           const manifest = await manifestRes.json();
           if (manifest && manifest.files) {
             Object.keys(manifest.files).forEach((key) => {
-              if (manifest.files[key]) fileMap[key] = "data/" + manifest.files[key];
+              if (manifest.files[key]) fileMap[key] = "./data/" + manifest.files[key];
             });
           }
         }
@@ -1391,10 +1435,10 @@
       try {
         for (const role of roles) {
           const path = fileMap[role];
-          const res = await fetch(path, { cache: "no-cache" });
+          const res = await fetch(`${path}?t=${Date.now()}`, { cache: "no-cache" });
           if (!res.ok) continue;
           const blob = await res.blob();
-          const fileName = path.split("/").pop() || `${role}.xlsx`;
+          const fileName = path.split("/").pop().split("?")[0] || `${role}.xlsx`;
           const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           fetchedFiles[role] = file;
           setFile(role, file);
@@ -1407,8 +1451,10 @@
           for (const role of roles) {
             parsed[role] = datasetFromSheets(await parseXlsx(fetchedFiles[role]), schemas[role], fetchedFiles[role].name);
           }
-          render(compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access), basisDate);
-          $("successMessage").textContent = `저장소(data/)에 보관된 최신 주간 데이터(${basisDate} 기준)를 자동으로 불러왔습니다.`;
+          const computed = compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access);
+          render(computed, basisDate);
+          saveLocalCache(computed, basisDate);
+          $("successMessage").textContent = `저장소(data/)에 보관된 최신 주간 데이터(${basisDate} 기준)를 성공적으로 불러왔습니다.`;
           $("successNotice").classList.add("show");
           $("uploadPanel").classList.add("collapsed");
           $("toggleUpload").textContent = "파일 수동 업로드";
@@ -1440,7 +1486,20 @@
     const reloadBtn = $("reloadEmbeddedBtn");
     if (reloadBtn) reloadBtn.addEventListener("click", () => loadEmbeddedData(true));
     setupStatInfo();
-    loadEmbeddedData(false);
+
+    async function initDashboard() {
+      // 1. 로컬 캐시에서 먼저 복원 (0.01초 만에 화면 표시!)
+      const cached = await loadLocalCache();
+      if (cached && cached.data && cached.basisDate) {
+        render(cached.data, cached.basisDate);
+        $("uploadPanel").classList.add("collapsed");
+        $("toggleUpload").textContent = "파일 수동 업로드";
+      }
+      // 2. 백그라운드에서 저장소(data/) 최신 파일 동기화
+      loadEmbeddedData(false);
+    }
+
+    initDashboard();
   })();
   </script>
 </body>
