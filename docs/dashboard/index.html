@@ -90,7 +90,7 @@
     .tabs-shell{margin-bottom:18px}.tab-nav{display:flex;align-items:center;gap:6px;background:#eaf1ed;border:1px solid #dce7e1;border-radius:14px;padding:5px;margin-bottom:14px;position:sticky;top:82px;z-index:20;box-shadow:0 4px 14px rgba(18,60,41,.06)}.tab-btn{flex:1;border:0;background:transparent;border-radius:10px;padding:11px 14px;color:#66746c;font-size:12px;font-weight:850;display:flex;justify-content:center;align-items:center;gap:7px}.tab-btn svg{width:15px;height:15px}.tab-btn.active{background:#fff;color:var(--green-800);box-shadow:0 3px 10px rgba(18,60,41,.09)}.tab-panel[hidden]{display:none}.tab-panel{animation:tabIn .18s ease}@keyframes tabIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:none}}
     .scope-badge{display:inline-flex;align-items:center;border-radius:99px;padding:3px 6px;font-size:8.5px;font-weight:850;letter-spacing:-.01em}.scope-badge.period{background:#e8f2ff;color:#2f64b5}.scope-badge.snapshot{background:var(--green-100);color:var(--green-800)}.scope-badge.source{background:#f0ebff;color:#6e4ead}
     .kpi-titleblock{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.kpi-label{display:flex;align-items:center;gap:4px}
-    .stat-info{width:16px;height:16px;border:1px solid #c9d7d0;border-radius:50%;background:#fff;color:#6d7c74;font:800 10px/1 Arial;display:inline-grid;place-items:center;padding:0;position:relative;vertical-align:middle;z-index:5}.stat-info:hover,.stat-info:focus{border-color:var(--green-500);color:var(--green-700);outline:0}.stat-info::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:230px;padding:8px 10px;border-radius:8px;background:#19342a;color:#fff;font:500 10px/1.45 Pretendard,"Malgun Gothic",sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);opacity:0;visibility:hidden;pointer-events:none;transition:.15s;white-space:normal;text-align:left;letter-spacing:-.01em}.stat-info::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:#19342a;opacity:0;visibility:hidden}.stat-info:hover::after,.stat-info:focus::after,.stat-info:hover::before,.stat-info:focus::before{opacity:1;visibility:visible}
+    .stat-info{width:16px;height:16px;border:1px solid #c9d7d0;border-radius:50%;background:#fff;color:#6d7c74;font:800 10px/1 Arial;display:inline-grid;place-items:center;padding:0;position:relative;vertical-align:middle;z-index:5}.stat-info:hover,.stat-info:focus{border-color:var(--green-500);color:var(--green-700);outline:0}.floating-tooltip{position:fixed;z-index:90;width:230px;padding:8px 10px;border-radius:8px;background:#19342a;color:#fff;font:500 10px/1.45 Pretendard,"Malgun Gothic",sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.2);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease,visibility .12s ease;white-space:normal;text-align:left;letter-spacing:-.01em}.floating-tooltip.show{opacity:1;visibility:visible}.floating-tooltip::after{content:"";position:absolute;left:var(--arrow-left,50%);transform:translateX(-50%);border:5px solid transparent}.floating-tooltip.above::after{top:100%;border-top-color:#19342a}.floating-tooltip.below::after{bottom:100%;border-bottom-color:#19342a}
 
     .period-summary-grid,.usage-summary,.security-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:15px}.mini-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:0 4px 14px rgba(18,60,41,.045)}.mini-kpi-top{display:flex;align-items:center;justify-content:space-between;color:#66736c;font-size:10.5px;font-weight:750}.mini-kpi b{display:inline-block;margin-top:9px;font-size:24px;letter-spacing:-.04em}.mini-kpi small{font-size:10px;color:#7e8b84;margin-left:2px}.mini-kpi.danger b{color:var(--red)}
 
@@ -1000,12 +1000,26 @@
     }
     function closeCriteriaModal() { $("criteriaModal").hidden=true; document.body.style.overflow=""; }
     function setupStatInfo() {
+      const tooltip=document.createElement("div"); tooltip.id="floatingStatTooltip"; tooltip.className="floating-tooltip above"; tooltip.setAttribute("role","tooltip"); document.body.appendChild(tooltip);
+      const hideTooltip=() => { tooltip.classList.remove("show"); tooltip.setAttribute("aria-hidden","true"); };
+      const showTooltip=(button) => {
+        tooltip.textContent=button.dataset.tooltip || ""; tooltip.classList.add("show"); tooltip.setAttribute("aria-hidden","false");
+        const rect=button.getBoundingClientRect(), tip=tooltip.getBoundingClientRect(), margin=12;
+        const left=Math.min(window.innerWidth-tip.width-margin,Math.max(margin,rect.left+rect.width/2-tip.width/2));
+        const aboveTop=rect.top-tip.height-10, placeBelow=aboveTop < margin;
+        tooltip.style.left=`${left}px`; tooltip.style.top=`${placeBelow ? rect.bottom+10 : aboveTop}px`;
+        tooltip.style.setProperty("--arrow-left",`${Math.max(12,Math.min(tip.width-12,rect.left+rect.width/2-left))}px`);
+        tooltip.classList.toggle("above",!placeBelow); tooltip.classList.toggle("below",placeBelow);
+      };
       document.querySelectorAll("[data-stat]").forEach((element) => {
         const key=element.dataset.stat, item=metricDefinitions[key];
         if (!item || element.querySelector(".stat-info")) return;
-        const button=document.createElement("button"); button.type="button"; button.className="stat-info"; button.textContent="i"; button.dataset.tooltip=item.short; button.title=item.short; button.setAttribute("aria-label",`${item.label} 통계 기준 보기`);
-        button.addEventListener("click",(event) => {event.preventDefault();event.stopPropagation();openCriteriaModal(key)}); element.appendChild(button);
+        const button=document.createElement("button"); button.type="button"; button.className="stat-info"; button.textContent="i"; button.dataset.tooltip=item.short; button.setAttribute("aria-label",`${item.label} 통계 기준 보기`); button.setAttribute("aria-describedby",tooltip.id);
+        button.addEventListener("mouseenter",() => showTooltip(button)); button.addEventListener("mouseleave",hideTooltip); button.addEventListener("focus",() => showTooltip(button)); button.addEventListener("blur",hideTooltip);
+        button.addEventListener("keydown",(event) => { if (event.key === "Escape") hideTooltip(); });
+        button.addEventListener("click",(event) => {event.preventDefault();event.stopPropagation();hideTooltip();openCriteriaModal(key)}); element.appendChild(button);
       });
+      window.addEventListener("scroll",hideTooltip,true); window.addEventListener("resize",hideTooltip);
     }
     function activateTab(name) {
       document.querySelectorAll("[data-tab]").forEach((button) => { const active=button.dataset.tab === name; button.classList.toggle("active",active); button.setAttribute("aria-selected",String(active)); });
