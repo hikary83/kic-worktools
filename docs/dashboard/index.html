@@ -234,8 +234,11 @@
 
       <section class="upload-panel" id="uploadPanel">
         <div class="upload-head">
-          <div class="upload-title"><span class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v5h16v-5"/></svg></span><div><strong>주간 Excel 데이터 적용</strong><span>동일 기준일의 5개 파일을 선택해 주세요.</span></div></div>
-          <button class="link-btn" id="toggleUpload" type="button">접기</button>
+          <div class="upload-title"><span class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v5h16v-5"/></svg></span><div><strong>주간 Excel 데이터 관리</strong><span>새 파일을 드래그하여 업로드하거나 덮어쓸 수 있습니다.</span></div></div>
+          <div style="display:flex;align-items:center;gap:6px">
+            <button class="link-btn" id="resetFilesBtn" type="button" title="선택된 5개 파일을 비우고 새로 선택할 수 있게 초기화합니다.">파일 초기화</button>
+            <button class="link-btn" id="toggleUpload" type="button">접기</button>
+          </div>
         </div>
         <div class="upload-body">
           <div class="file-grid">
@@ -1271,10 +1274,8 @@
         await commitFileToGitHub(`${GH_DATA_PATH}/manifest.json`, manifestBase64, `data: update manifest.json for ${basisDate}`, token);
 
         closeDeployConfirmModal();
-        $("successMessage").textContent = `🎉 ${basisDate} 기준 5개 엑셀 파일이 GitHub 저장소에 성공적으로 전사 배포되었습니다! (약 1~2분 후 GitHub Pages에 반영되어 모든 직원이 열람할 수 있습니다.)`;
+        $("successMessage").textContent = `🎉 ${basisDate} 기준 5개 엑셀 파일이 GitHub 저장소(data/)에 성공적으로 저장(Save)되었습니다! (약 1~2분 후 GitHub Pages에 반영되어 모든 직원이 열람할 수 있습니다.)`;
         $("successNotice").classList.add("show");
-        $("uploadPanel").classList.add("collapsed");
-        $("toggleUpload").textContent = "다시 불러오기";
 
         // 로컬 뷰도 렌더링
         const parsed = {};
@@ -1290,6 +1291,36 @@
         alert("배포 중 오류가 발생했습니다: " + (err.message || err));
       }
     });
+
+    const defaultSlotLabels = {
+      applications: "이용신청_YYYY-MM-DD.xlsx",
+      customers: "고객사현황_YYYY-MM-DD.xlsx",
+      instruments: "고객사계측기현황_YYYY-MM-DD.xlsx",
+      activities: "데이터변경이력_YYYY-MM-DD.xlsx",
+      access: "보안접속이력_YYYY-MM-DD.xlsx"
+    };
+
+    function resetSelectedFiles() {
+      Object.keys(selectedFiles).forEach((role) => {
+        selectedFiles[role] = null;
+        const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
+        if (slot) {
+          slot.classList.remove("ready");
+          const nameEl = slot.querySelector(".file-name");
+          if (nameEl) nameEl.textContent = defaultSlotLabels[role] || `${role}.xlsx`;
+          const dateEl = slot.querySelector(".file-date");
+          if (dateEl) dateEl.textContent = "";
+          const input = slot.querySelector("input");
+          if (input) input.value = "";
+        }
+      });
+      refreshApplyButton();
+      clearNotices();
+    }
+
+    const resetFilesBtn = $("resetFilesBtn");
+    if (resetFilesBtn) resetFilesBtn.addEventListener("click", resetSelectedFiles);
+
     function setFile(role,file) {
       if (!file) return;
       const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
@@ -1300,6 +1331,7 @@
 
     document.querySelectorAll(".file-slot").forEach((slot) => {
       const role = slot.dataset.role, input = slot.querySelector("input");
+      input.addEventListener("click", () => { input.value = ""; });
       input.addEventListener("change",() => setFile(role,input.files[0]));
       ["dragenter","dragover"].forEach((type) => slot.addEventListener(type,(e) => {e.preventDefault();slot.classList.add("dragover")}));
       ["dragleave","drop"].forEach((type) => slot.addEventListener(type,(e) => {e.preventDefault();slot.classList.remove("dragover")}));
