@@ -1503,8 +1503,6 @@
         const hiddenToggleHtml = item.status === '반려'
           ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="text-[10px] ${isHiddenRejected ? 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100'} px-2 py-0.5 rounded-md font-bold" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>${isHiddenRejected ? '숨김 해제' : '숨김'}</button>`
           : '';
-        const devInitial = (item.dev && item.dev.length > 0) ? item.dev.charAt(0) : '?';
-
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2 mb-2">
             <div class="min-w-0">
@@ -1521,10 +1519,7 @@
             ${sourceLinkHtml}${jiraLinkHtml}
           </div>
           <div class="flex justify-between items-center pt-2.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-            <div class="flex items-center gap-1.5">
-              <div class="w-5 h-5 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[9px] flex items-center justify-center border border-slate-200 dark:border-slate-700 font-mono">${escapeHtml(devInitial)}</div>
-              <span class="font-bold text-slate-700 dark:text-slate-300 text-xs">${escapeHtml(item.dev || '미배정')}</span>
-            </div>
+            <span class="font-bold text-slate-700 dark:text-slate-300 text-xs">${escapeHtml(item.dev || '미배정')}</span>
             <div class="flex items-center gap-1">${hiddenToggleHtml}<span class="text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md text-[10px] font-bold">${escapeHtml(item.status || '접수대기')}</span></div>
           </div>
         `;
@@ -1727,8 +1722,6 @@
           : '';
         const jiraLinkHtml = getJiraBadgeHtml(item, safeJiraLink);
         const linkHtml = [typeBadgeHtml, sourceLinkHtml, jiraLinkHtml].filter(Boolean).join('');
-        const devInitial = (item.dev && item.dev.length > 0) ? item.dev.charAt(0) : '?';
-
         div.innerHTML = `
             <button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 dark:bg-[#1A2234] hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-sky-400 rounded-xl transition-all z-10 shadow-sm" title="상태 수정">
                 <i class="fas fa-pen text-[10px]"></i>
@@ -1742,10 +1735,7 @@
                 <div class="mt-2.5 flex flex-wrap items-center gap-1.5 min-h-[18px]">${linkHtml}</div>
             </div>
             <div class='flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs'>
-                <div class="flex items-center gap-2">
-                  <div class="w-6 h-6 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 font-bold text-[10px] flex items-center justify-center border border-slate-200 dark:border-slate-700 font-mono">${escapeHtml(devInitial)}</div>
-                  <span class='font-bold text-slate-700 dark:text-slate-300'>${escapeHtml(item.dev || '미배정')}</span>
-                </div>
+                <span class='font-bold text-slate-700 dark:text-slate-300 text-xs'>${escapeHtml(item.dev || '미배정')}</span>
                 <span class='px-2.5 py-0.5 rounded-md text-[11px] font-bold ${getStatusStyles(item.status)}'>${escapeHtml(item.status)}</span>
             </div>
         `;
