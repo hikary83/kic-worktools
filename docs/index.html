@@ -35,7 +35,7 @@
   <script src="js/config.js"></script>
   <script src="js/kic-common.js"></script>
 </head>
-<body class="relative bg-[#F7F9FB] dark:bg-[#0B1326] text-slate-900 dark:text-slate-100 transition-colors duration-200">
+<body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
 
   <aside class="kic-lnb">
     <div class="kic-lnb-brand">
@@ -98,8 +98,8 @@
       </div>
 
       <!-- 상단 컨트롤 캡슐 바 -->
-      <div class="bg-white dark:bg-[#131B2E] p-2 rounded-2xl border border-slate-200/90 dark:border-[#222A3D] shadow-sm flex flex-wrap items-center gap-2 transition-colors">
-        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-[#1A2234] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
+      <div class="bg-white dark:bg-[#2F2F2F] p-2 rounded-2xl border border-slate-200/90 dark:border-[#424242] shadow-sm flex flex-wrap items-center gap-2 transition-colors">
+        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-[#262626] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
           <i class="far fa-calendar-alt text-slate-400 dark:text-slate-500 text-xs"></i>
           <input type="date" id="startDate" class="bg-transparent border-0 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 cursor-pointer p-0">
           <span class="text-slate-300 dark:text-slate-600 text-xs font-bold">~</span>
@@ -109,7 +109,7 @@
         <button onclick="resetFilter()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors">전체조회</button>
         
         <div class="flex items-center gap-1.5 border-l border-slate-100 dark:border-slate-800 pl-2 ml-auto">
-          <button onclick="openSettingsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-[#1A2234] text-slate-500 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog"></i></button>
+          <button onclick="openSettingsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-[#262626] text-slate-500 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog"></i></button>
           <button onclick="openAddModal()" class="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-sky-950/60 text-blue-600 dark:text-sky-400 border border-blue-100 dark:border-sky-800/60 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white transition-colors shadow-sm" title="새 이슈 등록"><i class="fas fa-plus"></i></button>
           <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors shadow-sm" title="구글 시트 열기"><i class="fas fa-file-excel"></i></a>
         </div>
@@ -174,7 +174,7 @@
     </div>
 
     <!-- 3단: 탭 네비게이션 -->
-    <div class="flex border-b border-slate-200 dark:border-[#222A3D] gap-8 px-2">
+    <div class="flex border-b border-slate-200 dark:border-[#424242] gap-8 px-2">
       <!-- 탭 이름 이슈 관리로 일원화 -->
       <button onclick="switchTab('pending')" id="tab-btn-pending" class="pb-3 text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all tab-active"><i class="fas fa-tasks mr-2"></i>이슈 관리</button>
       <button onclick="switchTab('stats')" id="tab-btn-stats" class="pb-3 text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all"><i class="fas fa-chart-pie mr-2"></i>통계 리포트</button>
@@ -193,12 +193,12 @@
       <div id="tab-pending-content" class="space-y-10 animate-in fade-in duration-500">
         
         <!-- 이슈 관리 전용 검색 -->
-        <div class="bg-white dark:bg-[#131B2E] p-4 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm">
+        <div class="bg-white dark:bg-[#2F2F2F] p-4 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm">
           <div class="flex flex-col md:flex-row md:items-center gap-3">
             <div class="relative flex-1">
               <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 text-sm"></i>
               <input type="text" id="globalSearchInput" oninput="handleGlobalSearchInput()"
-                     class="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 focus:border-blue-400"
+                     class="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 focus:border-blue-400"
                      placeholder="이슈 관리 검색: 제목, 요청자, 담당자, 메뉴, 처리내용, 지라링크 등">
               <button id="globalSearchClearBtn" onclick="clearGlobalSearch()"
                       class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full text-slate-300 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
@@ -225,20 +225,20 @@
               <span>✅ 조회 기간 내 이슈 - 완료</span>
               <span class="text-xs bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-done-current">0건</span>
             </h3>
-            <button id="btn-toggle-done" onclick="toggleSection('done-current-container', 'btn-toggle-done')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1A2234] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
+            <button id="btn-toggle-done" onclick="toggleSection('done-current-container', 'btn-toggle-done')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
           </div>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="done-current-container" class="hidden"></div>
         </div>
 
         <!-- 섹션 3: 과거 누적 -->
-        <div class="pt-6 border-t border-slate-200 dark:border-[#222A3D]">
+        <div class="pt-6 border-t border-slate-200 dark:border-[#424242]">
           <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-rose-500 pl-3 mb-4 flex items-center justify-between gap-2">
             <h3 class="flex items-center gap-2">
               <span>⚠️ 이월된 미처리 건</span>
               <span class="text-xs bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-past">0건</span>
             </h3>
-            <button id="btn-toggle-past" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#1A2234] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
+            <button id="btn-toggle-past" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
           </div>
           <!-- 칸반 보드가 렌더링될 컨테이너 -->
           <div id="pending-past-container" class="hidden"></div>
@@ -247,22 +247,22 @@
 
       <!-- 탭 2: 통계 요약 -->
       <div id="tab-stats-content" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pb-10">
-        <div class="bg-white dark:bg-[#131B2E] p-6 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="far fa-building text-blue-500"></i> 지사별 접수 비율</h4><div class="relative h-64 w-full"><canvas id="branchChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#131B2E] p-6 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-desktop text-purple-500"></i> 시스템별 비중</h4><div class="relative h-64 w-full"><canvas id="systemChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#131B2E] p-6 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-user-tag text-emerald-500"></i> 담당자별 처리 현황</h4><div class="relative h-64 w-full"><canvas id="devChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#131B2E] p-6 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-tags text-amber-500"></i> 이슈 유형 분포</h4><div class="relative h-64 w-full"><canvas id="typeChart"></canvas></div></div>
+        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="far fa-building text-blue-500"></i> 지사별 접수 비율</h4><div class="relative h-64 w-full"><canvas id="branchChart"></canvas></div></div>
+        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-desktop text-purple-500"></i> 시스템별 비중</h4><div class="relative h-64 w-full"><canvas id="systemChart"></canvas></div></div>
+        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-user-tag text-emerald-500"></i> 담당자별 처리 현황</h4><div class="relative h-64 w-full"><canvas id="devChart"></canvas></div></div>
+        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-tags text-amber-500"></i> 이슈 유형 분포</h4><div class="relative h-64 w-full"><canvas id="typeChart"></canvas></div></div>
       </div>
 
       <!-- 탭 3: AI 분석 리포트 -->
       <div id="tab-ai-content" class="hidden pb-10 mt-6">
-        <div class="bg-white dark:bg-[#131B2E] p-6 rounded-2xl border border-slate-200 dark:border-[#222A3D] shadow-sm flex flex-col min-h-[600px]">
+        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm flex flex-col min-h-[600px]">
           <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
             <div>
               <h4 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base"><i class="fas fa-magic text-purple-500"></i> Gemini AI 헬프데스크 운영 리포트</h4>
               <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">현재 조회 데이터와 전주 동일 기간을 비교해 보고용 운영 요약과 주요 인사이트를 정리합니다.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <button id="btn-copy-ai" onclick="copyAIReport()" class="hidden bg-white dark:bg-[#1A2234] text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm flex items-center gap-2" title="AI 리포트 복사">
+              <button id="btn-copy-ai" onclick="copyAIReport()" class="hidden bg-white dark:bg-[#262626] text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm flex items-center gap-2" title="AI 리포트 복사">
                 <i class="fas fa-copy"></i> 복사
               </button>
               <button id="btn-generate-ai" onclick="generateAIReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm shadow-purple-500/20 flex items-center gap-2">
@@ -276,7 +276,7 @@
             <p class="text-purple-600 dark:text-purple-400 mt-4 font-bold text-sm animate-pulse">AI가 이슈를 분석 중입니다...</p>
           </div>
 
-          <div id="ai-report-result" class="text-slate-700 dark:text-slate-200 leading-relaxed text-sm bg-slate-50 dark:bg-[#1A2234] p-6 rounded-xl border border-slate-200/80 dark:border-slate-800 flex-1">
+          <div id="ai-report-result" class="text-slate-700 dark:text-slate-200 leading-relaxed text-sm bg-slate-50 dark:bg-[#262626] p-6 rounded-xl border border-slate-200/80 dark:border-slate-800 flex-1">
             <div class="text-center py-20 text-slate-400 dark:text-slate-600">
               <i class="fas fa-chart-line text-5xl mb-4 opacity-30 block"></i>
               상단의 '분석 리포트 자동 생성' 버튼을 클릭하시면 AI 리포트가 생성됩니다.
@@ -284,10 +284,10 @@
           </div>
 
           <!-- 대화형 AI 채팅 섹션 -->
-          <div id="ai-chat-section" class="hidden mt-6 flex-col border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-[#131B2E] shadow-sm">
-            <div id="ai-chat-history" class="p-6 h-72 overflow-y-auto space-y-5 bg-slate-50 dark:bg-[#1A2234] border-b border-slate-200 dark:border-slate-700 scroll-smooth"></div>
-            <div class="p-3 bg-white dark:bg-[#131B2E] flex gap-2 items-center">
-                <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-[#1A2234] border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white dark:focus:bg-[#1A2234] transition-all text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="리포트 내용에 대해 추가로 지시하거나 질문해보세요...">
+          <div id="ai-chat-section" class="hidden mt-6 flex-col border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-[#2F2F2F] shadow-sm">
+            <div id="ai-chat-history" class="p-6 h-72 overflow-y-auto space-y-5 bg-slate-50 dark:bg-[#262626] border-b border-slate-200 dark:border-slate-700 scroll-smooth"></div>
+            <div class="p-3 bg-white dark:bg-[#2F2F2F] flex gap-2 items-center">
+                <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white dark:focus:bg-[#1A2234] transition-all text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="리포트 내용에 대해 추가로 지시하거나 질문해보세요...">
                 <button onclick="sendChatMessage()" id="btn-send-chat" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-bold text-sm shadow-sm flex items-center gap-2 whitespace-nowrap">
                     <i class="fas fa-paper-plane"></i> 전송
                 </button>
@@ -300,7 +300,7 @@
 
   <!-- [모달] 시스템 설정 (담당 개발자 관리) -->
   <div id="settingsModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-[#222A3D] rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col m-4 transform scale-95 transition-transform duration-300" id="settingsModalContent">
+    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col m-4 transform scale-95 transition-transform duration-300" id="settingsModalContent">
       <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center bg-slate-50 dark:bg-[#171F33] rounded-t-3xl">
         <h2 class="text-base font-extrabold text-slate-800 dark:text-white flex items-center gap-2"><i class="fas fa-cog text-slate-500"></i> 시스템 설정 (담당 개발자 관리)</h2>
         <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"><i class="fas fa-times"></i></button>
@@ -330,8 +330,8 @@
 
   <!-- [모달] 이슈 등록 -->
   <div id="addModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-[#222A3D] rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar m-4 transform scale-95 transition-transform duration-300" id="addModalContent">
-      <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#131B2E] z-10">
+    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar m-4 transform scale-95 transition-transform duration-300" id="addModalContent">
+      <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#2F2F2F] z-10">
         <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-plus-circle text-blue-600 dark:text-sky-400"></i> 새 이슈 등록 (이관)</h2>
         <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
       </div>
@@ -343,10 +343,10 @@
               <div class="flex items-center gap-2 text-sm font-extrabold text-blue-900 dark:text-sky-300"><i class="fas fa-camera"></i> 게시판 캡처 자동 이관</div>
               <p class="mt-1 text-xs text-blue-700 dark:text-sky-400 leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. (💡 상단 <b>브라우저 주소창(URL)까지 함께 캡처</b>하시면 원문 링크까지 자동으로 채워집니다!)</p>
             </div>
-            <span class="shrink-0 text-[11px] font-bold text-blue-700 dark:text-sky-300 bg-white dark:bg-[#131B2E] border border-blue-200 dark:border-sky-800 rounded-full px-2.5 py-1">최대 3장</span>
+            <span class="shrink-0 text-[11px] font-bold text-blue-700 dark:text-sky-300 bg-white dark:bg-[#2F2F2F] border border-blue-200 dark:border-sky-800 rounded-full px-2.5 py-1">최대 3장</span>
           </div>
 
-          <div id="add-capture-zone" tabindex="0" class="min-h-[112px] rounded-xl border-2 border-dashed border-blue-300 dark:border-sky-700 bg-white dark:bg-[#1A2234] flex items-center justify-center p-3 outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-sky-900/40 transition-all">
+          <div id="add-capture-zone" tabindex="0" class="min-h-[112px] rounded-xl border-2 border-dashed border-blue-300 dark:border-sky-700 bg-white dark:bg-[#262626] flex items-center justify-center p-3 outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-sky-900/40 transition-all">
             <div id="add-capture-empty" class="text-center text-slate-400 dark:text-slate-500 py-3">
               <i class="fas fa-paste text-2xl text-blue-400 dark:text-sky-400 mb-2"></i>
               <div class="text-sm font-bold text-slate-600 dark:text-slate-300">여기를 클릭한 뒤 Ctrl+V</div>
@@ -357,31 +357,31 @@
 
           <input id="add-capture-input" type="file" accept="image/*" multiple class="hidden">
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" onclick="document.getElementById('add-capture-input').click()" class="px-3 py-2 rounded-lg bg-white dark:bg-[#1A2234] border border-blue-200 dark:border-sky-800 text-blue-700 dark:text-sky-300 text-xs font-bold hover:bg-blue-50 dark:hover:bg-sky-900/40"><i class="fas fa-image mr-1"></i>이미지 선택</button>
+            <button type="button" onclick="document.getElementById('add-capture-input').click()" class="px-3 py-2 rounded-lg bg-white dark:bg-[#262626] border border-blue-200 dark:border-sky-800 text-blue-700 dark:text-sky-300 text-xs font-bold hover:bg-blue-50 dark:hover:bg-sky-900/40"><i class="fas fa-image mr-1"></i>이미지 선택</button>
             <button type="button" id="add-capture-analyze-btn" onclick="analyzeAddCapture(false)" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 text-white text-xs font-bold disabled:opacity-50 shadow-sm"><i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력</button>
             <button type="button" onclick="clearAddCaptureImages()" class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-200">캡처 초기화</button>
             <span id="add-capture-status" class="text-xs font-bold text-slate-500 ml-1"></span>
           </div>
           <div id="add-capture-warning" class="hidden mt-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2"></div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 dark:bg-[#1A2234] p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">접수 일자 (지정) <span class="text-red-500">*</span></label><input type="date" id="add-date" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100 cursor-pointer"></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지사 <span class="text-red-500">*</span></label><select id="add-branch" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">요청자</label><input type="text" id="add-requester" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="add-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
+        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 dark:bg-[#262626] p-4 rounded-xl border border-slate-200 dark:border-slate-700">
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">접수 일자 (지정) <span class="text-red-500">*</span></label><input type="date" id="add-date" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지사 <span class="text-red-500">*</span></label><select id="add-branch" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">요청자</label><input type="text" id="add-requester" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="add-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">시스템 구분</label><select id="add-system" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="CMS">CMS</option><option value="CWIZ">CWIZ</option><option value="인프라">인프라</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">유형</label><select id="add-type" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="오류">오류</option><option value="데이터 수정">데이터 수정</option><option value="단순 문의">단순 문의</option><option value="기능 개선">기능 개선</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">긴급도</label><select id="add-priority" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="낮음">낮음</option><option value="보통" selected>보통</option><option value="높음">높음</option><option value="긴급">긴급</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">시스템 구분</label><select id="add-system" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="CMS">CMS</option><option value="CWIZ">CWIZ</option><option value="인프라">인프라</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">유형</label><select id="add-type" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="오류">오류</option><option value="데이터 수정">데이터 수정</option><option value="단순 문의">단순 문의</option><option value="기능 개선">기능 개선</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">긴급도</label><select id="add-priority" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="낮음">낮음</option><option value="보통" selected>보통</option><option value="높음">높음</option><option value="긴급">긴급</option></select></div>
         </div>
         <input type="hidden" id="add-menu" value="">
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="add-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지라 링크</label><input type="url" id="add-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">제목 <span class="text-red-500">*</span></label><input type="text" id="add-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상세 내용 <span class="text-red-500">*</span></label><textarea id="add-details" rows="4" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"></textarea></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="add-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지라 링크</label><input type="url" id="add-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL"></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">제목 <span class="text-red-500">*</span></label><input type="text" id="add-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상세 내용 <span class="text-red-500">*</span></label><textarea id="add-details" rows="4" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></textarea></div>
       </div>
-      <div class="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#131B2E] rounded-b-3xl">
+      <div class="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#2F2F2F] rounded-b-3xl">
         <button onclick="closeAddModal()" class="px-5 py-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-sm">취소</button>
         <button onclick="submitAddForm()" class="px-6 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm shadow-sm">이슈 등록 (이관)</button>
       </div>
@@ -390,28 +390,28 @@
 
   <!-- [모달] 현황 업데이트 -->
   <div id="editModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#131B2E] border border-slate-200 dark:border-[#222A3D] rounded-3xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
-      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#131B2E] z-10 rounded-t-3xl">
+    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
+      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#2F2F2F] z-10 rounded-t-3xl">
         <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-edit text-emerald-500"></i> 현황 업데이트</h2>
         <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
       </div>
       <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar">
-        <div class="bg-slate-50 dark:bg-[#1A2234] p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+        <div class="bg-slate-50 dark:bg-[#262626] p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#131B2E] px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono" id="edit-id-display"></span>
+                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#2F2F2F] px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono" id="edit-id-display"></span>
                 <div class="flex items-center gap-2">
                     <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium" id="edit-meta-display"></span>
                     <span class="text-[10px] text-blue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-sky-950/60 px-2 py-0.5 rounded" id="edit-menu-display"></span>
                 </div>
             </div>
-            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">제목 수정</label><input type="text" id="edit-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"></div>
-            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">상세 내용 수정</label><textarea id="edit-details" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-[#131B2E] resize-none"></textarea></div>
+            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">제목 수정</label><input type="text" id="edit-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
+            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">상세 내용 수정</label><textarea id="edit-details" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-[#2F2F2F] resize-none"></textarea></div>
         </div>
         <input type="hidden" id="edit-id">
         <input type="hidden" id="edit-source-type" value="helpdesk">
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="edit-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상태</label><select id="edit-status" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"><option value="접수대기">접수대기</option><option value="검토중" class="text-purple-600">검토중</option><option value="예정" class="text-blue-600">예정</option><option value="처리중">처리중</option><option value="완료" class="text-green-600">완료</option><option value="반려" class="text-red-600">반려</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="edit-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상태</label><select id="edit-status" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="접수대기">접수대기</option><option value="검토중" class="text-purple-600">검토중</option><option value="예정" class="text-blue-600">예정</option><option value="처리중">처리중</option><option value="완료" class="text-green-600">완료</option><option value="반려" class="text-red-600">반려</option></select></div>
         </div>
         <div>
           <div class="flex items-center justify-between gap-3 mb-1">
@@ -420,7 +420,7 @@
               <i class="fas fa-wand-magic-sparkles"></i><span>AI 답변</span>
             </button>
           </div>
-          <textarea id="edit-action" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100" placeholder="확인 결과, 처리 내용, 개선 방향 등 실제 답변의 핵심 내용을 간단히 입력하세요."></textarea>
+          <textarea id="edit-action" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="확인 결과, 처리 내용, 개선 방향 등 실제 답변의 핵심 내용을 간단히 입력하세요."></textarea>
           <p class="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">※ 입력한 처리 내용을 답변 초안으로 사용하며, 별도 답변 메뉴와 동일한 AI 답변 로직을 사용합니다.</p>
         </div>
         <div id="edit-ai-reply-panel" class="hidden rounded-2xl border border-violet-200 dark:border-violet-800 bg-violet-50/40 dark:bg-violet-950/30 p-3.5 space-y-2">
@@ -430,14 +430,14 @@
               <div id="edit-ai-reply-status" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.</div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#1A2234] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
+              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#262626] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
               <button type="button" onclick="copyEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold shadow-sm"><i class="fas fa-copy mr-1"></i>복사</button>
             </div>
           </div>
-          <textarea id="edit-ai-reply-result" rows="8" class="w-full border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2 text-sm leading-relaxed bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100 resize-y" placeholder="AI 답변이 여기에 생성됩니다."></textarea>
+          <textarea id="edit-ai-reply-result" rows="8" class="w-full border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2 text-sm leading-relaxed bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 resize-y" placeholder="AI 답변이 여기에 생성됩니다."></textarea>
         </div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">비고 (내부 메모)</label><input type="text" id="edit-remark" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="edit-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">비고 (내부 메모)</label><input type="text" id="edit-remark" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
+        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="edit-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
         <div>
           <div class="flex items-center justify-between gap-3 mb-1">
             <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">지라 링크</label>
@@ -447,10 +447,10 @@
               <span>Jira 일감 연동 완료</span>
             </label>
           </div>
-          <input type="url" id="edit-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#131B2E] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL">
+          <input type="url" id="edit-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL">
         </div>
       </div>
-      <div class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#131B2E] rounded-b-3xl">
+      <div class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#2F2F2F] rounded-b-3xl">
         <button onclick="closeEditModal()" class="px-5 py-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-sm">취소</button>
         <button onclick="submitEditForm()" class="px-6 py-2 text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold text-sm shadow-sm">저장하기</button>
       </div>

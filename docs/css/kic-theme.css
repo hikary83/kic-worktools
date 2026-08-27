@@ -1,31 +1,32 @@
 /* ==============================================================
-   KIC 업무 도구 통합 디자인 시스템 (Kinetic Enterprise & Dark)
-   - Fonts: Inter (UI/Headings) + JetBrains Mono (Metadata/Tags)
-   - Themes: ☀️ Light (Kinetic Enterprise) & 🌙 Dark (Kinetic Dark)
+   KIC 업무 도구 통합 디자인 시스템 (ChatGPT Midnight Charcoal & Pretendard)
+   - Fonts: Pretendard (UI/Headings) + JetBrains Mono (Metadata/Tags)
+   - Themes: ☀️ Light (Clean Neutral) & 🌙 Dark (ChatGPT Midnight Charcoal)
    ============================================================== */
 
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
+@import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+@import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@500;600;700&family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200&display=swap');
 
 :root {
-  /* ☀️ Kinetic Enterprise (Light Mode Tokens) */
-  --bg-app: #F7F9FB;
+  /* ☀️ Clean Neutral (Light Mode Tokens) */
+  --bg-app: #F7F7F8;
   --surface-card: #FFFFFF;
-  --surface-card-subtle: #F8FAFC;
+  --surface-card-subtle: #F9F9FA;
   --surface-elevated: #FFFFFF;
-  --surface-hover: #F1F5F9;
+  --surface-hover: #F0F0F1;
   
-  --text-primary: #0F172A;
-  --text-secondary: #475569;
-  --text-muted: #94A3B8;
+  --text-primary: #0D0D0D;
+  --text-secondary: #5D5D5D;
+  --text-muted: #8E8E8E;
   --text-inverse: #FFFFFF;
   
-  --border-main: #E2E8F0;
-  --border-subtle: #EDF2F7;
-  --border-focus: #0058BE;
+  --border-main: #E5E5E5;
+  --border-subtle: #ECECEC;
+  --border-focus: #10A37F;
 
-  --color-primary: #0058BE;
-  --color-primary-hover: #00479E;
-  --color-primary-light: #EFF6FF;
+  --color-primary: #10A37F;
+  --color-primary-hover: #0E8A6C;
+  --color-primary-light: #E6F7F3;
   
   --color-success: #10B981;
   --color-success-light: #ECFDF5;
@@ -33,76 +34,79 @@
   --color-warning-light: #FFFBEB;
   --color-error: #EF4444;
   --color-error-light: #FEF2F2;
-  --color-indigo: #5E6AD2;
+  --color-indigo: #6366F1;
   --color-indigo-light: #EEF2FF;
 
-  --sidebar-bg: #0F172A;
-  --sidebar-text: #E2E8F0;
-  --sidebar-text-muted: #94A3B8;
-  --sidebar-border: rgba(148, 163, 184, 0.18);
-  --sidebar-active-bg: #2563EB;
+  --sidebar-bg: #171717;
+  --sidebar-text: #ECECEC;
+  --sidebar-text-muted: #8E8E8E;
+  --sidebar-border: rgba(255, 255, 255, 0.08);
+  --sidebar-active-bg: #212121;
   --sidebar-active-text: #FFFFFF;
 
-  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
-  --shadow-card: 0 4px 6px -1px rgba(15, 23, 42, 0.05), 0 2px 4px -2px rgba(15, 23, 42, 0.05);
-  --shadow-elevated: 0 20px 25px -5px rgba(15, 23, 42, 0.08), 0 8px 10px -6px rgba(15, 23, 42, 0.08);
-  --glass-backdrop: rgba(15, 23, 42, 0.45);
+  --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.04);
+  --shadow-card: 0 2px 8px -2px rgba(0, 0, 0, 0.06), 0 1px 4px -1px rgba(0, 0, 0, 0.04);
+  --shadow-elevated: 0 20px 25px -5px rgba(0, 0, 0, 0.08), 0 8px 10px -6px rgba(0, 0, 0, 0.06);
+  --glass-backdrop: rgba(0, 0, 0, 0.45);
 }
 
 html.dark {
-  /* 🌙 Kinetic Dark (Dark Mode Tokens) */
-  --bg-app: #0B1326;
-  --surface-card: #131B2E;
-  --surface-card-subtle: #171F33;
-  --surface-elevated: #1E293B;
-  --surface-hover: #222A3D;
+  /* 🌙 ChatGPT Midnight Charcoal (Dark Mode Tokens) */
+  --bg-app: #212121;
+  --surface-card: #2F2F2F;
+  --surface-card-subtle: #262626;
+  --surface-elevated: #383838;
+  --surface-hover: #383838;
 
-  --text-primary: #F8FAFC;
-  --text-secondary: #CBD5E1;
-  --text-muted: #64748B;
-  --text-inverse: #0F172A;
+  --text-primary: #ECECEC;
+  --text-secondary: #B4B4B4;
+  --text-muted: #8E8E8E;
+  --text-inverse: #212121;
 
-  --border-main: #222A3D;
-  --border-subtle: #1A2234;
-  --border-focus: #38BDF8;
+  --border-main: #424242;
+  --border-subtle: #333333;
+  --border-focus: #10A37F;
 
-  --color-primary: #38BDF8;
-  --color-primary-hover: #0EA5E9;
-  --color-primary-light: rgba(56, 189, 248, 0.12);
+  --color-primary: #10A37F;
+  --color-primary-hover: #1A7F64;
+  --color-primary-light: rgba(16, 163, 127, 0.16);
 
-  --color-success: #34D399;
-  --color-success-light: rgba(52, 211, 153, 0.12);
-  --color-warning: #FBBF24;
-  --color-warning-light: rgba(251, 191, 36, 0.12);
-  --color-error: #F87171;
-  --color-error-light: rgba(248, 113, 113, 0.12);
+  --color-success: #10B981;
+  --color-success-light: rgba(16, 185, 129, 0.16);
+  --color-warning: #F59E0B;
+  --color-warning-light: rgba(245, 158, 11, 0.16);
+  --color-error: #EF4444;
+  --color-error-light: rgba(239, 68, 68, 0.16);
   --color-indigo: #818CF8;
-  --color-indigo-light: rgba(129, 140, 248, 0.12);
+  --color-indigo-light: rgba(129, 140, 248, 0.16);
 
-  --sidebar-bg: #060E20;
-  --sidebar-text: #E2E8F0;
-  --sidebar-text-muted: #64748B;
+  --sidebar-bg: #171717;
+  --sidebar-text: #ECECEC;
+  --sidebar-text-muted: #8E8E8E;
   --sidebar-border: rgba(255, 255, 255, 0.08);
-  --sidebar-active-bg: #2170E4;
+  --sidebar-active-bg: #2F2F2F;
   --sidebar-active-text: #FFFFFF;
 
   --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.4);
-  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.35);
-  --shadow-elevated: 0 20px 30px rgba(0, 0, 0, 0.6);
-  --glass-backdrop: rgba(6, 14, 32, 0.75);
+  --shadow-card: 0 4px 12px rgba(0, 0, 0, 0.28);
+  --shadow-elevated: 0 20px 30px rgba(0, 0, 0, 0.5);
+  --glass-backdrop: rgba(0, 0, 0, 0.7);
 }
 
 /* ==============================================================
-   Base Elements
+   Base Elements (Pretendard Typography)
    ============================================================== */
 body {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Noto Sans KR', 'Malgun Gothic', sans-serif;
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif;
   background-color: var(--bg-app);
   color: var(--text-primary);
   margin: 0;
   padding: 0;
-  transition: background-color 0.25s ease, color 0.25s ease;
-  letter-spacing: -0.01em;
+  line-height: 1.6;
+  letter-spacing: -0.015em;
+  transition: background-color 0.2s ease, color 0.2s ease;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
 .font-mono, .mono-tag {
@@ -503,15 +507,15 @@ body.kic-lnb-collapsed .kic-tool-offset {
 }
 
 #kic-toast.toast-info {
-  background: rgba(15, 23, 42, 0.95);
+  background: rgba(23, 23, 23, 0.95);
   color: #ffffff;
   border: 1px solid rgba(255, 255, 255, 0.15);
 }
 
 html.dark #kic-toast.toast-info {
-  background: rgba(30, 41, 59, 0.95);
-  color: #F8FAFC;
-  border: 1px solid rgba(255, 255, 255, 0.15);
+  background: rgba(47, 47, 47, 0.95);
+  color: #ECECEC;
+  border: 1px solid #424242;
 }
 
 /* ==============================================================
@@ -594,7 +598,7 @@ html.dark #kic-toast.toast-info {
   pointer-events: none;
   transform: translate(-50%, -14px);
   transition: opacity .16s ease, transform .16s ease, background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
-  box-shadow: 0 12px 30px rgba(15,23,42,.18);
+  box-shadow: 0 12px 30px rgba(0, 0, 0, 0.18);
 }
 
 .kanban-floating-done-dropzone.show {
@@ -611,15 +615,15 @@ html.dark #kic-toast.toast-info {
 }
 
 .dark .kanban-floating-done-dropzone {
-  background-color: #131B2E !important;
-  border-color: #059669 !important;
-  color: #34d399 !important;
+  background-color: #2F2F2F !important;
+  border-color: #10A37F !important;
+  color: #10B981 !important;
   box-shadow: 0 14px 34px rgba(0,0,0,.6);
 }
 
 .dark .kanban-floating-done-dropzone.kanban-done-drop-active {
-  background-color: #064e3b !important;
-  border-color: #10b981 !important;
+  background-color: #1E392A !important;
+  border-color: #10A37F !important;
 }
 
 body.kic-lnb-collapsed .kanban-floating-done-dropzone {
