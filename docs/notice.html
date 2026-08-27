@@ -242,12 +242,133 @@
     @media(max-width:1280px){.previewWrap{transform:scale(.68);height:930px}.app{grid-template-columns:470px 1fr}}
     @media(max-width:980px){.app{grid-template-columns:1fr}.editor{position:static;max-height:none}.previewWrap{transform:scale(.55);height:760px}.item-top{grid-template-columns:42px 1fr 68px}.item-top .select{grid-column:2 / span 1}.item-top .input{grid-column:1 / -1}}
 
-    /* KIC 업무 도구 통합 UI 보정 */
-    body{background:#f8fafc!important;color:#1e293b!important;font-family:'Noto Sans KR','Malgun Gothic',Arial,sans-serif!important}
-    .topbar{position:static!important;top:auto!important;background:#fff!important;border:1px solid #e2e8f0!important;border-radius:16px!important;padding:18px 20px!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04)!important;margin:22px auto 20px!important;width:calc(100% - 44px)!important;max-width:1440px!important}
-    .topbar h1{font-size:22px!important;font-weight:900!important;color:#1e293b!important;letter-spacing:-.4px!important}.topbar p{color:#64748b!important;font-weight:700!important}
-    .app{max-width:1500px!important;padding:0 22px 22px!important;grid-template-columns:420px 1fr!important;gap:20px!important}.panel{border:1px solid #e2e8f0!important;border-radius:16px!important;box-shadow:0 4px 6px -1px rgba(0,0,0,.08),0 2px 4px -1px rgba(0,0,0,.04)!important}.editor{top:22px!important}
-    .hint{background:#eff6ff!important;border-color:#bfdbfe!important;color:#1d4ed8!important;border-radius:12px!important}.section-title{color:#1e293b!important;border-bottom-color:#e2e8f0!important}.label{color:#475569!important}.input,.textarea,.select{border-color:#cbd5e1!important;border-radius:10px!important}.btn{border-radius:10px!important;font-size:13px!important}.btn.blue{background:#2563eb!important}.btn.gray{background:#f1f5f9!important;color:#475569!important}.btn.indigo{background:#eef2ff!important;color:#3730a3!important}.design-picker{border-color:#e2e8f0!important;background:#f8fafc!important;border-radius:10px!important}.previewArea{background:#f1f5f9!important;border:1px solid #e2e8f0!important;border-radius:16px!important;min-height:calc(100vh - 120px)!important}.previewHeader{color:#64748b!important}.previewHeader h2{color:#1e293b!important}
+    /* KIC 업무 도구 통합 UI 보정 & ChatGPT 다크모드 대응 */
+    body {
+      background: var(--bg-app) !important;
+      color: var(--text-primary) !important;
+      font-family: 'Pretendard Variable', Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
+    }
+    .topbar {
+      position: static !important;
+      top: auto !important;
+      background: var(--surface-card) !important;
+      border: 1px solid var(--border-main) !important;
+      border-radius: 20px !important;
+      padding: 18px 24px !important;
+      box-shadow: var(--shadow-card) !important;
+      margin: 22px auto 20px !important;
+      width: calc(100% - 44px) !important;
+      max-width: 1480px !important;
+    }
+    .topbar h1 {
+      font-size: 22px !important;
+      font-weight: 800 !important;
+      color: var(--text-primary) !important;
+      letter-spacing: -0.02em !important;
+    }
+    .topbar p {
+      color: var(--text-secondary) !important;
+      font-weight: 500 !important;
+    }
+    .app {
+      max-width: 1520px !important;
+      padding: 0 22px 22px !important;
+      grid-template-columns: 440px 1fr !important;
+      gap: 22px !important;
+    }
+    .panel {
+      background: var(--surface-card) !important;
+      border: 1px solid var(--border-main) !important;
+      border-radius: 24px !important;
+      box-shadow: var(--shadow-card) !important;
+    }
+    .editor {
+      top: 22px !important;
+    }
+    .hint {
+      background: rgba(16, 163, 127, 0.08) !important;
+      border: 1px solid rgba(16, 163, 127, 0.2) !important;
+      color: #10A37F !important;
+      border-radius: 16px !important;
+      font-weight: 500 !important;
+    }
+    html.dark .hint {
+      background: rgba(16, 163, 127, 0.12) !important;
+      border-color: rgba(16, 163, 127, 0.3) !important;
+      color: #34D399 !important;
+    }
+    .section-title {
+      color: var(--text-primary) !important;
+      border-bottom-color: var(--border-subtle) !important;
+    }
+    .label {
+      color: var(--text-secondary) !important;
+    }
+    .input, .textarea, .select {
+      border: 1px solid var(--border-main) !important;
+      border-radius: 14px !important;
+      background: var(--surface-card) !important;
+      color: var(--text-primary) !important;
+    }
+    html.dark .input, html.dark .textarea, html.dark .select {
+      background: #212121 !important;
+      border-color: #424242 !important;
+      color: #ECECEC !important;
+    }
+    .item-box {
+      border: 1px solid var(--border-main) !important;
+      background: var(--surface-card-subtle) !important;
+      border-radius: 16px !important;
+    }
+    html.dark .item-box {
+      background: #262626 !important;
+      border-color: #383838 !important;
+    }
+    .btn {
+      border-radius: 12px !important;
+      font-size: 13px !important;
+      font-weight: 700 !important;
+      transition: all 0.15s ease !important;
+    }
+    .btn.blue {
+      background: #10A37F !important;
+      color: #fff !important;
+    }
+    .btn.blue:hover {
+      background: #0D8C6D !important;
+    }
+    .btn.gray {
+      background: var(--surface-hover) !important;
+      color: var(--text-secondary) !important;
+    }
+    .btn.indigo {
+      background: rgba(99, 102, 241, 0.12) !important;
+      color: #818CF8 !important;
+      border: 1px solid rgba(99, 102, 241, 0.2) !important;
+    }
+    .design-picker {
+      border: 1px solid var(--border-main) !important;
+      background: var(--surface-card-subtle) !important;
+      border-radius: 12px !important;
+    }
+    .design-picker span {
+      color: var(--text-secondary) !important;
+    }
+    .design-picker select {
+      color: var(--text-primary) !important;
+    }
+    .previewArea {
+      background: #1C1C1C !important;
+      border: 1px solid var(--border-main) !important;
+      border-radius: 24px !important;
+      min-height: calc(100vh - 120px) !important;
+    }
+    .previewHeader {
+      color: var(--text-secondary) !important;
+    }
+    .previewHeader h2 {
+      color: var(--text-primary) !important;
+    }
     @media(max-width:980px){.app{grid-template-columns:1fr!important}.editor{position:static!important}.previewWrap{transform:scale(.55)!important;height:760px!important}}
   </style>
 
