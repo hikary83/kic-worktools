@@ -35,9 +35,10 @@
     h1{font-size:25px;line-height:1.15;margin:0 0 7px;font-weight:800;letter-spacing:-.04em}
     .subtitle{color:var(--muted);font-size:13px}
     .meta{display:flex;align-items:center;gap:12px;color:var(--muted)}
-    .meta-item{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);padding:8px 11px;border-radius:10px;box-shadow:0 3px 10px rgba(18,60,41,.04)}
+    .meta-item,.meta-button{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);padding:8px 11px;border-radius:10px;box-shadow:0 3px 10px rgba(18,60,41,.04)}
     .meta-item b{color:var(--ink);font-variant-numeric:tabular-nums}
-    .meta-item svg{width:15px;height:15px;color:var(--green-600)}
+    .meta-item svg,.meta-button svg{width:15px;height:15px;color:var(--green-600)}
+    .meta-button{color:var(--green-800);font-weight:800}.meta-button:hover{background:var(--green-50);border-color:#b8dcc8}
 
     .upload-panel{background:linear-gradient(120deg,#fff,#f4fff8);border:1px solid #cfe9da;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden;transition:.25s ease}
     .upload-head{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e1f0e7}
@@ -48,7 +49,7 @@
     .upload-title span{color:var(--muted);font-size:12px;margin-left:4px}
     .link-btn{border:0;background:transparent;color:var(--green-700);font-weight:700;padding:7px 8px}
     .upload-body{padding:17px 20px 19px}
-    .file-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr)) auto;gap:10px;align-items:stretch}
+    .file-grid{display:grid;grid-template-columns:repeat(5,minmax(0,1fr)) auto;gap:9px;align-items:stretch}
     .file-slot{min-height:78px;border:1px dashed #b9d7c6;border-radius:13px;background:#fff;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;cursor:pointer;transition:.18s}
     .file-slot:hover,.file-slot.dragover{border-color:var(--green-500);background:var(--green-50);transform:translateY(-1px)}
     .file-slot.ready{border-style:solid;border-color:#8bd8af;background:#f7fff9}
@@ -58,7 +59,7 @@
     .file-icon svg{width:20px;height:20px}
     .file-text{min-width:0;flex:1}
     .file-text strong{display:block;font-size:13px;margin-bottom:5px}
-    .file-name{display:block;color:#8a958f;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:225px}
+    .file-name{display:block;color:#8a958f;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:190px}
     .file-slot.ready .file-name{color:var(--green-800);font-weight:700}
     .file-date{position:absolute;right:10px;top:9px;color:var(--green-700);background:var(--green-100);border-radius:7px;padding:3px 6px;font-size:10px;font-weight:800;display:none}
     .file-slot.ready .file-date{display:block}
@@ -78,6 +79,20 @@
     .notice svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
     .notice-title{font-weight:800;margin-bottom:3px}
     .notice ul{margin:4px 0 0;padding-left:18px}
+
+    .period-panel{display:flex;align-items:center;justify-content:space-between;gap:18px;background:#fff;border:1px solid var(--line);border-radius:15px;padding:13px 16px;margin-bottom:14px;box-shadow:0 5px 16px rgba(18,60,41,.05)}
+    .period-copy{display:flex;align-items:center;gap:10px;min-width:230px}.period-copy .period-icon{width:34px;height:34px;border-radius:10px;background:var(--green-100);color:var(--green-700);display:grid;place-items:center}.period-copy svg{width:17px;height:17px}.period-copy strong{display:block;font-size:13px}.period-copy small{display:block;color:#77847d;font-size:10px;margin-top:3px}
+    .period-controls{display:flex;align-items:center;gap:8px;flex:1;justify-content:flex-end}.date-field{display:flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:9px;padding:4px 8px;background:#fbfdfc;color:#77847d;font-size:10px}.date-field input{border:0;outline:0;background:transparent;color:#26332c;font-size:11px;font-weight:750;padding:3px 0}.date-divider{color:#91a098}
+    .query-btn{border:0;border-radius:9px;background:var(--green-700);color:#fff;padding:9px 14px;font-size:11px;font-weight:850}.query-btn:disabled{background:#c6d0cb;cursor:not-allowed}
+    .quick-periods{display:flex;align-items:center;gap:4px;border-left:1px solid var(--line);padding-left:8px}.quick-btn{border:1px solid transparent;background:#f2f6f4;color:#68766e;border-radius:8px;padding:7px 8px;font-size:10px;font-weight:800}.quick-btn:hover,.quick-btn.active{border-color:#a9d7bd;background:var(--green-100);color:var(--green-800)}.quick-btn:disabled{opacity:.45;cursor:not-allowed}
+    .period-applied{display:flex;align-items:center;gap:6px;color:var(--green-800);background:var(--green-50);border:1px solid #c9e8d6;border-radius:9px;padding:8px 10px;font-size:10.5px;font-weight:800;white-space:nowrap}
+
+    .tabs-shell{margin-bottom:18px}.tab-nav{display:flex;align-items:center;gap:6px;background:#eaf1ed;border:1px solid #dce7e1;border-radius:14px;padding:5px;margin-bottom:14px;position:sticky;top:82px;z-index:20;box-shadow:0 4px 14px rgba(18,60,41,.06)}.tab-btn{flex:1;border:0;background:transparent;border-radius:10px;padding:11px 14px;color:#66746c;font-size:12px;font-weight:850;display:flex;justify-content:center;align-items:center;gap:7px}.tab-btn svg{width:15px;height:15px}.tab-btn.active{background:#fff;color:var(--green-800);box-shadow:0 3px 10px rgba(18,60,41,.09)}.tab-panel[hidden]{display:none}.tab-panel{animation:tabIn .18s ease}@keyframes tabIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:none}}
+    .scope-badge{display:inline-flex;align-items:center;border-radius:99px;padding:3px 6px;font-size:8.5px;font-weight:850;letter-spacing:-.01em}.scope-badge.period{background:#e8f2ff;color:#2f64b5}.scope-badge.snapshot{background:var(--green-100);color:var(--green-800)}.scope-badge.source{background:#f0ebff;color:#6e4ead}
+    .kpi-titleblock{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.kpi-label{display:flex;align-items:center;gap:4px}
+    .stat-info{width:16px;height:16px;border:1px solid #c9d7d0;border-radius:50%;background:#fff;color:#6d7c74;font:800 10px/1 Arial;display:inline-grid;place-items:center;padding:0;position:relative;vertical-align:middle;z-index:5}.stat-info:hover,.stat-info:focus{border-color:var(--green-500);color:var(--green-700);outline:0}.stat-info::after{content:attr(data-tooltip);position:absolute;left:50%;bottom:calc(100% + 8px);transform:translateX(-50%);width:230px;padding:8px 10px;border-radius:8px;background:#19342a;color:#fff;font:500 10px/1.45 Pretendard,"Malgun Gothic",sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.16);opacity:0;visibility:hidden;pointer-events:none;transition:.15s;white-space:normal;text-align:left;letter-spacing:-.01em}.stat-info::before{content:"";position:absolute;left:50%;bottom:calc(100% + 3px);transform:translateX(-50%);border:5px solid transparent;border-top-color:#19342a;opacity:0;visibility:hidden}.stat-info:hover::after,.stat-info:focus::after,.stat-info:hover::before,.stat-info:focus::before{opacity:1;visibility:visible}
+
+    .period-summary-grid,.usage-summary,.security-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:11px;margin-bottom:15px}.mini-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:13px 15px;box-shadow:0 4px 14px rgba(18,60,41,.045)}.mini-kpi-top{display:flex;align-items:center;justify-content:space-between;color:#66736c;font-size:10.5px;font-weight:750}.mini-kpi b{display:inline-block;margin-top:9px;font-size:24px;letter-spacing:-.04em}.mini-kpi small{font-size:10px;color:#7e8b84;margin-left:2px}.mini-kpi.danger b{color:var(--red)}
 
     .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:13px;margin-bottom:18px}
     .kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px 17px 14px;box-shadow:0 5px 16px rgba(18,60,41,.055);min-height:126px;position:relative;overflow:hidden}
@@ -162,18 +177,22 @@
     .activity-table thead th:nth-child(2),.activity-table tbody td:nth-child(2),.activity-table thead th:nth-child(3),.activity-table tbody td:nth-child(3),.activity-table thead th:nth-child(4),.activity-table tbody td:nth-child(4),.activity-table thead th:nth-child(5),.activity-table tbody td:nth-child(5),.activity-table thead th:nth-child(6),.activity-table tbody td:nth-child(6){text-align:left}
     .activity-table tbody td:nth-child(2){font-weight:750;color:#27332d;max-width:250px;overflow:hidden;text-overflow:ellipsis}.activity-table tbody td:nth-child(3){font-weight:650;color:#516058}.activity-table tbody td:nth-child(6){max-width:420px;overflow:hidden;text-overflow:ellipsis;color:#5f6d65}.activity-table tbody td{padding-top:9px;padding-bottom:9px}
     .activity-kind{display:inline-flex;border-radius:99px;padding:4px 7px;font-size:9.5px;font-weight:850;white-space:nowrap}.activity-kind.register{background:var(--green-100);color:var(--green-800)}.activity-kind.edit{background:#e8f0ff;color:#315fb7}.activity-kind.attachment{background:#f0e7ff;color:#7347ad}.activity-kind.user{background:#fff1cc;color:#926500}.activity-empty{display:grid;place-items:center;min-height:110px;color:#89958e;font-size:11px}
+    .access-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px;margin-bottom:18px}.access-panel{overflow:hidden}.access-body{padding:2px 18px 16px}.access-list{display:flex;flex-direction:column;gap:9px}.access-day{display:grid;grid-template-columns:64px 1fr 34px 1fr 34px;align-items:center;gap:8px;font-size:10px}.access-day .date{color:#6e7b74;font-weight:750}.dual-track{height:10px;border-radius:99px;background:#edf2ef;overflow:hidden}.dual-bar{height:100%;border-radius:99px;min-width:0}.dual-bar.success{background:var(--green-500)}.dual-bar.failure{background:#ee5965}.access-day b{text-align:right;font-size:10px}.access-legend{display:flex;align-items:center;gap:12px;color:#78857e;font-size:9.5px}.access-legend span{display:flex;align-items:center;gap:5px}.access-company-head,.access-company-row{display:grid;grid-template-columns:28px minmax(140px,1fr) 58px 58px 84px;gap:8px;align-items:center}.access-company-head{color:#7c8882;font-size:9.5px;font-weight:800;padding:0 6px 7px;border-bottom:1px solid var(--line)}.access-company-row{font-size:10.5px;padding:9px 6px;border-bottom:1px solid #edf1ef}.access-company-row:last-child{border-bottom:0}.access-company-row .rank{text-align:center;color:#94a098}.access-company-row .company{font-weight:800;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.access-company-row .num,.access-company-row .latest{text-align:right}.access-company-row .latest{color:#718078}
+    .security-box{background:#fff;border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:18px;overflow:hidden}.repeat-head,.repeat-row{display:grid;grid-template-columns:32px minmax(145px,1fr) 90px 70px 90px;gap:8px;align-items:center}.repeat-head{background:#f5f7f6;color:#6d7972;font-size:9.5px;font-weight:800;padding:9px 10px}.repeat-row{padding:10px;font-size:10.5px;border-bottom:1px solid #edf1ef}.repeat-row:last-child{border-bottom:0}.repeat-row .rank{text-align:center;color:#95a098}.repeat-row .identity{font-family:Consolas,"Malgun Gothic",monospace;font-weight:750;overflow:hidden;text-overflow:ellipsis}.repeat-row .num,.repeat-row .latest{text-align:right}.repeat-row .count{justify-self:end;display:inline-flex;background:#ffe4e7;color:#b52d3a;border-radius:99px;padding:4px 7px;font-weight:850}.security-table thead th:nth-child(n+2),.security-table tbody td:nth-child(n+2){text-align:left}.security-table tbody td:nth-child(4),.security-table tbody td:nth-child(5){font-family:Consolas,"Malgun Gothic",monospace}.security-table tbody td:nth-child(2){max-width:280px}.result-fail{display:inline-flex;background:#ffe4e7;color:#b52d3a;border-radius:99px;padding:4px 7px;font-size:9.5px;font-weight:850}
     .empty-row td{text-align:center!important;color:#8b9790!important;padding:32px 10px!important;font-weight:500!important}
     .two-col{display:grid;grid-template-columns:1fr;gap:15px}
     .scope-note{display:flex;align-items:center;gap:7px;color:#78857e;font-size:10.5px}.scope-note svg{width:14px;height:14px;color:var(--amber)}
     .footer{display:flex;justify-content:space-between;align-items:center;color:#8a9690;font-size:10.5px;padding:2px 4px 0}.footer strong{color:#607068}
     .spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
-    .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn{display:none!important}
+    .modal-backdrop{position:fixed;inset:0;background:rgba(6,30,21,.5);display:grid;place-items:center;padding:24px;z-index:100}.modal-backdrop[hidden]{display:none}.criteria-modal{width:min(900px,92vw);max-height:86vh;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column}.modal-head{padding:18px 21px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.modal-head strong{font-size:18px}.modal-head span{display:block;color:#77847d;font-size:11px;margin-top:4px}.modal-close{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:20px;color:#68766e}.modal-body{overflow:auto;padding:18px 21px 22px}.criteria-current{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:17px}.criteria-current div{background:var(--green-50);border:1px solid #cce9d8;border-radius:11px;padding:11px 13px;color:#597067;font-size:11px}.criteria-current b{display:block;color:var(--green-800);font-size:13px;margin-top:3px}.criteria-group{margin-top:16px}.criteria-group h3{margin:0 0 8px;font-size:13px}.criteria-row{display:grid;grid-template-columns:128px 80px 1fr 190px;gap:10px;padding:9px 10px;border-top:1px solid #edf1ef;font-size:10.5px;align-items:start}.criteria-row.focus{background:#f0fbf5}.criteria-row strong{font-size:11px}.criteria-row .source{color:#77847d}.criteria-note{margin-top:17px;border-radius:11px;background:#fff8e7;border:1px solid #f3dda3;color:#795a13;padding:11px 13px;font-size:10.5px;line-height:1.55}
+
+    .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn,.report-mode .period-controls{display:none!important}
     .report-mode .main{padding-top:24px}
     @media print{
       @page{size:A3 landscape;margin:12mm}
       body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice{display:none!important}.main{max-width:none;padding:18px 0 0}
+      .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice,.period-controls,.stat-info{display:none!important}.main{max-width:none;padding:18px 0 0}
       .kpi,.panel{box-shadow:none}.chart-body{height:205px}.footer{margin-top:8px}
     }
   </style>
@@ -201,6 +220,7 @@
       <div class="page-head">
         <div class="page-title"><span class="accent"></span><div><h1>CWIZ Enterprise 운영 현황</h1><div class="subtitle">이용신청부터 고객사·계측기 등록, CMS 매핑까지 한눈에 확인합니다.</div></div></div>
         <div class="meta">
+          <button class="meta-button" id="criteriaBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>통계 기준</span></button>
           <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>기준일</span><b id="basisDate">—</b></div>
           <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>최근 적용</span><b id="appliedTime">—</b></div>
         </div>
@@ -208,7 +228,7 @@
 
       <section class="upload-panel" id="uploadPanel">
         <div class="upload-head">
-          <div class="upload-title"><span class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v5h16v-5"/></svg></span><div><strong>주간 Excel 데이터 적용</strong><span>동일 기준일의 4개 파일을 선택해 주세요.</span></div></div>
+          <div class="upload-title"><span class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v5h16v-5"/></svg></span><div><strong>주간 Excel 데이터 적용</strong><span>동일 기준일의 5개 파일을 선택해 주세요.</span></div></div>
           <button class="link-btn" id="toggleUpload" type="button">접기</button>
         </div>
         <div class="upload-body">
@@ -233,6 +253,11 @@
               <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span>
               <span class="file-text"><strong>데이터변경이력 파일</strong><span class="file-name">데이터변경이력_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
             </label>
+            <label class="file-slot" data-role="access">
+              <input type="file" accept=".xlsx" />
+              <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
+              <span class="file-text"><strong>보안접속이력 파일</strong><span class="file-name">보안접속이력_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
+            </label>
             <button class="apply-btn" id="applyBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>데이터 적용</span></button>
           </div>
           <div class="upload-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>선택한 파일은 브라우저 안에서만 처리되며 외부 서버로 전송되지 않습니다. 파일명 날짜와 필수 컬럼을 자동 검증합니다.</div>
@@ -242,29 +267,79 @@
       <div class="notice error" id="errorNotice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg><div><div class="notice-title">데이터를 적용하지 못했습니다.</div><div id="errorMessage"></div></div></div>
       <div class="notice success" id="successNotice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg><div><div class="notice-title">데이터 적용 완료</div><div id="successMessage"></div></div></div>
 
+      <section class="period-panel" aria-label="조회기간 설정">
+        <div class="period-copy"><span class="period-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg></span><div><strong>조회기간</strong><small id="periodAvailable">Excel 적용 후 기간을 선택할 수 있습니다.</small></div></div>
+        <div class="period-controls">
+          <label class="date-field"><span>시작일</span><input id="periodStart" type="date" disabled /></label><span class="date-divider">~</span><label class="date-field"><span>종료일</span><input id="periodEnd" type="date" disabled /></label>
+          <button class="query-btn" id="periodQueryBtn" type="button" disabled>조회</button>
+          <div class="quick-periods"><button class="quick-btn" type="button" data-preset="week" disabled>이번 주</button><button class="quick-btn" type="button" data-preset="7days" disabled>최근 7일</button><button class="quick-btn" type="button" data-preset="month" disabled>이번 달</button><button class="quick-btn" type="button" data-preset="all" disabled>파일 전체</button></div>
+        </div>
+        <div class="period-applied"><span>적용기간</span><b id="periodApplied">—</b></div>
+      </section>
+
+      <div class="tabs-shell">
+        <nav class="tab-nav" role="tablist" aria-label="운영현황 항목">
+          <button class="tab-btn active" id="tabBtnOverview" type="button" role="tab" aria-selected="true" aria-controls="tabOverview" data-tab="overview"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 13h7V4H4zM13 20h7v-7h-7zM13 11h7V4h-7zM4 20h7v-5H4z"/></svg>운영 요약</button>
+          <button class="tab-btn" id="tabBtnCustomers" type="button" role="tab" aria-selected="false" aria-controls="tabCustomers" data-tab="customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8M19 8v6M16 11h6"/></svg>신청·고객사</button>
+          <button class="tab-btn" id="tabBtnUsage" type="button" role="tab" aria-selected="false" aria-controls="tabUsage" data-tab="usage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18V6M4 18h16M8 15l3-4 3 2 5-7"/></svg>고객 이용</button>
+          <button class="tab-btn" id="tabBtnSecurity" type="button" role="tab" aria-selected="false" aria-controls="tabSecurity" data-tab="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6z"/><path d="M12 8v4M12 16h.01"/></svg>보안 접속</button>
+        </nav>
+
+        <div class="tab-panel" id="tabOverview" role="tabpanel" aria-labelledby="tabBtnOverview">
+
       <section class="kpi-grid" aria-label="핵심 운영 지표">
-        <article class="kpi"><div class="kpi-top"><span class="kpi-label">이용신청</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10v4H7zM5 5H3v16h18V5h-2"/><path d="M8 12h8M8 16h5"/></svg></span></div><div class="kpi-value"><span id="kpiApplications">—</span><span class="kpi-unit">건</span></div><div class="kpi-sub" id="subApplications">Excel 데이터를 적용해 주세요.</div></article>
-        <article class="kpi"><div class="kpi-top"><span class="kpi-label">승인 고객사</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8"/><path d="m16 11 2 2 4-5"/></svg></span></div><div class="kpi-value"><span id="kpiApproved">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subApproved">이용신청 승인 기준</div></article>
-        <article class="kpi"><div class="kpi-top"><span class="kpi-label">등록 고객사</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M9 9h.01M15 9h.01"/></svg></span></div><div class="kpi-value"><span id="kpiCustomers">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subCustomers">고객사현황 전체 기준</div></article>
-        <article class="kpi"><div class="kpi-top"><span class="kpi-label">등록 계측기</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3M7 17h10"/></svg></span></div><div class="kpi-value"><span id="kpiAssets">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subAssets">총자산 합계</div></article>
-        <article class="kpi danger"><div class="kpi-top"><span class="kpi-label">미매핑 계측기</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/><path d="m4 4 16 16"/></svg></span></div><div class="kpi-value"><span id="kpiUnmapped">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subUnmapped">CMS 미매핑 합계</div></article>
-        <article class="kpi rate"><div class="kpi-top"><span class="kpi-label">CMS 매핑률</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19 20 5M7 5h.01M17 19h.01"/><circle cx="7" cy="5" r="3"/><circle cx="17" cy="19" r="3"/></svg></span></div><div class="kpi-value"><span id="kpiRate">—</span><span class="kpi-unit">%</span></div><div class="kpi-sub" id="subRate">(총자산-미매핑) ÷ 총자산</div></article>
+        <article class="kpi"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="applications">이용신청</span><span class="scope-badge period">기간 적용</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10v4H7zM5 5H3v16h18V5h-2"/><path d="M8 12h8M8 16h5"/></svg></span></div><div class="kpi-value"><span id="kpiApplications">—</span><span class="kpi-unit">건</span></div><div class="kpi-sub" id="subApplications">Excel 데이터를 적용해 주세요.</div></article>
+        <article class="kpi"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="approved">승인 고객사</span><span class="scope-badge period">기간 적용</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8"/><path d="m16 11 2 2 4-5"/></svg></span></div><div class="kpi-value"><span id="kpiApproved">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subApproved">기간 신청분 승인 기준</div></article>
+        <article class="kpi"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="customers">등록 고객사</span><span class="scope-badge snapshot">기준일 현재</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M9 9h.01M15 9h.01"/></svg></span></div><div class="kpi-value"><span id="kpiCustomers">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subCustomers">고객사현황 전체 기준</div></article>
+        <article class="kpi"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="assets">등록 계측기</span><span class="scope-badge snapshot">기준일 현재</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3M7 17h10"/></svg></span></div><div class="kpi-value"><span id="kpiAssets">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subAssets">총자산 합계</div></article>
+        <article class="kpi danger"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="unmapped">미매핑 계측기</span><span class="scope-badge snapshot">기준일 현재</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/><path d="m4 4 16 16"/></svg></span></div><div class="kpi-value"><span id="kpiUnmapped">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subUnmapped">CMS 미매핑 합계</div></article>
+        <article class="kpi rate"><div class="kpi-top"><div class="kpi-titleblock"><span class="kpi-label" data-stat="mapping">CMS 매핑률</span><span class="scope-badge snapshot">기준일 현재</span></div><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19 20 5M7 5h.01M17 19h.01"/><circle cx="7" cy="5" r="3"/><circle cx="17" cy="19" r="3"/></svg></span></div><div class="kpi-value"><span id="kpiRate">—</span><span class="kpi-unit">%</span></div><div class="kpi-sub" id="subRate">(총자산-미매핑) ÷ 총자산</div></article>
       </section>
 
       <section class="chart-grid">
-        <article class="panel application-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 처리 현황</strong></div><div class="period-toggle" id="applicationPeriod"><button class="period-btn active" type="button" data-period="week" aria-pressed="true">이번 주</button><button class="period-btn" type="button" data-period="all" aria-pressed="false">파일 전체</button></div></div><div class="chart-body"><div class="donut-wrap"><div class="donut application empty" id="applicationDonut"><div class="donut-center"><strong id="applicationDonutRate">—</strong><span>승인률</span></div></div><div class="legend"><div class="legend-row"><span class="dot approved"></span><span>승인</span><b id="legendApproved">—</b></div><div class="legend-row"><span class="dot waiting"></span><span>대기</span><b id="legendWaiting">—</b></div><div class="legend-row"><span class="dot rejected"></span><span>반려</span><b id="legendRejected">—</b></div><div class="legend-total"><span id="applicationTotalLabel">신규 신청</span><b id="legendApplicationTotal">—</b></div></div></div><div class="application-foot"><span id="applicationPeriodLabel">월요일~기준일</span><span id="applicationBacklog">현재 미처리 —</span></div></div></article>
-        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>CMS 매핑 현황</strong></div><span class="panel-badge">자산 기준</span></div><div class="chart-body"><div class="donut-wrap"><div class="donut" id="mappingDonut"><div class="donut-center"><strong id="donutRate">—</strong><span>매핑률</span></div></div><div class="legend"><div class="legend-row"><span class="dot mapped"></span><span>매핑 완료</span><b id="legendMapped">—</b></div><div class="legend-row"><span class="dot unmapped"></span><span>미매핑</span><b id="legendUnmapped">—</b></div><div class="legend-total"><span>전체 자산</span><b id="legendTotal">—</b></div></div></div></div></article>
-        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>차기교정 관리 현황</strong><small>계측기 수</small></div><span class="panel-badge">Snapshot</span></div><div class="chart-body"><div class="bars"><div class="bar-row"><span class="bar-label">교정 준비</span><div class="bar-track"><div class="bar prep" id="barPrep"></div></div><div class="bar-value"><b id="valuePrep">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">교정 임박</span><div class="bar-track"><div class="bar near" id="barNear"></div></div><div class="bar-value"><b id="valueNear">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">기한 초과</span><div class="bar-track"><div class="bar overdue" id="barOverdue"></div></div><div class="bar-value"><b id="valueOverdue">—</b><span>대</span></div></div><div class="chart-foot"><span>원본 「교정 준비 / 교정 임박 / 기한 초과」 합계</span><span id="calibrationTotal">관리 대상 —</span></div></div></div></article>
+        <article class="panel application-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="applicationStatus">이용신청 처리 현황</strong></div><span class="panel-badge period">기간 적용</span></div><div class="chart-body"><div class="donut-wrap"><div class="donut application empty" id="applicationDonut"><div class="donut-center"><strong id="applicationDonutRate">—</strong><span>승인률</span></div></div><div class="legend"><div class="legend-row"><span class="dot approved"></span><span>승인</span><b id="legendApproved">—</b></div><div class="legend-row"><span class="dot waiting"></span><span>대기</span><b id="legendWaiting">—</b></div><div class="legend-row"><span class="dot rejected"></span><span>반려</span><b id="legendRejected">—</b></div><div class="legend-total"><span id="applicationTotalLabel">기간 신청</span><b id="legendApplicationTotal">—</b></div></div></div><div class="application-foot"><span id="applicationPeriodLabel">조회기간 신청분</span><span id="applicationBacklog">현재 미처리 —</span></div></div></article>
+        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="mapping">CMS 매핑 현황</strong></div><span class="panel-badge">기준일 현재</span></div><div class="chart-body"><div class="donut-wrap"><div class="donut" id="mappingDonut"><div class="donut-center"><strong id="donutRate">—</strong><span>매핑률</span></div></div><div class="legend"><div class="legend-row"><span class="dot mapped"></span><span>매핑 완료</span><b id="legendMapped">—</b></div><div class="legend-row"><span class="dot unmapped"></span><span>미매핑</span><b id="legendUnmapped">—</b></div><div class="legend-total"><span>전체 자산</span><b id="legendTotal">—</b></div></div></div></div></article>
+        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="calibration">차기교정 관리 현황</strong><small>계측기 수</small></div><span class="panel-badge">기준일 현재</span></div><div class="chart-body"><div class="bars"><div class="bar-row"><span class="bar-label">교정 준비</span><div class="bar-track"><div class="bar prep" id="barPrep"></div></div><div class="bar-value"><b id="valuePrep">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">교정 임박</span><div class="bar-track"><div class="bar near" id="barNear"></div></div><div class="bar-value"><b id="valueNear">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">기한 초과</span><div class="bar-track"><div class="bar overdue" id="barOverdue"></div></div><div class="bar-value"><b id="valueOverdue">—</b><span>대</span></div></div><div class="chart-foot"><span>원본 「교정 준비 / 교정 임박 / 기한 초과」 합계</span><span id="calibrationTotal">관리 대상 —</span></div></div></div></article>
+      </section>
+
+      <section class="period-summary-grid" aria-label="선택 기간 이용 요약">
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessSuccess">접속 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="overviewAccessCompanies">—</b><small>개사</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessUsers">접속 사용자</span><span class="scope-badge period">기간 적용</span></div><b id="overviewAccessUsers">—</b><small>명</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="customerActivity">데이터 작업</span><span class="scope-badge period">기간 적용</span></div><b id="overviewActivityLogs">—</b><small>건</small></article>
+        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="accessFailure">로그인 실패</span><span class="scope-badge period">기간 적용</span></div><b id="overviewLoginFailures">—</b><small>건</small></article>
+      </section>
+        </div>
+
+        <div class="tab-panel" id="tabUsage" role="tabpanel" aria-labelledby="tabBtnUsage" hidden>
+      <section class="usage-summary">
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessSuccess">접속 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessCompanies">—</b><small>개사</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessUsers">접속 사용자</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessUsers">—</b><small>명</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessSuccess">로그인 성공</span><span class="scope-badge period">기간 적용</span></div><b id="usageLoginSuccess">—</b><small>건</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="customerActivity">데이터 작업</span><span class="scope-badge period">기간 적용</span></div><b id="usageActivityLogs">—</b><small>건</small></article>
+      </section>
+
+      <section class="access-grid">
+        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessSuccess">일자별 접속 현황</strong></div><div class="access-legend"><span><i class="dot mapped"></i>성공</span><span><i class="dot rejected"></i>실패</span></div></div><div class="access-body"><div class="access-list" id="accessDailyList"><div class="activity-empty">Excel 데이터를 적용하면 접속 현황이 표시됩니다.</div></div></div></article>
+        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>접속 고객사 TOP 5</strong></div><small id="accessCompanyNote">로그인 성공 기준</small></div><div class="access-body"><div class="access-company-head"><span>순위</span><span>고객사</span><span style="text-align:right">사용자</span><span style="text-align:right">접속</span><span style="text-align:right">최근 접속</span></div><div id="accessCompanyList"><div class="activity-empty">Excel 데이터를 적용하면 접속 고객사가 표시됩니다.</div></div></div></article>
       </section>
 
       <section class="panel activity-panel">
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객 사용 활동</strong><small>고객사가 CWIZ에서 수행한 데이터 작업</small></div><div class="period-toggle" id="activityPeriod"><button class="period-btn active" type="button" data-period="week" aria-pressed="true">이번 주</button><button class="period-btn" type="button" data-period="all" aria-pressed="false">파일 전체</button></div></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="customerActivity">고객 사용 활동</strong><small>고객사가 CWIZ에서 수행한 데이터 작업</small></div><span class="panel-badge period">기간 적용</span></div>
         <div class="activity-summary"><div class="activity-stat"><span>활동 고객사</span><div><b id="activityCompanies">—</b><small>개사</small></div></div><div class="activity-stat"><span>활동 사용자</span><div><b id="activityUsers">—</b><small>명</small></div></div><div class="activity-stat"><span>작업 로그</span><div><b id="activityLogs">—</b><small>건</small></div></div><div class="activity-stat"><span>계측기 등록</span><div><b id="activityRegistrations">—</b><small>건</small></div></div></div>
         <div class="activity-layout">
           <div class="activity-box"><div class="activity-box-title"><strong>작업 유형</strong><span id="activityTypeNote">이번 주 기준</span></div><div class="activity-type-bars"><div class="activity-type-row"><span>계측기 등록</span><div class="activity-type-track"><div class="activity-type-bar register" id="activityBarRegister"></div></div><b id="activityValueRegister">—</b></div><div class="activity-type-row"><span>정보 수정</span><div class="activity-type-track"><div class="activity-type-bar edit" id="activityBarEdit"></div></div><b id="activityValueEdit">—</b></div><div class="activity-type-row"><span>첨부 추가</span><div class="activity-type-track"><div class="activity-type-bar attachment" id="activityBarAttachment"></div></div><b id="activityValueAttachment">—</b></div><div class="activity-type-row"><span>사용자 등록</span><div class="activity-type-track"><div class="activity-type-bar user" id="activityBarUser"></div></div><b id="activityValueUser">—</b></div></div></div>
           <div class="activity-box"><div class="activity-box-title"><strong>활동 고객사 TOP 5</strong><span>작업 로그 많은 순</span></div><div class="activity-company-head"><span>순위</span><span>고객사</span><span style="text-align:right">사용자</span><span style="text-align:right">작업</span><span style="text-align:right">주요 작업</span><span style="text-align:right">최근 활동</span></div><div id="activityCompanyList"><div class="activity-empty">Excel 데이터를 적용하면 고객 활동이 표시됩니다.</div></div></div>
         </div>
         <div class="activity-recent"><div class="activity-recent-head"><strong>최근 활동 내역</strong><span id="activityRecentNote">최근 8건</span></div><table class="activity-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>메뉴</th><th>작업</th><th>대상 및 변경내용</th></tr></thead><tbody id="activityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 최근 고객 활동이 표시됩니다.</td></tr></tbody></table></div>
+      </section>
+        </div>
+
+        <div class="tab-panel" id="tabCustomers" role="tabpanel" aria-labelledby="tabBtnCustomers" hidden>
+      <section class="period-summary-grid">
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="applications">기간 신규 신청</span><span class="scope-badge period">기간 적용</span></div><b id="periodApplications">—</b><small>건</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="approved">기간 신청분 승인</span><span class="scope-badge period">기간 적용</span></div><b id="periodApproved">—</b><small>건</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="newCustomers">신규 등록 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="periodNewCustomers">—</b><small>개사</small></article>
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="applicationBacklog">현재 대기</span><span class="scope-badge snapshot">기준일 현재</span></div><b id="periodCurrentWaiting">—</b><small>건</small></article>
       </section>
 
       <section class="panel table-panel">
@@ -281,9 +356,34 @@
         <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>담당자 운영현황</strong><small>고객사 「영업 담당자」 기준</small></div><div class="scope-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg>원본에 담당지사 컬럼이 없어 지사 집계는 제외했습니다.</div></div>
         <div class="table-wrap"><table><thead><tr><th>순위</th><th>담당자</th><th>고객사 수</th><th>등록 계측기</th><th>미매핑</th><th>매핑률</th><th>기한 초과</th></tr></thead><tbody id="staffTableBody"><tr class="empty-row"><td colspan="7">Excel 데이터를 적용하면 담당자 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
+        </div>
+
+        <div class="tab-panel" id="tabSecurity" role="tabpanel" aria-labelledby="tabBtnSecurity" hidden>
+      <section class="security-summary">
+        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessAttempts">로그인 시도</span><span class="scope-badge period">기간 적용</span></div><b id="securityAttempts">—</b><small>건</small></article>
+        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="accessFailure">로그인 실패</span><span class="scope-badge period">기간 적용</span></div><b id="securityFailures">—</b><small>건</small></article>
+        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="repeatFailure">반복 실패 ID</span><span class="scope-badge period">기간 적용</span></div><b id="securityRepeatIds">—</b><small>개</small></article>
+        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="repeatFailure">반복 실패 IP</span><span class="scope-badge period">기간 적용</span></div><b id="securityRepeatIps">—</b><small>개</small></article>
+      </section>
+
+      <section class="access-grid">
+        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessAttempts">일자별 로그인 결과</strong></div><span class="panel-badge period">기간 적용</span></div><div class="access-body"><div class="access-list" id="securityDailyList"><div class="activity-empty">Excel 데이터를 적용하면 로그인 결과가 표시됩니다.</div></div></div></article>
+        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="repeatFailure">반복 실패 ID TOP 5</strong></div><small>동일 ID 5회 이상 표시</small></div><div class="access-body"><div class="repeat-head"><span>순위</span><span>마스킹 ID</span><span style="text-align:right">고객사</span><span style="text-align:right">실패</span><span style="text-align:right">최근 실패</span></div><div id="repeatFailureList"><div class="activity-empty">반복 실패 내역이 없습니다.</div></div></div></article>
+      </section>
+
+      <section class="security-box"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessFailure">최근 로그인 실패 내역</strong><small>아이디와 IP는 화면에서 마스킹</small></div><span id="securityRecentNote" class="panel-badge period">최근 8건</span></div><div class="table-wrap"><table class="security-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>아이디</th><th>접속 IP</th><th>결과</th></tr></thead><tbody id="securityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 접속 실패 내역이 표시됩니다.</td></tr></tbody></table></div></section>
+        </div>
+      </div>
 
       <footer class="footer"><span><strong>CWIZ Enterprise</strong> · Admin Dashboard Preview</span><span>Jira CW2R-73 · 1단계 운영 대시보드 참고용</span></footer>
     </main>
+  </div>
+
+  <div class="modal-backdrop" id="criteriaModal" hidden>
+    <section class="criteria-modal" role="dialog" aria-modal="true" aria-labelledby="criteriaTitle">
+      <div class="modal-head"><div><strong id="criteriaTitle">통계 기준 안내</strong><span>각 수치의 기간 적용 여부, 데이터 출처와 계산 기준을 확인할 수 있습니다.</span></div><button class="modal-close" id="criteriaClose" type="button" aria-label="통계 기준 닫기">×</button></div>
+      <div class="modal-body"><div class="criteria-current"><div>현재 조회기간<b id="criteriaPeriod">—</b></div><div>Snapshot 기준일<b id="criteriaBasis">—</b></div></div><div id="criteriaContent"></div><div class="criteria-note">조회기간은 신청·등록·작업·접속처럼 날짜가 있는 데이터에 적용됩니다. 등록 계측기, 미매핑, 매핑률, 차기교정 현황은 업로드 파일 기준일 현재의 Snapshot이므로 조회기간을 바꿔도 값이 변하지 않습니다. 접속 실패는 확인이 필요한 로그 수이며 보안사고 확정 건수를 의미하지 않습니다.</div></div>
+    </section>
   </div>
 
   <script>
@@ -306,14 +406,38 @@
       activities: {
         label: "데이터변경이력",
         required: [["일시"], ["고객사"], ["사용자"], ["아이디"], ["메뉴"], ["로그 유형", "로그유형"], ["대상"], ["변경 항목", "변경항목"], ["변경 전", "변경전"], ["변경 후", "변경후"]]
+      },
+      access: {
+        label: "보안접속이력",
+        required: [["일시"], ["고객사"], ["사용자"], ["아이디"], ["로그 유형", "로그유형"], ["결과"], ["접속 IP", "접속IP"]]
       }
     };
 
-    const selectedFiles = { applications:null, customers:null, instruments:null, activities:null };
+    const metricDefinitions = {
+      applications:{group:"기간 기반 지표",label:"이용신청",scope:"기간 적용",source:"이용신청 · 신청일자",short:"조회기간에 신청된 건수입니다.",detail:"신청일자가 시작일~종료일에 포함된 신청을 집계합니다."},
+      approved:{group:"기간 기반 지표",label:"승인 고객사",scope:"기간 적용",source:"이용신청 · 상태/사업자번호",short:"조회기간 신청분 중 현재 승인 상태인 고유 고객사입니다.",detail:"조회기간에 신청된 행 중 상태가 승인인 건을 사업자등록번호로 중복 제거합니다. 번호가 없으면 회사명을 사용합니다."},
+      applicationStatus:{group:"기간 기반 지표",label:"신청 처리 현황",scope:"기간 적용",source:"이용신청 · 신청일자/상태",short:"조회기간 신청분의 현재 승인·대기·반려 상태입니다.",detail:"승인일자가 아니라 신청일자를 기준으로 기간을 적용하며, 선택된 신청의 현재 상태를 표시합니다."},
+      newCustomers:{group:"기간 기반 지표",label:"신규 등록 고객사",scope:"기간 적용",source:"고객사현황 · 등록일",short:"조회기간에 등록된 고객사 수입니다.",detail:"고객사현황의 등록일이 시작일~종료일에 포함된 행을 집계합니다."},
+      customerActivity:{group:"고객 이용·보안",label:"고객 데이터 작업",scope:"기간 적용",source:"데이터변경이력 · 일시",short:"조회기간에 고객사가 수행한 데이터 작업 로그입니다.",detail:"계측기 등록, 정보 수정, 첨부 추가, 사용자 등록 등 변경이력 로그를 작업 일시 기준으로 집계합니다."},
+      accessAttempts:{group:"고객 이용·보안",label:"로그인 시도",scope:"기간 적용",source:"보안접속이력 · 일시/로그 유형",short:"조회기간의 로그인 성공과 실패를 합한 시도 수입니다.",detail:"로그 유형이 로그인인 행만 집계하며 로그아웃은 제외합니다."},
+      accessSuccess:{group:"고객 이용·보안",label:"로그인 성공",scope:"기간 적용",source:"보안접속이력 · 결과",short:"조회기간의 로그인 성공 로그입니다.",detail:"로그 유형이 로그인이고 결과가 성공인 행을 집계합니다. 실제 서비스 접속 현황을 보는 용도입니다."},
+      accessUsers:{group:"고객 이용·보안",label:"접속 사용자",scope:"기간 적용",source:"보안접속이력 · 고객사/아이디",short:"조회기간에 로그인에 성공한 고유 사용자 수입니다.",detail:"고객사와 아이디 조합으로 중복 제거하며 아이디가 없으면 사용자명을 사용합니다."},
+      accessFailure:{group:"고객 이용·보안",label:"로그인 실패",scope:"기간 적용",source:"보안접속이력 · 결과",short:"조회기간의 로그인 실패 로그이며 보안사고 확정 건수는 아닙니다.",detail:"로그 유형이 로그인이고 결과가 실패인 행을 집계합니다. 화면에서는 아이디와 IP를 마스킹합니다."},
+      repeatFailure:{group:"고객 이용·보안",label:"반복 로그인 실패",scope:"기간 적용",source:"보안접속이력 · 아이디/IP",short:"조회기간에 동일 ID 또는 IP로 5회 이상 실패한 대상을 표시합니다.",detail:"운영 확인용 임시 기준이며 보안사고 판정을 의미하지 않습니다. 임계값은 현재 5회입니다."},
+      customers:{group:"기준일 Snapshot",label:"등록 고객사",scope:"기준일 현재",source:"고객사현황",short:"업로드 파일 기준일 현재 등록 고객사 전체입니다.",detail:"고객사현황 데이터 행 전체를 집계하며 조회기간을 변경해도 값이 바뀌지 않습니다."},
+      assets:{group:"기준일 Snapshot",label:"등록 계측기",scope:"기준일 현재",source:"고객사계측기현황 · 총자산",short:"기준일 현재 고객사별 총자산의 합계입니다.",detail:"고객사계측기현황의 총자산을 합산합니다. 과거 시점 자산은 현재 Snapshot 파일만으로 재계산할 수 없습니다."},
+      unmapped:{group:"기준일 Snapshot",label:"미매핑 계측기",scope:"기준일 현재",source:"고객사계측기현황 · 미매핑",short:"기준일 현재 CMS에 매핑되지 않은 계측기 합계입니다.",detail:"고객사계측기현황의 미매핑 컬럼을 합산합니다."},
+      mapping:{group:"기준일 Snapshot",label:"CMS 매핑률",scope:"기준일 현재",source:"고객사계측기현황",short:"(총자산-미매핑) ÷ 총자산으로 계산합니다.",detail:"총자산이 0이면 0%로 처리하며 조회기간을 변경해도 값이 바뀌지 않습니다."},
+      calibration:{group:"기준일 Snapshot",label:"차기교정 관리",scope:"기준일 현재",source:"고객사계측기현황",short:"원본의 교정 준비·임박·기한 초과 합계입니다.",detail:"대시보드에서 날짜를 다시 계산하지 않고 원본 컬럼 값을 그대로 합산합니다."},
+      applicationBacklog:{group:"기준일 Snapshot",label:"현재 대기",scope:"기준일 현재",source:"이용신청 · 상태",short:"업로드 파일 전체에서 현재 대기 상태인 신청 수입니다.",detail:"조회기간과 관계없이 현재 상태가 대기인 신청을 집계합니다."}
+    };
+
+    const selectedFiles = { applications:null, customers:null, instruments:null, activities:null, access:null };
     let dashboardData = null;
     let dashboardBasisDate = null;
-    let applicationPeriod = "week";
-    let activityPeriod = "week";
+    let dashboardPeriodStart = null;
+    let dashboardPeriodEnd = null;
+    let dashboardPeriodMin = null;
     const $ = (id) => document.getElementById(id);
     const nf = new Intl.NumberFormat("ko-KR");
     const pf = new Intl.NumberFormat("ko-KR", { maximumFractionDigits:1, minimumFractionDigits:1 });
@@ -512,7 +636,7 @@
       return logType || "기타";
     }
 
-    function compute(applications, customers, instruments, activities) {
+    function compute(applications, customers, instruments, activities, access) {
       const appTotal = applications.length;
       const approvedApplications = countStatus(applications,"승인"), waiting = countStatus(applications,"대기"), rejected = countStatus(applications,"반려");
       const approved = new Set(applications.filter((r) => String(value(r,["상태"])).trim() === "승인").map((r) => normalizeBiz(value(r,["사업자등록번호","사업자번호"])) || String(value(r,["회사명"])).trim()).filter(Boolean)).size;
@@ -528,6 +652,14 @@
         applicant:String(value(r,["신청자"]) || ""),
         approvedDate:String(value(r,["승인일자"]) || ""),
         companyCode:String(value(r,["회사코드"]) || "")
+      })).sort((a,b) => b.date.localeCompare(a.date) || a.sourceIndex-b.sourceIndex);
+      const customerRows = customers.map((r,index) => ({
+        sourceIndex:index,
+        date:String(value(r,["등록일"]) || "").slice(0,10),
+        company:String(value(r,["회사명"]) || "회사명 없음"),
+        biz:normalizeBiz(value(r,["사업자번호","사업자등록번호"])),
+        status:String(value(r,["상태"]) || "").trim(),
+        staff:String(value(r,["영업 담당자","영업담당자"]) || "담당자 미지정").trim()
       })).sort((a,b) => b.date.localeCompare(a.date) || a.sourceIndex-b.sourceIndex);
       const instrumentRows = instruments.map((r) => {
         const assets = toNumber(value(r,["총자산"])), miss = toNumber(value(r,["미매핑"]));
@@ -551,6 +683,20 @@
           category:classifyActivityRecord(r)
         };
       }).sort((a,b) => b.timestamp.localeCompare(a.timestamp) || a.sourceIndex-b.sourceIndex);
+      const accessRows = access.map((r,index) => {
+        const timestamp = String(value(r,["일시"]) || "");
+        return {
+          sourceIndex:index,
+          timestamp,
+          date:timestamp.slice(0,10),
+          company:String(value(r,["고객사"]) || "").trim(),
+          user:String(value(r,["사용자"]) || "").trim(),
+          userId:String(value(r,["아이디"]) || "").trim(),
+          logType:String(value(r,["로그 유형","로그유형"]) || "").trim(),
+          result:String(value(r,["결과"]) || "").trim(),
+          ip:String(value(r,["접속 IP","접속IP"]) || "").trim()
+        };
+      }).sort((a,b) => b.timestamp.localeCompare(a.timestamp) || a.sourceIndex-b.sourceIndex);
       const instByBiz = new Map(instrumentRows.filter((r) => r.biz).map((r) => [r.biz,r]));
       const staffMap = new Map();
       for (const c of customers) {
@@ -561,7 +707,35 @@
         if (inst) { s.assets += inst.assets; s.unmapped += inst.unmapped; s.overdue += inst.overdue; }
       }
       const staff = [...staffMap.values()].map((s) => ({...s,rate:s.assets ? Math.max(0,(s.assets-s.unmapped)/s.assets) : null})).sort((a,b) => b.assets-a.assets || b.customers-a.customers);
-      return { appTotal,approvedApplications,approved,waiting,rejected,customerTotal,normal,inactive,totalAssets,unmapped,mapped,rate:totalAssets?mapped/totalAssets:0,prep,near,overdue,applicationRows,instrumentRows,activityRows,staff };
+      return { appTotal,approvedApplications,approved,waiting,rejected,customerTotal,normal,inactive,totalAssets,unmapped,mapped,rate:totalAssets?mapped/totalAssets:0,prep,near,overdue,applicationRows,customerRows,instrumentRows,activityRows,accessRows,staff };
+    }
+
+    function rowsInRange(rows, start, end) { return rows.filter((row) => row.date && row.date >= start && row.date <= end); }
+    function uniqueApprovedCompanies(rows) {
+      return new Set(rows.filter((row) => row.status === "승인").map((row) => normalizeBiz(row.biz) || row.company).filter(Boolean)).size;
+    }
+    function summarizeAccess(rows) {
+      const loginRows = rows.filter((row) => row.logType === "로그인");
+      const successRows = loginRows.filter((row) => row.result === "성공");
+      const failureRows = loginRows.filter((row) => row.result === "실패");
+      const countBy = (source,keyFn) => {
+        const map = new Map();
+        source.forEach((row) => { const key=keyFn(row); if (key) map.set(key,(map.get(key)||0)+1); });
+        return map;
+      };
+      const failureById = countBy(failureRows,(row) => row.userId.toLowerCase());
+      const failureByIp = countBy(failureRows,(row) => row.ip);
+      return {
+        loginRows,successRows,failureRows,
+        attempts:loginRows.length,
+        successes:successRows.length,
+        failures:failureRows.length,
+        activeCompanies:new Set(successRows.map((row) => row.company).filter(Boolean)).size,
+        activeUsers:new Set(successRows.map((row) => `${row.company}|${row.userId || row.user}`).filter(Boolean)).size,
+        repeatIds:[...failureById.values()].filter((count) => count >= 5).length,
+        repeatIps:[...failureByIp.values()].filter((count) => count >= 5).length,
+        failureById,failureByIp
+      };
     }
 
     function setText(id, text) { $(id).textContent = text; }
@@ -581,10 +755,11 @@
     function renderApplicationTable() {
       if (!dashboardData) return;
       const status = $("applicationStatus").value, limit = $("applicationLimit").value;
-      const filtered = dashboardData.applicationRows.filter((r) => status === "all" || r.status === status);
+      const periodRows = rowsInRange(dashboardData.applicationRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const filtered = periodRows.filter((r) => status === "all" || r.status === status);
       const rows = limit === "all" ? filtered : filtered.slice(0,Number(limit));
       const statusLabel = status === "all" ? "전체 상태" : status;
-      setText("applicationTableNote",`${statusLabel} ${nf.format(filtered.length)}건 · 최근 신청일 순`);
+      setText("applicationTableNote",`${periodText()} · ${statusLabel} ${nf.format(filtered.length)}건`);
       $("applicationTableBody").innerHTML = rows.length ? rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.date || "—")}</td><td>${statusPill(r.status)}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${escapeHtml(formatBiz(r.biz))}</td><td>${escapeHtml(r.applicant || "—")}</td><td>${escapeHtml(r.approvedDate || "—")}</td><td>${escapeHtml(r.companyCode || "—")}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="8">선택한 상태의 신청 업체가 없습니다.</td></tr>`;
     }
     function weekStartIso(basisDate) {
@@ -594,10 +769,9 @@
       return date.toISOString().slice(0,10);
     }
     function renderApplicationChart() {
-      if (!dashboardData || !dashboardBasisDate) return;
+      if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
       const allRows = dashboardData.applicationRows;
-      const weekStart = weekStartIso(dashboardBasisDate);
-      const rows = applicationPeriod === "week" ? allRows.filter((r) => r.date >= weekStart && r.date <= dashboardBasisDate) : allRows;
+      const rows = rowsInRange(allRows,dashboardPeriodStart,dashboardPeriodEnd);
       const approved = rows.filter((r) => r.status === "승인").length;
       const waiting = rows.filter((r) => r.status === "대기").length;
       const rejected = rows.filter((r) => r.status === "반려").length;
@@ -614,16 +788,11 @@
       setText("legendWaiting",`${nf.format(waiting)}건`);
       setText("legendRejected",`${nf.format(rejected)}건`);
       setText("legendApplicationTotal",`${nf.format(total)}건`);
-      setText("applicationTotalLabel",applicationPeriod === "week" ? "신규 신청" : "전체 신청");
-      if (applicationPeriod === "week") {
-        const carriedWaiting = allRows.filter((r) => r.status === "대기" && r.date < weekStart).length;
-        const totalWaiting = allRows.filter((r) => r.status === "대기").length;
-        setText("applicationPeriodLabel",`${weekStart.slice(5).replace("-",".")}~${dashboardBasisDate.slice(5).replace("-",".")} 신청분`);
-        $("applicationBacklog").innerHTML = `이월 대기 <strong>${nf.format(carriedWaiting)}건</strong> · 전체 미처리 <strong>${nf.format(totalWaiting)}건</strong>`;
-      } else {
-        setText("applicationPeriodLabel","업로드 파일 전체 기준");
-        $("applicationBacklog").innerHTML = `현재 미처리 <strong>${nf.format(waiting)}건</strong>`;
-      }
+      setText("applicationTotalLabel","기간 신청");
+      const carriedWaiting = allRows.filter((r) => r.status === "대기" && r.date < dashboardPeriodStart).length;
+      const totalWaiting = allRows.filter((r) => r.status === "대기").length;
+      setText("applicationPeriodLabel",`${periodText()} 신청분`);
+      $("applicationBacklog").innerHTML = `이월 대기 <strong>${nf.format(carriedWaiting)}건</strong> · 전체 미처리 <strong>${nf.format(totalWaiting)}건</strong>`;
     }
     function activityKindClass(category) {
       return category === "계측기 등록" ? "register" : category === "정보 수정" ? "edit" : category === "첨부 추가" ? "attachment" : category === "사용자 등록" ? "user" : "other";
@@ -645,9 +814,8 @@
       return text.length >= 16 ? `${text.slice(5,10).replace("-",".")} ${text.slice(11,16)}` : text || "—";
     }
     function renderActivitySection() {
-      if (!dashboardData || !dashboardBasisDate) return;
-      const weekStart = weekStartIso(dashboardBasisDate);
-      const rows = activityPeriod === "week" ? dashboardData.activityRows.filter((r) => r.date >= weekStart && r.date <= dashboardBasisDate) : dashboardData.activityRows;
+      if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
+      const rows = rowsInRange(dashboardData.activityRows,dashboardPeriodStart,dashboardPeriodEnd);
       const companies = new Set(rows.map((r) => r.company).filter(Boolean));
       const users = new Set(rows.map((r) => `${r.company}|${r.userId || r.user}`).filter(Boolean));
       const categories = ["계측기 등록","정보 수정","첨부 추가","사용자 등록"];
@@ -656,7 +824,7 @@
       setText("activityUsers",nf.format(users.size));
       setText("activityLogs",nf.format(rows.length));
       setText("activityRegistrations",nf.format(counts["계측기 등록"]));
-      setText("activityTypeNote",activityPeriod === "week" ? `${weekStart.slice(5).replace("-",".")}~${dashboardBasisDate.slice(5).replace("-",".")}` : "업로드 파일 전체");
+      setText("activityTypeNote",periodText());
       const maxCount = Math.max(...categories.map((category) => counts[category]),1);
       const barKeys = {"계측기 등록":"Register","정보 수정":"Edit","첨부 추가":"Attachment","사용자 등록":"User"};
       categories.forEach((category) => {
@@ -680,8 +848,101 @@
       $("activityCompanyList").innerHTML = companyRows.length ? companyRows.map((group,index) => `<div class="activity-company-row"><span class="rank">${index+1}</span><span class="company" title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</span><span class="num">${nf.format(group.users.size)}명</span><span class="num">${nf.format(group.logs)}건</span><span class="activity-main">${escapeHtml(group.main)}</span><span class="latest">${escapeHtml(shortActivityTime(group.latest))}</span></div>`).join("") : `<div class="activity-empty">선택한 기간에 고객 활동이 없습니다.</div>`;
 
       const recent = rows.slice(0,8);
-      setText("activityRecentNote",`${activityPeriod === "week" ? "이번 주" : "파일 전체"} · 최근 ${nf.format(recent.length)}건`);
+      setText("activityRecentNote",`${periodText()} · 최근 ${nf.format(recent.length)}건`);
       $("activityTableBody").innerHTML = recent.length ? recent.map((row) => `<tr><td>${escapeHtml(shortActivityTime(row.timestamp))}</td><td title="${escapeHtml(row.company)}">${escapeHtml(row.company)}</td><td>${escapeHtml(row.user || "—")}</td><td>${escapeHtml(row.menu || "—")}</td><td>${activityKindBadge(row.category)}</td><td title="${escapeHtml(activityDescription(row))}">${escapeHtml(activityDescription(row))}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">선택한 기간에 고객 활동이 없습니다.</td></tr>`;
+    }
+    function periodText() {
+      if (!dashboardPeriodStart || !dashboardPeriodEnd) return "조회기간 미설정";
+      return `${dashboardPeriodStart.slice(5).replace("-",".")}~${dashboardPeriodEnd.slice(5).replace("-",".")}`;
+    }
+    function addDaysIso(dateText, days) {
+      const date = new Date(`${dateText}T00:00:00Z`);
+      date.setUTCDate(date.getUTCDate()+days);
+      return date.toISOString().slice(0,10);
+    }
+    function clampPeriodStart(dateText) { return dateText < dashboardPeriodMin ? dashboardPeriodMin : dateText; }
+    function maskIdentity(value) {
+      const text = String(value || "").trim();
+      if (!text) return "—";
+      if (!text.includes("@")) return `${text.slice(0,2)}***`;
+      const [local,domain] = text.split("@");
+      const parts = String(domain || "").split(".");
+      const host = parts.shift() || "";
+      const suffix = parts.length ? `.${parts.join(".")}` : "";
+      return `${local.slice(0,2)}***@${host.slice(0,1)}***${suffix}`;
+    }
+    function maskIp(value) {
+      const parts = String(value || "").split(".");
+      return parts.length === 4 ? `${parts[0]}.${parts[1]}.***.***` : value ? "***" : "—";
+    }
+    function renderDailyAccessList(targetId, rows) {
+      const byDate = new Map();
+      rows.filter((row) => row.logType === "로그인").forEach((row) => {
+        if (!byDate.has(row.date)) byDate.set(row.date,{date:row.date,success:0,failure:0});
+        const day = byDate.get(row.date);
+        if (row.result === "성공") day.success += 1;
+        if (row.result === "실패") day.failure += 1;
+      });
+      const days = [...byDate.values()].sort((a,b) => b.date.localeCompare(a.date)).slice(0,10);
+      const max = Math.max(...days.flatMap((day) => [day.success,day.failure]),1);
+      $(targetId).innerHTML = days.length ? days.map((day) => `<div class="access-day"><span class="date">${escapeHtml(day.date.slice(5).replace("-","."))}</span><div class="dual-track"><div class="dual-bar success" style="width:${day.success/max*100}%"></div></div><b>${nf.format(day.success)}</b><div class="dual-track"><div class="dual-bar failure" style="width:${day.failure/max*100}%"></div></div><b>${nf.format(day.failure)}</b></div>`).join("") : `<div class="activity-empty">선택한 기간에 로그인 기록이 없습니다.</div>`;
+    }
+    function renderAccessSection() {
+      const rows = rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const summary = summarizeAccess(rows);
+      renderDailyAccessList("accessDailyList",rows);
+      const grouped = new Map();
+      summary.successRows.forEach((row) => {
+        const company = row.company || "고객사 미확인";
+        if (!grouped.has(company)) grouped.set(company,{company,users:new Set(),count:0,latest:row.timestamp});
+        const group = grouped.get(company);
+        group.users.add(row.userId || row.user || "미확인"); group.count += 1;
+        if (row.timestamp > group.latest) group.latest = row.timestamp;
+      });
+      const companyRows = [...grouped.values()].sort((a,b) => b.count-a.count || b.latest.localeCompare(a.latest)).slice(0,5);
+      setText("accessCompanyNote",`${periodText()} · 로그인 성공 기준`);
+      $("accessCompanyList").innerHTML = companyRows.length ? companyRows.map((group,index) => `<div class="access-company-row"><span class="rank">${index+1}</span><span class="company" title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</span><span class="num">${nf.format(group.users.size)}명</span><span class="num">${nf.format(group.count)}건</span><span class="latest">${escapeHtml(shortActivityTime(group.latest))}</span></div>`).join("") : `<div class="activity-empty">선택한 기간에 성공한 로그인이 없습니다.</div>`;
+    }
+    function renderSecuritySection() {
+      const rows = rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const summary = summarizeAccess(rows);
+      renderDailyAccessList("securityDailyList",rows);
+      const grouped = new Map();
+      summary.failureRows.forEach((row) => {
+        const key = row.userId.toLowerCase();
+        if (!key) return;
+        if (!grouped.has(key)) grouped.set(key,{identity:row.userId,company:row.company || "미확인",count:0,latest:row.timestamp,ips:new Set()});
+        const group = grouped.get(key); group.count += 1; if (row.company) group.company=row.company; if (row.ip) group.ips.add(row.ip); if (row.timestamp > group.latest) group.latest=row.timestamp;
+      });
+      const repeats = [...grouped.values()].filter((group) => group.count >= 5).sort((a,b) => b.count-a.count || b.latest.localeCompare(a.latest)).slice(0,5);
+      $("repeatFailureList").innerHTML = repeats.length ? repeats.map((group,index) => `<div class="repeat-row"><span class="rank">${index+1}</span><span class="identity" title="마스킹 처리">${escapeHtml(maskIdentity(group.identity))}</span><span class="num" title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</span><span class="count">${nf.format(group.count)}회</span><span class="latest">${escapeHtml(shortActivityTime(group.latest))}</span></div>`).join("") : `<div class="activity-empty">동일 ID 5회 이상 반복 실패가 없습니다.</div>`;
+      const recent = summary.failureRows.slice(0,8);
+      setText("securityRecentNote",`${periodText()} · 최근 ${nf.format(recent.length)}건`);
+      $("securityTableBody").innerHTML = recent.length ? recent.map((row) => `<tr><td>${escapeHtml(shortActivityTime(row.timestamp))}</td><td title="${escapeHtml(row.company || "고객사 미확인")}">${escapeHtml(row.company || "고객사 미확인")}</td><td>${escapeHtml(row.user || "—")}</td><td>${escapeHtml(maskIdentity(row.userId))}</td><td>${escapeHtml(maskIp(row.ip))}</td><td><span class="result-fail">실패</span></td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">선택한 기간에 로그인 실패가 없습니다.</td></tr>`;
+    }
+    function renderPeriodKpis() {
+      const applications = rowsInRange(dashboardData.applicationRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const approvedApplications = applications.filter((row) => row.status === "승인").length;
+      const waiting = applications.filter((row) => row.status === "대기").length;
+      const rejected = applications.filter((row) => row.status === "반려").length;
+      const approvedCompanies = uniqueApprovedCompanies(applications);
+      const newCustomers = rowsInRange(dashboardData.customerRows,dashboardPeriodStart,dashboardPeriodEnd).length;
+      const activities = rowsInRange(dashboardData.activityRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const access = summarizeAccess(rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd));
+      setText("kpiApplications",nf.format(applications.length));
+      $("subApplications").innerHTML = `<span class="good">승인 ${nf.format(approvedApplications)}</span> · <span class="pending">대기 ${nf.format(waiting)}</span> · <span class="bad">반려 ${nf.format(rejected)}</span>`;
+      setText("kpiApproved",nf.format(approvedCompanies)); setText("subApproved",`기간 신청분 승인 ${nf.format(approvedApplications)}건`);
+      setText("periodApplications",nf.format(applications.length)); setText("periodApproved",nf.format(approvedApplications)); setText("periodNewCustomers",nf.format(newCustomers)); setText("periodCurrentWaiting",nf.format(dashboardData.waiting));
+      setText("overviewAccessCompanies",nf.format(access.activeCompanies)); setText("overviewAccessUsers",nf.format(access.activeUsers)); setText("overviewActivityLogs",nf.format(activities.length)); setText("overviewLoginFailures",nf.format(access.failures));
+      setText("usageAccessCompanies",nf.format(access.activeCompanies)); setText("usageAccessUsers",nf.format(access.activeUsers)); setText("usageLoginSuccess",nf.format(access.successes)); setText("usageActivityLogs",nf.format(activities.length));
+      setText("securityAttempts",nf.format(access.attempts)); setText("securityFailures",nf.format(access.failures)); setText("securityRepeatIds",nf.format(access.repeatIds)); setText("securityRepeatIps",nf.format(access.repeatIps));
+    }
+    function renderPeriodViews() {
+      if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
+      setText("periodApplied",periodText());
+      renderPeriodKpis(); renderApplicationChart(); renderApplicationTable(); renderActivitySection(); renderAccessSection(); renderSecuritySection();
+      setText("criteriaPeriod",`${dashboardPeriodStart} ~ ${dashboardPeriodEnd}`);
+      setText("criteriaBasis",dashboardBasisDate || "—");
     }
     function renderCustomerTable() {
       if (!dashboardData) return;
@@ -695,14 +956,66 @@
       const rows = dashboardData.staff.slice(0,10);
       $("staffTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${nf.format(r.customers)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
     }
-    function escapeHtml(value) { return String(value).replace(/[&<>"]/g,(c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+    function escapeHtml(value) { return String(value).replace(/[&<>"']/g,(c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
+    function setPresetActive(preset) {
+      document.querySelectorAll("[data-preset]").forEach((button) => button.classList.toggle("active",button.dataset.preset === preset));
+    }
+    function applyPeriodRange(start,end,preset=null) {
+      if (!dashboardData) return;
+      if (!start || !end) { showError("시작일과 종료일을 모두 선택해 주세요."); return; }
+      if (start > end) { showError("시작일은 종료일보다 늦을 수 없습니다."); return; }
+      if (end > dashboardBasisDate) { showError(`종료일은 파일 기준일(${dashboardBasisDate})을 넘을 수 없습니다.`); return; }
+      if (start < dashboardPeriodMin) { showError(`시작일은 업로드 데이터의 최초 일자(${dashboardPeriodMin})보다 빠를 수 없습니다.`); return; }
+      dashboardPeriodStart=start; dashboardPeriodEnd=end;
+      $("periodStart").value=start; $("periodEnd").value=end;
+      setPresetActive(preset); clearNotices(); renderPeriodViews();
+    }
+    function applyPreset(preset) {
+      if (!dashboardData) return;
+      let start;
+      if (preset === "week") start=weekStartIso(dashboardBasisDate);
+      else if (preset === "7days") start=addDaysIso(dashboardBasisDate,-6);
+      else if (preset === "month") start=`${dashboardBasisDate.slice(0,7)}-01`;
+      else start=dashboardPeriodMin;
+      applyPeriodRange(clampPeriodStart(start),dashboardBasisDate,preset);
+    }
+    function initializePeriodControls() {
+      const validDate = /^\d{4}-\d{2}-\d{2}$/;
+      const dates = [...dashboardData.applicationRows,...dashboardData.customerRows,...dashboardData.activityRows,...dashboardData.accessRows].map((row) => row.date).filter((date) => validDate.test(date) && date <= dashboardBasisDate).sort();
+      dashboardPeriodMin=dates[0] || weekStartIso(dashboardBasisDate);
+      ["periodStart","periodEnd"].forEach((id) => { $(id).disabled=false; $(id).min=dashboardPeriodMin; $(id).max=dashboardBasisDate; });
+      $("periodQueryBtn").disabled=false; document.querySelectorAll("[data-preset]").forEach((button) => {button.disabled=false});
+      setText("periodAvailable",`업로드 데이터 조회 가능 ${dashboardPeriodMin} ~ ${dashboardBasisDate}`);
+      applyPreset("week");
+    }
+    function renderCriteriaContent(focusKey=null) {
+      const groups = new Map();
+      Object.entries(metricDefinitions).forEach(([key,item]) => { if (!groups.has(item.group)) groups.set(item.group,[]); groups.get(item.group).push({key,...item}); });
+      $("criteriaContent").innerHTML = [...groups.entries()].map(([group,items]) => `<section class="criteria-group"><h3>${escapeHtml(group)}</h3>${items.map((item) => `<div class="criteria-row ${item.key === focusKey ? "focus":""}" data-criteria-key="${escapeHtml(item.key)}"><strong>${escapeHtml(item.label)}</strong><span class="scope-badge ${item.scope === "기간 적용" ? "period":"snapshot"}">${escapeHtml(item.scope)}</span><span>${escapeHtml(item.detail)}</span><span class="source">${escapeHtml(item.source)}</span></div>`).join("")}</section>`).join("");
+    }
+    function openCriteriaModal(focusKey=null) {
+      renderCriteriaContent(focusKey); setText("criteriaPeriod",dashboardPeriodStart ? `${dashboardPeriodStart} ~ ${dashboardPeriodEnd}` : "Excel 적용 후 표시"); setText("criteriaBasis",dashboardBasisDate || "Excel 적용 후 표시");
+      $("criteriaModal").hidden=false; document.body.style.overflow="hidden"; $("criteriaClose").focus();
+      if (focusKey) requestAnimationFrame(() => $("criteriaContent").querySelector(`[data-criteria-key="${focusKey}"]`)?.scrollIntoView({block:"center"}));
+    }
+    function closeCriteriaModal() { $("criteriaModal").hidden=true; document.body.style.overflow=""; }
+    function setupStatInfo() {
+      document.querySelectorAll("[data-stat]").forEach((element) => {
+        const key=element.dataset.stat, item=metricDefinitions[key];
+        if (!item || element.querySelector(".stat-info")) return;
+        const button=document.createElement("button"); button.type="button"; button.className="stat-info"; button.textContent="i"; button.dataset.tooltip=item.short; button.title=item.short; button.setAttribute("aria-label",`${item.label} 통계 기준 보기`);
+        button.addEventListener("click",(event) => {event.preventDefault();event.stopPropagation();openCriteriaModal(key)}); element.appendChild(button);
+      });
+    }
+    function activateTab(name) {
+      document.querySelectorAll("[data-tab]").forEach((button) => { const active=button.dataset.tab === name; button.classList.toggle("active",active); button.setAttribute("aria-selected",String(active)); });
+      const panelId=`tab${name[0].toUpperCase()}${name.slice(1)}`;
+      document.querySelectorAll(".tab-panel").forEach((panel) => { panel.hidden=panel.id !== panelId; });
+    }
     function render(data, basisDate) {
       dashboardData = data;
       dashboardBasisDate = basisDate;
       setText("basisDate",basisDate); setText("appliedTime",new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date()));
-      setText("kpiApplications",nf.format(data.appTotal));
-      $("subApplications").innerHTML = `<span class="good">승인 ${nf.format(data.approvedApplications)}</span> · <span class="pending">대기 ${nf.format(data.waiting)}</span> · <span class="bad">반려 ${nf.format(data.rejected)}</span>`;
-      setText("kpiApproved",nf.format(data.approved)); setText("subApproved",`전체 신청의 ${data.appTotal ? pf.format(data.approved/data.appTotal*100):"0.0"}%`);
       setText("kpiCustomers",nf.format(data.customerTotal)); $("subCustomers").innerHTML = `<span class="good">정상 ${nf.format(data.normal)}</span> · 비활성 ${nf.format(data.inactive)}`;
       setText("kpiAssets",nf.format(data.totalAssets)); setText("subAssets",`${nf.format(data.instrumentRows.length)}개 고객사 계측기현황 합계`);
       setText("kpiUnmapped",nf.format(data.unmapped)); setText("subUnmapped",`전체 자산의 ${data.totalAssets ? pf.format(data.unmapped/data.totalAssets*100):"0.0"}%`);
@@ -712,7 +1025,7 @@
       const max = Math.max(data.prep,data.near,data.overdue,1);
       [["Prep",data.prep],["Near",data.near],["Overdue",data.overdue]].forEach(([key,n]) => { $("bar"+key).style.width=`${n/max*100}%`; setText("value"+key,nf.format(n)); });
       setText("calibrationTotal",`관리 대상 ${nf.format(data.prep+data.near+data.overdue)}대`);
-      renderApplicationChart(); renderActivitySection(); renderApplicationTable(); renderCustomerTable(); renderStaffTable();
+      renderCustomerTable(); renderStaffTable(); initializePeriodControls();
     }
 
     function showError(messages) {
@@ -744,14 +1057,14 @@
       const dates = Object.entries(selectedFiles).map(([role,file]) => ({role,date:extractDate(file.name),name:file.name}));
       const dateErrors = dates.filter((x) => !x.date).map((x) => `${x.name}: 파일명에서 기준일(YYYY-MM-DD)을 찾을 수 없습니다.`);
       if (dateErrors.length) { showError(dateErrors); return; }
-      if (new Set(dates.map((x) => x.date)).size !== 1) { showError(`4개 파일의 기준일이 서로 다릅니다. (${dates.map((x) => `${schemas[x.role].label} ${x.date}`).join(" / ")})`); return; }
+      if (new Set(dates.map((x) => x.date)).size !== 1) { showError(`5개 파일의 기준일이 서로 다릅니다. (${dates.map((x) => `${schemas[x.role].label} ${x.date}`).join(" / ")})`); return; }
       const btn = $("applyBtn"), icon = btn.querySelector("svg"), label = btn.querySelector("span");
       btn.disabled = true; icon.classList.add("spin"); label.textContent = "분석 중";
       try {
         const parsed = {};
-        for (const role of ["applications","customers","instruments","activities"]) parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
-        render(compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities),dates[0].date);
-        $("successMessage").textContent = `${dates[0].date} 기준 파일 4개를 정상적으로 읽어 화면을 갱신했습니다.`;
+        for (const role of ["applications","customers","instruments","activities","access"]) parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
+        render(compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities,parsed.access),dates[0].date);
+        $("successMessage").textContent = `${dates[0].date} 기준 파일 5개를 정상적으로 읽어 화면을 갱신했습니다.`;
         $("successNotice").classList.add("show"); $("uploadPanel").classList.add("collapsed"); $("toggleUpload").textContent = "다시 불러오기";
       } catch (error) {
         console.error(error); showError(error?.message || "알 수 없는 오류가 발생했습니다.");
@@ -762,24 +1075,18 @@
 
     $("applicationStatus").addEventListener("change",renderApplicationTable);
     $("applicationLimit").addEventListener("change",renderApplicationTable);
-    $("applicationPeriod").addEventListener("click",(event) => {
-      const button = event.target.closest("[data-period]");
-      if (!button) return;
-      applicationPeriod = button.dataset.period;
-      $("applicationPeriod").querySelectorAll("[data-period]").forEach((item) => { const active=item === button; item.classList.toggle("active",active); item.setAttribute("aria-pressed",String(active)); });
-      renderApplicationChart();
-    });
-    $("activityPeriod").addEventListener("click",(event) => {
-      const button = event.target.closest("[data-period]");
-      if (!button) return;
-      activityPeriod = button.dataset.period;
-      $("activityPeriod").querySelectorAll("[data-period]").forEach((item) => { const active=item === button; item.classList.toggle("active",active); item.setAttribute("aria-pressed",String(active)); });
-      renderActivitySection();
-    });
+    $("periodQueryBtn").addEventListener("click",() => applyPeriodRange($("periodStart").value,$("periodEnd").value,null));
+    document.querySelectorAll("[data-preset]").forEach((button) => button.addEventListener("click",() => applyPreset(button.dataset.preset)));
+    document.querySelectorAll("[data-tab]").forEach((button) => button.addEventListener("click",() => activateTab(button.dataset.tab)));
+    $("criteriaBtn").addEventListener("click",() => openCriteriaModal());
+    $("criteriaClose").addEventListener("click",closeCriteriaModal);
+    $("criteriaModal").addEventListener("click",(event) => { if (event.target === $("criteriaModal")) closeCriteriaModal(); });
+    document.addEventListener("keydown",(event) => { if (event.key === "Escape" && !$("criteriaModal").hidden) closeCriteriaModal(); });
     $("customerSort").addEventListener("change",renderCustomerTable);
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
+    setupStatInfo();
   })();
   </script>
 </body>
