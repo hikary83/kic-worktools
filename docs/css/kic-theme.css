@@ -109,6 +109,30 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+/* ==============================================================
+   다크모드 글로벌 폼 컨트롤 (Input / Select / Textarea)
+   ============================================================== */
+html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]),
+html.dark select,
+html.dark textarea {
+  background-color: #212121 !important;
+  border-color: #424242 !important;
+  color: #ECECEC !important;
+}
+
+html.dark input:not([type="checkbox"]):not([type="radio"]):focus,
+html.dark select:focus,
+html.dark textarea:focus {
+  border-color: #10A37F !important;
+  background-color: #262626 !important;
+  outline: none;
+}
+
+html.dark input::placeholder,
+html.dark textarea::placeholder {
+  color: #737373 !important;
+}
+
 .font-mono, .mono-tag {
   font-family: 'JetBrains Mono', monospace !important;
 }
