@@ -730,8 +730,12 @@
           }
         })
         .catch(err => {
-          if (syncIndicator) syncIndicator.classList.add('hidden');
-          onFailure(err);
+          if (syncIndicator) {
+            syncIndicator.className = 'text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
+            syncIndicator.innerHTML = '<i class="fas fa-exclamation-circle text-amber-500"></i> 동기화 지연 (캐시 유지)';
+            setTimeout(() => syncIndicator.classList.add('hidden'), 4000);
+          }
+          onFailure(err, isBackground);
         });
     }
 
@@ -741,12 +745,13 @@
       loadData(false);
     }
 
-    function onFailure(error) {
-      console.error(error);
+    function onFailure(error, isBackground = false) {
+      console.warn("Data load warning/error:", error);
       if (!window.currentStats) {
-        document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${error.message}</p><button onclick='loadData(false)' class='mt-4 text-blue-600 underline font-bold'>다시 시도</button>`;
-      } else {
-        showToast('최신 데이터 동기화 실패 (기존 캐시 표시 중)', 'error');
+        document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${escapeHtml(error.message || error)}</p><button onclick='loadData(false)' class='mt-4 text-blue-600 underline font-bold'>다시 시도</button>`;
+      } else if (!isBackground) {
+        // 사용자가 직접 버튼을 클릭하여 수동 조회했을 때만 토스트 표시
+        showToast('데이터 조회 실패: ' + (error.message || '네트워크 상태를 확인해주세요.'), 'error');
       }
     }
 

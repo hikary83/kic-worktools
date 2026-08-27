@@ -498,3 +498,59 @@ html.dark #kic-toast.toast-info {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* ==============================================================
+   Kanban Floating Dropzone (드래그 시에만 나타나는 완료 영역)
+   ============================================================== */
+.kanban-floating-done-dropzone {
+  position: fixed;
+  top: 16px;
+  left: calc(50% + 122px);
+  width: min(520px, calc(100vw - 300px));
+  min-height: 66px;
+  z-index: 100005;
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transform: translate(-50%, -14px);
+  transition: opacity .16s ease, transform .16s ease, background-color .14s ease, border-color .14s ease, box-shadow .14s ease;
+  box-shadow: 0 12px 30px rgba(15,23,42,.18);
+}
+
+.kanban-floating-done-dropzone.show {
+  opacity: 1;
+  visibility: visible;
+  pointer-events: auto;
+  transform: translate(-50%, 0);
+}
+
+.kanban-floating-done-dropzone.kanban-done-drop-active {
+  background-color: #dcfce7 !important;
+  border-color: #22c55e !important;
+  box-shadow: 0 14px 34px rgba(34,197,94,.28);
+}
+
+.dark .kanban-floating-done-dropzone {
+  background-color: #131B2E !important;
+  border-color: #059669 !important;
+  color: #34d399 !important;
+  box-shadow: 0 14px 34px rgba(0,0,0,.6);
+}
+
+.dark .kanban-floating-done-dropzone.kanban-done-drop-active {
+  background-color: #064e3b !important;
+  border-color: #10b981 !important;
+}
+
+body.kic-lnb-collapsed .kanban-floating-done-dropzone {
+  left: calc(50% + 38px);
+  width: min(520px, calc(100vw - 125px));
+}
+
+@media (max-width: 900px) {
+  .kanban-floating-done-dropzone,
+  body.kic-lnb-collapsed .kanban-floating-done-dropzone {
+    left: 50%;
+    width: calc(100vw - 24px);
+  }
+}
