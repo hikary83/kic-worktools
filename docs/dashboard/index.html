@@ -63,10 +63,17 @@
     .file-slot.ready .file-name{color:var(--green-800);font-weight:700}
     .file-date{position:absolute;right:10px;top:9px;color:var(--green-700);background:var(--green-100);border-radius:7px;padding:3px 6px;font-size:10px;font-weight:800;display:none}
     .file-slot.ready .file-date{display:block}
-    .apply-btn{border:0;border-radius:13px;padding:0 23px;background:linear-gradient(135deg,var(--green-700),var(--green-500));color:#fff;font-weight:800;min-width:132px;box-shadow:0 8px 16px rgba(8,160,95,.2);display:flex;align-items:center;justify-content:center;gap:8px}
+    .upload-actions{display:flex;flex-direction:column;gap:7px;min-width:132px}
+    .apply-btn{border:0;border-radius:11px;padding:0 14px;background:linear-gradient(135deg,var(--green-700),var(--green-500));color:#fff;font-weight:800;height:36px;box-shadow:0 6px 14px rgba(8,160,95,.2);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;transition:.18s;cursor:pointer}
     .apply-btn:disabled{cursor:not-allowed;background:#c5d0ca;box-shadow:none}
     .apply-btn:not(:disabled):hover{filter:brightness(.97);transform:translateY(-1px)}
-    .apply-btn svg{width:17px;height:17px}
+    .apply-btn svg{width:15px;height:15px}
+    .deploy-btn{border:0;border-radius:11px;padding:0 14px;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;font-weight:800;height:36px;box-shadow:0 6px 14px rgba(37,99,235,.22);display:flex;align-items:center;justify-content:center;gap:6px;font-size:12px;transition:.18s;cursor:pointer}
+    .deploy-btn:disabled{cursor:not-allowed;background:#c5d0ca;box-shadow:none}
+    .deploy-btn:not(:disabled):hover{filter:brightness(1.08);transform:translateY(-1px)}
+    .deploy-btn svg{width:15px;height:15px}
+    .token-link{color:var(--muted);font-size:10.5px;text-decoration:underline;cursor:pointer;border:0;background:transparent;padding:2px;text-align:center}
+    .token-link:hover{color:var(--ink)}
     .upload-help{margin:11px 2px 0;color:#7b8881;font-size:11px;display:flex;align-items:center;gap:6px}
     .upload-help svg{width:14px;height:14px}
     .upload-panel.collapsed .upload-body{display:none}
@@ -257,9 +264,13 @@
               <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6z"/><path d="m9 12 2 2 4-4"/></svg></span>
               <span class="file-text"><strong>보안접속이력 파일</strong><span class="file-name">보안접속이력_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
             </label>
-            <button class="apply-btn" id="applyBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>데이터 적용</span></button>
+            <div class="upload-actions">
+              <button class="apply-btn" id="applyBtn" type="button" disabled title="선택한 5개 파일을 현재 브라우저 화면에서만 분석하여 봅니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>데이터 적용</span></button>
+              <button class="deploy-btn" id="deployBtn" type="button" disabled title="선택한 5개 파일을 GitHub 저장소(data/)에 커밋하여 모든 직원이 볼 수 있게 즉시 배포합니다."><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 2 11 13M22 2l-7 20-4-9-9-4 20-7z"/></svg><span>전사 배포</span></button>
+              <button class="token-link" id="ghTokenBtn" type="button" title="GitHub Personal Access Token을 설정합니다.">GitHub 토큰 설정</button>
+            </div>
           </div>
-          <div class="upload-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>선택한 파일은 브라우저 안에서만 처리되며 외부 서버로 전송되지 않습니다. 파일명 날짜와 필수 컬럼을 자동 검증합니다.</div>
+          <div class="upload-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>선택한 파일은 브라우저 안에서만 처리됩니다. <strong>[전사 배포]</strong>를 누르면 GitHub 저장소(data/)에 안전하게 자동 커밋되어 모든 직원 화면에 반영됩니다.</span></div>
         </div>
       </section>
 
@@ -383,6 +394,56 @@
       <div class="modal-head"><div><strong id="criteriaTitle">통계 기준 안내</strong><span>각 수치의 기간 적용 여부, 데이터 출처와 계산 기준을 확인할 수 있습니다.</span></div><button class="modal-close" id="criteriaClose" type="button" aria-label="통계 기준 닫기">×</button></div>
       <div class="modal-body"><div class="criteria-current"><div>현재 조회기간<b id="criteriaPeriod">—</b></div><div>Snapshot 기준일<b id="criteriaBasis">—</b></div></div><div id="criteriaContent"></div><div class="criteria-note">조회기간은 신청·등록·작업·접속처럼 날짜가 있는 데이터에 적용됩니다. 등록 계측기, 미매핑, 매핑률, 차기교정 현황은 업로드 파일 기준일 현재의 Snapshot이므로 조회기간을 바꿔도 값이 변하지 않습니다. 접속 실패는 확인이 필요한 로그 수이며 보안사고 확정 건수를 의미하지 않습니다.</div></div>
     </section>
+  </div>
+
+  <!-- 🔐 GitHub 토큰 설정 모달 -->
+  <div class="modal-backdrop" id="tokenModal" hidden>
+    <div class="criteria-modal" style="max-width:500px">
+      <div class="modal-head">
+        <div><strong>GitHub 배포 토큰 설정</strong><span>프론트엔드에서 저장소(data/)로 엑셀을 자동 배포하기 위한 토큰입니다.</span></div>
+        <button class="modal-close" id="tokenClose" type="button">×</button>
+      </div>
+      <div class="modal-body" style="padding:20px">
+        <label style="display:block;font-size:12px;font-weight:700;margin-bottom:6px">GitHub Personal Access Token (PAT)</label>
+        <input type="password" id="ghTokenInput" placeholder="ghp_... 또는 github_pat_..." style="width:100%;padding:10px 12px;border:1px solid var(--line);border-radius:10px;font-size:13px;outline:none;box-sizing:border-box" />
+        <div style="font-size:11px;color:var(--muted);margin:8px 0 16px;line-height:1.5">
+          * <code>repo</code> 또는 <code>contents:write</code> 권한이 있는 토큰을 입력하세요.<br>
+          * 입력한 토큰은 본인 브라우저(localStorage)에만 안전하게 보관됩니다.
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px">
+          <button type="button" id="tokenClearBtn" style="border:1px solid var(--line);background:#fff;padding:8px 14px;border-radius:9px;font-size:12px;font-weight:700;color:var(--red)">토큰 삭제</button>
+          <button type="button" id="tokenSaveBtn" style="border:0;background:var(--green-700);color:#fff;padding:8px 18px;border-radius:9px;font-size:12px;font-weight:700">저장</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 🚀 전사 배포 컨펌 모달 -->
+  <div class="modal-backdrop" id="deployConfirmModal" hidden>
+    <div class="criteria-modal" style="max-width:540px">
+      <div class="modal-head">
+        <div><strong>전사 대시보드 데이터 배포</strong><span>모든 직원이 열람하는 공용 데이터를 갱신합니다.</span></div>
+        <button class="modal-close" id="deployConfirmClose" type="button">×</button>
+      </div>
+      <div class="modal-body" style="padding:20px">
+        <div style="background:var(--green-50);border:1px solid #cce9d8;border-radius:12px;padding:14px;margin-bottom:14px">
+          <div style="font-size:12px;color:var(--muted)">적용 기준일</div>
+          <div style="font-size:17px;font-weight:800;color:var(--green-800);margin-top:2px" id="deployBasisDateText">—</div>
+        </div>
+        <p style="font-size:12.5px;color:var(--ink);line-height:1.6;margin:0 0 16px">
+          선택한 <b>5개 엑셀 파일</b>을 GitHub 저장소(<code>docs/dashboard/data/</code>)에 자동 커밋 & 푸시합니다.<br>
+          배포 완료 후 약 1~2분 뒤 모든 직원의 대시보드에 최신 데이터가 반영됩니다. 계속 진행하시겠습니까?
+        </p>
+        <div id="deployProgress" style="display:none;margin-bottom:14px;font-size:12px;font-weight:700;color:var(--blue)">
+          <div class="spin" style="display:inline-block;width:14px;height:14px;border:2px solid #2563eb;border-top-color:transparent;border-radius:50%;margin-right:6px;vertical-align:middle"></div>
+          <span id="deployStatusText">저장소로 배포 중...</span>
+        </div>
+        <div style="display:flex;justify-content:flex-end;gap:8px" id="deployButtonsWrap">
+          <button type="button" id="deployCancelBtn" style="border:1px solid var(--line);background:#fff;padding:9px 16px;border-radius:10px;font-size:12px;font-weight:700">취소</button>
+          <button type="button" id="deployStartBtn" style="border:0;background:linear-gradient(135deg,#2563eb,#1d4ed8);color:#fff;padding:9px 20px;border-radius:10px;font-size:12px;font-weight:800">🚀 덮어쓰기 배포 시작</button>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script>
@@ -1048,7 +1109,187 @@
       $("errorNotice").scrollIntoView({behavior:"smooth",block:"center"});
     }
     function clearNotices() { $("errorNotice").classList.remove("show"); $("successNotice").classList.remove("show"); }
-    function refreshApplyButton() { $("applyBtn").disabled = !Object.values(selectedFiles).every(Boolean); }
+    function refreshApplyButton() {
+      const allSelected = Object.values(selectedFiles).every(Boolean);
+      $("applyBtn").disabled = !allSelected;
+      if ($("deployBtn")) $("deployBtn").disabled = !allSelected;
+    }
+
+    // 🔐 GitHub 토큰 관리
+    const GH_REPO = "hikary83/kic-worktools";
+    const GH_BRANCH = "main";
+    const GH_DATA_PATH = "docs/dashboard/data";
+
+    function getGhToken() {
+      return localStorage.getItem("kic_gh_token") || "";
+    }
+    function openTokenModal() {
+      $("ghTokenInput").value = getGhToken();
+      $("tokenModal").hidden = false;
+    }
+    function closeTokenModal() {
+      $("tokenModal").hidden = true;
+    }
+
+    $("ghTokenBtn").addEventListener("click", openTokenModal);
+    $("tokenClose").addEventListener("click", closeTokenModal);
+    $("tokenSaveBtn").addEventListener("click", () => {
+      const val = $("ghTokenInput").value.trim();
+      if (!val) { alert("토큰을 입력해주세요."); return; }
+      localStorage.setItem("kic_gh_token", val);
+      closeTokenModal();
+      alert("GitHub 토큰이 저장되었습니다.");
+    });
+    $("tokenClearBtn").addEventListener("click", () => {
+      localStorage.removeItem("kic_gh_token");
+      $("ghTokenInput").value = "";
+      closeTokenModal();
+      alert("GitHub 토큰이 삭제되었습니다.");
+    });
+    $("tokenModal").addEventListener("click", (e) => { if (e.target === $("tokenModal")) closeTokenModal(); });
+
+    // 🚀 GitHub 프론트엔드 직접 배포 로직
+    function fileToBase64(file) {
+      return new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => {
+          const res = reader.result;
+          const base64 = res.split(",")[1];
+          resolve(base64);
+        };
+        reader.onerror = reject;
+        reader.readAsDataURL(file);
+      });
+    }
+
+    async function getFileSha(path, token) {
+      try {
+        const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}?ref=${GH_BRANCH}`, {
+          headers: {
+            "Authorization": `token ${token}`,
+            "Accept": "application/vnd.github.v3+json"
+          },
+          cache: "no-cache"
+        });
+        if (res.ok) {
+          const data = await res.json();
+          return data.sha;
+        }
+      } catch (e) {}
+      return null;
+    }
+
+    async function commitFileToGitHub(path, base64Content, commitMessage, token) {
+      const sha = await getFileSha(path, token);
+      const payload = {
+        message: commitMessage,
+        content: base64Content,
+        branch: GH_BRANCH
+      };
+      if (sha) payload.sha = sha;
+
+      const res = await fetch(`https://api.github.com/repos/${GH_REPO}/contents/${path}`, {
+        method: "PUT",
+        headers: {
+          "Authorization": `token ${token}`,
+          "Accept": "application/vnd.github.v3+json",
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (!res.ok) {
+        const err = await res.json().catch(() => ({}));
+        throw new Error(`[${path}] 업로드 실패 (${res.status}): ${err.message || res.statusText}`);
+      }
+      return await res.json();
+    }
+
+    function openDeployConfirmModal() {
+      const token = getGhToken();
+      if (!token) {
+        alert("GitHub 배포를 위해 먼저 Personal Access Token을 설정해야 합니다.");
+        openTokenModal();
+        return;
+      }
+      const dates = Object.entries(selectedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
+      const basisDate = dates.find(x => x.date)?.date || new Date().toISOString().slice(0, 10);
+      $("deployBasisDateText").textContent = basisDate + " 기준";
+      $("deployProgress").style.display = "none";
+      $("deployButtonsWrap").style.display = "flex";
+      $("deployConfirmModal").hidden = false;
+    }
+
+    function closeDeployConfirmModal() {
+      $("deployConfirmModal").hidden = true;
+    }
+
+    $("deployBtn").addEventListener("click", openDeployConfirmModal);
+    $("deployConfirmClose").addEventListener("click", closeDeployConfirmModal);
+    $("deployCancelBtn").addEventListener("click", closeDeployConfirmModal);
+    $("deployConfirmModal").addEventListener("click", (e) => { if (e.target === $("deployConfirmModal")) closeDeployConfirmModal(); });
+
+    $("deployStartBtn").addEventListener("click", async () => {
+      const token = getGhToken();
+      if (!token) { closeDeployConfirmModal(); openTokenModal(); return; }
+
+      const dates = Object.entries(selectedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
+      const basisDate = dates.find(x => x.date)?.date || new Date().toISOString().slice(0, 10);
+
+      $("deployProgress").style.display = "block";
+      $("deployButtonsWrap").style.display = "none";
+      const statusEl = $("deployStatusText");
+
+      const fixedFileNames = {
+        applications: "이용신청.xlsx",
+        customers: "고객사현황.xlsx",
+        instruments: "고객사계측기현황.xlsx",
+        activities: "데이터변경이력.xlsx",
+        access: "보안접속이력.xlsx"
+      };
+
+      try {
+        const roles = ["applications", "customers", "instruments", "activities", "access"];
+        let step = 1;
+        for (const role of roles) {
+          const file = selectedFiles[role];
+          const fixedName = fixedFileNames[role];
+          statusEl.textContent = `(${step}/6) ${schemas[role].label} (${fixedName}) 커밋 중...`;
+          const base64 = await fileToBase64(file);
+          await commitFileToGitHub(`${GH_DATA_PATH}/${fixedName}`, base64, `data: update ${fixedName} for ${basisDate}`, token);
+          step++;
+        }
+
+        // manifest.json 커밋
+        statusEl.textContent = `(6/6) manifest.json 설정 갱신 중...`;
+        const manifestObj = {
+          basisDate,
+          updatedAt: new Date().toISOString(),
+          files: fixedFileNames
+        };
+        const manifestBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestObj, null, 2))));
+        await commitFileToGitHub(`${GH_DATA_PATH}/manifest.json`, manifestBase64, `data: update manifest.json for ${basisDate}`, token);
+
+        closeDeployConfirmModal();
+        $("successMessage").textContent = `🎉 ${basisDate} 기준 5개 엑셀 파일이 GitHub 저장소에 성공적으로 전사 배포되었습니다! (약 1~2분 후 GitHub Pages에 반영되어 모든 직원이 열람할 수 있습니다.)`;
+        $("successNotice").classList.add("show");
+        $("uploadPanel").classList.add("collapsed");
+        $("toggleUpload").textContent = "다시 불러오기";
+
+        // 로컬 뷰도 렌더링
+        const parsed = {};
+        for (const role of roles) {
+          parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]), schemas[role], selectedFiles[role].name);
+        }
+        render(compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access), basisDate);
+
+      } catch (err) {
+        console.error(err);
+        $("deployProgress").style.display = "none";
+        $("deployButtonsWrap").style.display = "flex";
+        alert("배포 중 오류가 발생했습니다: " + (err.message || err));
+      }
+    });
     function setFile(role,file) {
       if (!file) return;
       const slot = document.querySelector(`.file-slot[data-role="${role}"]`);

@@ -288,17 +288,22 @@ Excel 적용 후 화면 상단의 시작일·종료일을 바꾸고 `조회`하�
 
 ## 13. 배포 방법
 
-GitHub Pages는 이 저장소의 `docs` 폴더를 사용한다. `main` 브랜치에 푸시하면 잠시 후 공개 주소에 반영된다.
+### 1) 프론트엔드 원클릭 자동 배포 (추천 🚀)
+1. 대시보드 웹 화면에서 5개 엑셀 파일을 드래그하여 슬롯에 넣습니다.
+2. `[GitHub 토큰 설정]` 링크를 눌러 `repo` 권한이 있는 Personal Access Token을 1회 입력 및 저장합니다.
+3. **`[전사 배포]`** 버튼을 누르고 컨펌 창에서 **`[🚀 덮어쓰기 배포 시작]`**을 누릅니다.
+4. 브라우저가 GitHub API를 통해 `docs/dashboard/data/` 폴더에 5개 엑셀 및 `manifest.json`을 자동 커밋 & 푸시합니다.
+5. 약 1~2분 후 GitHub Pages에 자동 반영되어 모든 직원이 최신 데이터를 보게 됩니다.
 
+### 2) 수동 Git 커밋 배포
 ```powershell
 git -C "D:\Google Antigravity\kic-worktools" status --short
-git -C "D:\Google Antigravity\kic-worktools" diff --check
-git -C "D:\Google Antigravity\kic-worktools" add docs/dashboard/index.html docs/dashboard/README.md
-git -C "D:\Google Antigravity\kic-worktools" commit -m "docs: update dashboard guide"
+git -C "D:\Google Antigravity\kic-worktools" add docs/dashboard/data docs/dashboard/index.html docs/dashboard/README.md
+git -C "D:\Google Antigravity\kic-worktools" commit -m "data: update weekly dashboard excel files"
 git -C "D:\Google Antigravity\kic-worktools" push origin main
 ```
 
-배포 후 <https://hikary83.github.io/kic-worktools/dashboard/>를 새로 열어 확인한다. 이전 화면이 캐시되어 보이면 강력 새로고침을 사용한다.
+배포 후 <https://hikary83.github.io/kic-worktools/dashboard/>를 열어 확인합니다.
 
 ## 14. 향후 확장 방향
 
