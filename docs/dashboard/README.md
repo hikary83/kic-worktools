@@ -36,15 +36,18 @@ CWIZ Enterprise Admin에 정식 대시보드·통계 기능이 개발되기 전�
 D:\Google Antigravity\kic-worktools
 └─ docs
    └─ dashboard
-      ├─ index.html          # 실행 파일: HTML, CSS, Excel 파서, 집계, 화면 렌더링 포함
-      └─ README.md           # 이 문서
+      ├─ index.html          # 실행 파일: HTML, CSS, Excel 파서, 집계, 화면 렌더링, data/ 자동로드 포함
+      ├─ README.md           # 이 문서
+      └─ data/               # 주간 엑셀 5개 보관 폴더 (직원 접속 시 자동 로드용)
+         ├─ manifest.json    # 파일명 매핑 설정
+         ├─ 이용신청.xlsx
+         ├─ 고객사현황.xlsx
+         ├─ 고객사계측기현황.xlsx
+         ├─ 데이터변경이력.xlsx
+         └─ 보안접속이력.xlsx
 ```
 
-`index.html` 한 파일 안에 모든 기능이 들어 있다.
-
-- 상단 `<style>`: 브랜드 컬러, 레이아웃, KPI·차트·표 스타일
-- 본문 `<body>`: 파일 선택, 공통 기간 조회, 탭, KPI, 차트, 고객 활동·접속 현황, 표, 통계 기준 모달
-- 하단 `<script>`: Excel 압축 해제·파싱, 검증, 집계, 렌더링, 이벤트 처리
+`index.html` 실행 시 `data/` 폴더의 엑셀 5개를 자동으로 읽어와 바로 화면을 렌더링합니다. 수동 업로드 패널도 유지되어 필요 시 임시 엑셀을 즉석에서 검증할 수 있습니다.
 
 ## 4. 매주 사용하는 입력 파일
 

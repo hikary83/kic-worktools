@@ -220,7 +220,6 @@
       <div class="page-head">
         <div class="page-title"><span class="accent"></span><div><h1>CWIZ Enterprise 운영 현황</h1><div class="subtitle">이용신청부터 고객사·계측기 등록, CMS 매핑까지 한눈에 확인합니다.</div></div></div>
         <div class="meta">
-          <button class="meta-button" id="criteriaBtn" type="button"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>통계 기준</span></button>
           <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>기준일</span><b id="basisDate">—</b></div>
           <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>최근 적용</span><b id="appliedTime">—</b></div>
         </div>
@@ -1087,6 +1086,71 @@
       }
     });
 
+    async function loadEmbeddedData(showManualNoticeIfMissing = false) {
+      let fileMap = {
+        applications: "data/이용신청.xlsx",
+        customers: "data/고객사현황.xlsx",
+        instruments: "data/고객사계측기현황.xlsx",
+        activities: "data/데이터변경이력.xlsx",
+        access: "data/보안접속이력.xlsx"
+      };
+
+      try {
+        const manifestRes = await fetch("data/manifest.json", { cache: "no-cache" });
+        if (manifestRes.ok) {
+          const manifest = await manifestRes.json();
+          if (manifest && manifest.files) {
+            Object.keys(manifest.files).forEach((key) => {
+              if (manifest.files[key]) fileMap[key] = "data/" + manifest.files[key];
+            });
+          }
+        }
+      } catch (e) {}
+
+      const roles = ["applications", "customers", "instruments", "activities", "access"];
+      const fetchedFiles = {};
+      const btn = $("applyBtn"), icon = btn?.querySelector("svg"), label = btn?.querySelector("span");
+      const reloadBtn = $("reloadEmbeddedBtn"), reloadSvg = reloadBtn?.querySelector("svg");
+
+      if (btn) { btn.disabled = true; if (icon) icon.classList.add("spin"); if (label) label.textContent = "데이터 자동 로드 중"; }
+      if (reloadSvg) reloadSvg.classList.add("spin");
+
+      try {
+        for (const role of roles) {
+          const path = fileMap[role];
+          const res = await fetch(path, { cache: "no-cache" });
+          if (!res.ok) continue;
+          const blob = await res.blob();
+          const fileName = path.split("/").pop() || `${role}.xlsx`;
+          const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
+          fetchedFiles[role] = file;
+          setFile(role, file);
+        }
+
+        if (Object.keys(fetchedFiles).length === 5) {
+          const dates = Object.entries(fetchedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
+          let basisDate = dates.find((x) => x.date)?.date || new Date().toISOString().slice(0, 10);
+          const parsed = {};
+          for (const role of roles) {
+            parsed[role] = datasetFromSheets(await parseXlsx(fetchedFiles[role]), schemas[role], fetchedFiles[role].name);
+          }
+          render(compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access), basisDate);
+          $("successMessage").textContent = `저장소(data/)에 보관된 최신 주간 데이터(${basisDate} 기준)를 자동으로 불러왔습니다.`;
+          $("successNotice").classList.add("show");
+          $("uploadPanel").classList.add("collapsed");
+          $("toggleUpload").textContent = "파일 수동 업로드";
+        } else if (showManualNoticeIfMissing) {
+          showError("저장소(data/) 폴더에 5개 엑셀 파일이 모두 준비되지 않았습니다. 상단에서 파일을 직접 선택해 주세요.");
+        }
+      } catch (err) {
+        console.warn("Embedded data load error:", err);
+        if (showManualNoticeIfMissing) showError("데이터 자동 불러오기 중 오류가 발생했습니다: " + (err?.message || err));
+      } finally {
+        if (btn) { btn.disabled = !Object.values(selectedFiles).every(Boolean); if (icon) icon.classList.remove("spin"); if (label) label.textContent = "데이터 적용"; }
+        if (reloadSvg) reloadSvg.classList.remove("spin");
+      }
+    }
+
     $("applicationStatus").addEventListener("change",renderApplicationTable);
     $("applicationLimit").addEventListener("change",renderApplicationTable);
     $("periodQueryBtn").addEventListener("click",() => applyPeriodRange($("periodStart").value,$("periodEnd").value,null));
@@ -1100,7 +1164,10 @@
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
+    const reloadBtn = $("reloadEmbeddedBtn");
+    if (reloadBtn) reloadBtn.addEventListener("click", () => loadEmbeddedData(true));
     setupStatInfo();
+    loadEmbeddedData(false);
   })();
   </script>
 </body>

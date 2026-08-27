@@ -1,0 +1,11 @@
+﻿{
+  "basisDate": "2026-08-27",
+  "comment": "매주 새 엑셀 5개를 docs/dashboard/data/ 폴더에 넣고 푸시하면 대시보드가 자동으로 로드합니다.",
+  "files": {
+    "applications": "이용신청.xlsx",
+    "customers": "고객사현황.xlsx",
+    "instruments": "고객사계측기현황.xlsx",
+    "activities": "데이터변경이력.xlsx",
+    "access": "보안접속이력.xlsx"
+  }
+}
