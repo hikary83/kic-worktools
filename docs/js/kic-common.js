@@ -6,15 +6,15 @@
  * - 사이드바 LNB 관리자 (KicLnb)
  */
 
-// 1. 테마 조기 초기화 (FOUC 깜빡임 방지용)
+// 1. 테마 조기 초기화 (FOUC 깜빡임 방지용 - 기본값 다크 모드)
 (function initEarlyTheme() {
   try {
     const saved = localStorage.getItem('kic_theme');
-    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
-    if (saved === 'dark' || (!saved && prefersDark)) {
-      document.documentElement.classList.add('dark');
-    } else {
+    // 사용자가 명시적으로 'light'를 선택하지 않은 모든 경우 다크 모드 기본 적용
+    if (saved === 'light') {
       document.documentElement.classList.remove('dark');
+    } else {
+      document.documentElement.classList.add('dark');
     }
   } catch (e) {
     console.warn('Early theme init error:', e);
@@ -48,8 +48,8 @@ const KicTheme = {
     const switchBtns = document.querySelectorAll('.kic-theme-switch');
     switchBtns.forEach(btn => {
       btn.innerHTML = isDark
-        ? `<span class="kic-lnb-ico">☀️</span><span class="kic-lnb-text">라이트 모드</span>`
-        : `<span class="kic-lnb-ico">🌙</span><span class="kic-lnb-text">다크 모드</span>`;
+        ? `<span class="kic-lnb-ico">☀️</span><span class="kic-lnb-text">라이트</span>`
+        : `<span class="kic-lnb-ico">🌙</span><span class="kic-lnb-text">다크</span>`;
       btn.setAttribute('title', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
     });
   },
