@@ -1,0 +1,602 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>CWIZ Enterprise 운영 현황</title>
+  <style>
+    :root {
+      --green-950:#073b2b; --green-900:#0b4f38; --green-800:#08623f; --green-700:#087a4b;
+      --green-600:#08a05f; --green-500:#16b86c; --green-300:#86e3b5; --green-100:#ddf8e9;
+      --green-50:#f1fcf6; --ink:#17211d; --muted:#64716a; --line:#dfe8e3; --panel:#ffffff;
+      --canvas:#f4f8f6; --amber:#e3a008; --orange:#f97316; --red:#dc3e4b; --blue:#2f6fed;
+      --shadow:0 8px 26px rgba(18, 60, 41, .08); --radius:18px;
+    }
+    *{box-sizing:border-box}
+    html{scroll-behavior:smooth}
+    body{margin:0;background:var(--canvas);color:var(--ink);font-family:Pretendard,"Malgun Gothic","Apple SD Gothic Neo",Arial,sans-serif;font-size:14px;letter-spacing:-.015em}
+    button,input,select{font:inherit}
+    button{cursor:pointer}
+    .shell{min-width:1180px;min-height:100vh}
+    .topbar{height:72px;background:linear-gradient(115deg,var(--green-950),var(--green-800));color:#fff;display:flex;align-items:center;justify-content:space-between;padding:0 38px;box-shadow:0 4px 18px rgba(7,59,43,.16);position:sticky;top:0;z-index:30}
+    .brand{display:flex;align-items:center;gap:13px}
+    .brand-symbol{width:36px;height:36px;border-radius:11px;background:linear-gradient(145deg,#31d884,#0ba85e);display:grid;place-items:center;box-shadow:inset 0 0 0 1px rgba(255,255,255,.25)}
+    .brand-symbol svg{width:22px;height:22px}
+    .brand-copy strong{display:block;font-size:18px;letter-spacing:-.02em}
+    .brand-copy span{display:block;margin-top:2px;color:#bfe9d1;font-size:11px;letter-spacing:.04em}
+    .top-actions{display:flex;align-items:center;gap:9px}
+    .top-btn{border:1px solid rgba(255,255,255,.18);color:#fff;background:rgba(255,255,255,.09);padding:9px 13px;border-radius:10px;display:flex;align-items:center;gap:7px}
+    .top-btn:hover{background:rgba(255,255,255,.16)}
+    .top-btn svg{width:16px;height:16px}
+    .main{max-width:1540px;margin:0 auto;padding:28px 34px 44px}
+    .page-head{display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:20px}
+    .page-title{display:flex;align-items:center;gap:12px}
+    .page-title .accent{width:5px;height:42px;border-radius:99px;background:linear-gradient(var(--green-500),var(--green-700))}
+    h1{font-size:25px;line-height:1.15;margin:0 0 7px;font-weight:800;letter-spacing:-.04em}
+    .subtitle{color:var(--muted);font-size:13px}
+    .meta{display:flex;align-items:center;gap:12px;color:var(--muted)}
+    .meta-item{display:flex;align-items:center;gap:7px;background:#fff;border:1px solid var(--line);padding:8px 11px;border-radius:10px;box-shadow:0 3px 10px rgba(18,60,41,.04)}
+    .meta-item b{color:var(--ink);font-variant-numeric:tabular-nums}
+    .meta-item svg{width:15px;height:15px;color:var(--green-600)}
+
+    .upload-panel{background:linear-gradient(120deg,#fff,#f4fff8);border:1px solid #cfe9da;border-radius:var(--radius);box-shadow:var(--shadow);margin-bottom:22px;overflow:hidden;transition:.25s ease}
+    .upload-head{padding:16px 20px;display:flex;align-items:center;justify-content:space-between;border-bottom:1px solid #e1f0e7}
+    .upload-title{display:flex;align-items:center;gap:10px}
+    .upload-title .icon-box{width:34px;height:34px;border-radius:10px;background:var(--green-100);color:var(--green-700);display:grid;place-items:center}
+    .upload-title svg{width:18px;height:18px}
+    .upload-title strong{font-size:15px}
+    .upload-title span{color:var(--muted);font-size:12px;margin-left:4px}
+    .link-btn{border:0;background:transparent;color:var(--green-700);font-weight:700;padding:7px 8px}
+    .upload-body{padding:17px 20px 19px}
+    .file-grid{display:grid;grid-template-columns:repeat(3,1fr) auto;gap:12px;align-items:stretch}
+    .file-slot{min-height:78px;border:1px dashed #b9d7c6;border-radius:13px;background:#fff;padding:12px 14px;display:flex;align-items:center;gap:12px;position:relative;cursor:pointer;transition:.18s}
+    .file-slot:hover,.file-slot.dragover{border-color:var(--green-500);background:var(--green-50);transform:translateY(-1px)}
+    .file-slot.ready{border-style:solid;border-color:#8bd8af;background:#f7fff9}
+    .file-slot input{display:none}
+    .file-icon{width:40px;height:40px;border-radius:11px;background:#edf3f0;color:#87958e;display:grid;place-items:center;flex:0 0 auto}
+    .file-slot.ready .file-icon{background:var(--green-100);color:var(--green-700)}
+    .file-icon svg{width:20px;height:20px}
+    .file-text{min-width:0;flex:1}
+    .file-text strong{display:block;font-size:13px;margin-bottom:5px}
+    .file-name{display:block;color:#8a958f;font-size:11px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:270px}
+    .file-slot.ready .file-name{color:var(--green-800);font-weight:700}
+    .file-date{position:absolute;right:10px;top:9px;color:var(--green-700);background:var(--green-100);border-radius:7px;padding:3px 6px;font-size:10px;font-weight:800;display:none}
+    .file-slot.ready .file-date{display:block}
+    .apply-btn{border:0;border-radius:13px;padding:0 23px;background:linear-gradient(135deg,var(--green-700),var(--green-500));color:#fff;font-weight:800;min-width:132px;box-shadow:0 8px 16px rgba(8,160,95,.2);display:flex;align-items:center;justify-content:center;gap:8px}
+    .apply-btn:disabled{cursor:not-allowed;background:#c5d0ca;box-shadow:none}
+    .apply-btn:not(:disabled):hover{filter:brightness(.97);transform:translateY(-1px)}
+    .apply-btn svg{width:17px;height:17px}
+    .upload-help{margin:11px 2px 0;color:#7b8881;font-size:11px;display:flex;align-items:center;gap:6px}
+    .upload-help svg{width:14px;height:14px}
+    .upload-panel.collapsed .upload-body{display:none}
+    .upload-panel.collapsed .upload-head{border-bottom:0}
+
+    .notice{display:none;margin:0 0 18px;border-radius:13px;padding:13px 15px;align-items:flex-start;gap:10px;font-size:13px}
+    .notice.show{display:flex}
+    .notice.error{background:#fff1f2;border:1px solid #ffc9ce;color:#9f2431}
+    .notice.success{background:#effcf5;border:1px solid #bde8cf;color:#11663d}
+    .notice svg{width:18px;height:18px;flex:0 0 auto;margin-top:1px}
+    .notice-title{font-weight:800;margin-bottom:3px}
+    .notice ul{margin:4px 0 0;padding-left:18px}
+
+    .kpi-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:13px;margin-bottom:18px}
+    .kpi{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:17px 17px 14px;box-shadow:0 5px 16px rgba(18,60,41,.055);min-height:126px;position:relative;overflow:hidden}
+    .kpi::after{content:"";position:absolute;width:82px;height:82px;border-radius:50%;right:-30px;top:-34px;background:var(--green-50)}
+    .kpi.warn::after{background:#fff8e5}.kpi.danger::after{background:#fff0f1}.kpi.rate::after{background:#eaf5ff}
+    .kpi-top{display:flex;align-items:center;justify-content:space-between;position:relative;z-index:1}
+    .kpi-label{color:#5b6861;font-weight:700;font-size:12px}
+    .kpi-icon{width:29px;height:29px;border-radius:9px;background:var(--green-100);color:var(--green-700);display:grid;place-items:center}
+    .kpi.warn .kpi-icon{background:#fff0c7;color:#af7700}.kpi.danger .kpi-icon{background:#ffe0e3;color:#bf2b39}.kpi.rate .kpi-icon{background:#e6f1ff;color:var(--blue)}
+    .kpi-icon svg{width:15px;height:15px}
+    .kpi-value{font-size:29px;font-weight:850;letter-spacing:-.045em;line-height:1;margin:14px 0 10px;font-variant-numeric:tabular-nums}
+    .kpi-unit{font-size:12px;color:#77837d;font-weight:600;margin-left:3px}
+    .kpi-sub{color:#76827c;font-size:10.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .kpi-sub .good{color:var(--green-700);font-weight:800}.kpi-sub .pending{color:#a67000;font-weight:800}.kpi-sub .bad{color:var(--red);font-weight:800}
+
+    .chart-grid{display:grid;grid-template-columns:1fr 1.35fr;gap:15px;margin-bottom:18px}
+    .panel{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);box-shadow:var(--shadow)}
+    .panel-head{padding:17px 19px 13px;display:flex;align-items:center;justify-content:space-between}
+    .panel-title{display:flex;align-items:center;gap:9px}
+    .panel-title .line{width:4px;height:20px;border-radius:9px;background:var(--green-500)}
+    .panel-title strong{font-size:15px}
+    .panel-title small{color:#819087;font-weight:500;margin-left:4px}
+    .panel-badge{font-size:10px;color:var(--green-700);background:var(--green-100);border-radius:99px;padding:5px 8px;font-weight:800}
+    .chart-body{height:230px;padding:8px 20px 20px}
+    .donut-wrap{height:100%;display:flex;align-items:center;justify-content:center;gap:38px}
+    .donut{--angle:0deg;width:160px;height:160px;border-radius:50%;background:conic-gradient(var(--green-500) 0 var(--angle),#e7ece9 var(--angle) 360deg);position:relative;box-shadow:inset 0 0 0 1px rgba(0,0,0,.02)}
+    .donut::after{content:"";position:absolute;inset:24px;border-radius:50%;background:#fff;box-shadow:0 0 0 1px #edf1ef}
+    .donut-center{position:absolute;z-index:2;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center}
+    .donut-center strong{font-size:25px;letter-spacing:-.04em}.donut-center span{color:#7a8780;font-size:10px;margin-top:4px}
+    .legend{display:flex;flex-direction:column;gap:14px;min-width:155px}
+    .legend-row{display:grid;grid-template-columns:auto 1fr auto;align-items:center;gap:8px}
+    .dot{width:9px;height:9px;border-radius:3px}.dot.mapped{background:var(--green-500)}.dot.unmapped{background:#dfe5e2}
+    .legend-row span{color:#64716a;font-size:12px}.legend-row b{font-size:14px;font-variant-numeric:tabular-nums}
+    .legend-total{border-top:1px solid var(--line);padding-top:11px;color:#718078;font-size:11px;display:flex;justify-content:space-between}.legend-total b{color:var(--ink)}
+    .bars{height:100%;display:flex;flex-direction:column;justify-content:center;gap:19px;padding:2px 5px}
+    .bar-row{display:grid;grid-template-columns:78px 1fr 66px;gap:13px;align-items:center}
+    .bar-label{font-size:12px;color:#59665f;font-weight:700}.bar-track{height:17px;border-radius:99px;background:#edf2ef;overflow:hidden;position:relative}
+    .bar{height:100%;min-width:0;border-radius:99px;transition:width .45s ease}.bar.prep{background:linear-gradient(90deg,#e9b429,#f4cb58)}.bar.near{background:linear-gradient(90deg,#fb8b38,#ffa55e)}.bar.overdue{background:linear-gradient(90deg,#dc3e4b,#f26a75)}
+    .bar-value{text-align:right;font-weight:850;font-size:15px;font-variant-numeric:tabular-nums}.bar-value span{font-size:10px;color:#849088;margin-left:2px}
+    .chart-foot{border-top:1px dashed var(--line);padding-top:13px;color:#7a8780;font-size:10.5px;display:flex;justify-content:space-between}
+
+    .table-panel{margin-bottom:18px;overflow:hidden}
+    .table-tools{display:flex;align-items:center;gap:8px}
+    .select{border:1px solid var(--line);background:#fff;color:#435049;border-radius:9px;padding:7px 29px 7px 10px;font-size:11px;font-weight:700;outline:none}
+    .table-wrap{padding:0 18px 16px;overflow:hidden}
+    table{width:100%;border-collapse:separate;border-spacing:0;font-size:12px}
+    thead th{background:#f3f7f5;color:#5f6c65;font-weight:800;text-align:right;padding:11px 12px;border-top:1px solid var(--line);border-bottom:1px solid var(--line);white-space:nowrap}
+    thead th:first-child{border-radius:10px 0 0 10px;text-align:center;width:48px}thead th:nth-child(2){text-align:left}thead th:last-child{border-radius:0 10px 10px 0}
+    tbody td{padding:11px 12px;border-bottom:1px solid #edf1ef;text-align:right;font-variant-numeric:tabular-nums;white-space:nowrap}
+    tbody tr:last-child td{border-bottom:0}tbody tr:hover td{background:#fbfdfc}
+    tbody td:first-child{text-align:center;color:#93a098;font-weight:700}tbody td:nth-child(2){text-align:left;font-weight:750;color:#27332d;max-width:360px;overflow:hidden;text-overflow:ellipsis}
+    .rate-pill{display:inline-flex;align-items:center;justify-content:center;min-width:54px;padding:4px 7px;border-radius:99px;background:var(--green-100);color:var(--green-800);font-weight:850}
+    .rate-pill.low{background:#fff1db;color:#a66100}.rate-pill.none{background:#eff2f0;color:#859088}
+    .risk{display:inline-flex;min-width:30px;justify-content:flex-end}.risk.red{color:var(--red);font-weight:850}.risk.orange{color:var(--orange);font-weight:850}
+    .status-pill{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:4px 8px;border-radius:99px;font-size:10.5px;font-weight:850}
+    .status-pill.approved{background:var(--green-100);color:var(--green-800)}.status-pill.waiting{background:#fff2c9;color:#9d6c00}.status-pill.rejected{background:#ffe4e7;color:#b52d3a}.status-pill.other{background:#edf1ef;color:#728078}
+    .applications-table thead th:nth-child(2),.applications-table tbody td:nth-child(2){text-align:center;font-weight:650;color:#5d6b64}
+    .applications-table thead th:nth-child(3),.applications-table tbody td:nth-child(3){text-align:center}
+    .applications-table thead th:nth-child(4),.applications-table tbody td:nth-child(4){text-align:left;max-width:330px;overflow:hidden;text-overflow:ellipsis;font-weight:750;color:#27332d}
+    .applications-table thead th:nth-child(5),.applications-table tbody td:nth-child(5){text-align:center}
+    .applications-table thead th:nth-child(6),.applications-table tbody td:nth-child(6){text-align:left}
+    .applications-table thead th:nth-child(7),.applications-table tbody td:nth-child(7){text-align:center}
+    .applications-table thead th:nth-child(8),.applications-table tbody td:nth-child(8){text-align:center;font-family:Consolas,"Malgun Gothic",monospace;font-size:11px}
+    .empty-row td{text-align:center!important;color:#8b9790!important;padding:32px 10px!important;font-weight:500!important}
+    .two-col{display:grid;grid-template-columns:1fr;gap:15px}
+    .scope-note{display:flex;align-items:center;gap:7px;color:#78857e;font-size:10.5px}.scope-note svg{width:14px;height:14px;color:var(--amber)}
+    .footer{display:flex;justify-content:space-between;align-items:center;color:#8a9690;font-size:10.5px;padding:2px 4px 0}.footer strong{color:#607068}
+    .spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
+
+    .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn{display:none!important}
+    .report-mode .main{padding-top:24px}
+    @media print{
+      @page{size:A3 landscape;margin:12mm}
+      body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
+      .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice{display:none!important}.main{max-width:none;padding:18px 0 0}
+      .kpi,.panel{box-shadow:none}.chart-body{height:205px}.footer{margin-top:8px}
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div class="brand">
+        <div class="brand-symbol" aria-hidden="true">
+          <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="12" width="4" height="7" rx="1" fill="white"/><rect x="10" y="8" width="4" height="11" rx="1" fill="white"/><rect x="17" y="4" width="4" height="15" rx="1" fill="white"/><path d="M3 21h18" stroke="white" stroke-width="1.7" stroke-linecap="round"/></svg>
+        </div>
+        <div class="brand-copy"><strong>CWIZ Enterprise</strong><span>OPERATION DASHBOARD</span></div>
+      </div>
+      <div class="top-actions">
+        <button class="top-btn" id="reportModeBtn" type="button" title="업로드 영역을 숨기고 보고 화면만 표시합니다.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h18v12H3z"/><path d="M8 20h8M12 16v4"/></svg><span>보고 모드</span>
+        </button>
+        <button class="top-btn" id="printBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V3h12v6M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v7H6z"/></svg><span>인쇄</span>
+        </button>
+      </div>
+    </header>
+
+    <main class="main">
+      <div class="page-head">
+        <div class="page-title"><span class="accent"></span><div><h1>CWIZ Enterprise 운영 현황</h1><div class="subtitle">이용신청부터 고객사·계측기 등록, CMS 매핑까지 한눈에 확인합니다.</div></div></div>
+        <div class="meta">
+          <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M16 3v4M8 3v4M3 10h18"/></svg><span>기준일</span><b id="basisDate">—</b></div>
+          <div class="meta-item"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></svg><span>최근 적용</span><b id="appliedTime">—</b></div>
+        </div>
+      </div>
+
+      <section class="upload-panel" id="uploadPanel">
+        <div class="upload-head">
+          <div class="upload-title"><span class="icon-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 16V4M7 9l5-5 5 5"/><path d="M4 15v5h16v-5"/></svg></span><div><strong>주간 Excel 데이터 적용</strong><span>동일 기준일의 3개 파일을 선택해 주세요.</span></div></div>
+          <button class="link-btn" id="toggleUpload" type="button">접기</button>
+        </div>
+        <div class="upload-body">
+          <div class="file-grid">
+            <label class="file-slot" data-role="applications">
+              <input type="file" accept=".xlsx" />
+              <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span>
+              <span class="file-text"><strong>이용신청 파일</strong><span class="file-name">이용신청_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
+            </label>
+            <label class="file-slot" data-role="customers">
+              <input type="file" accept=".xlsx" />
+              <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span>
+              <span class="file-text"><strong>고객사현황 파일</strong><span class="file-name">고객사현황_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
+            </label>
+            <label class="file-slot" data-role="instruments">
+              <input type="file" accept=".xlsx" />
+              <span class="file-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M14 2H6a2 2 0 0 0-2 2v16h16V8z"/><path d="M14 2v6h6M8 13h8M8 17h6"/></svg></span>
+              <span class="file-text"><strong>고객사계측기현황 파일</strong><span class="file-name">고객사계측기현황_YYYY-MM-DD.xlsx</span></span><span class="file-date"></span>
+            </label>
+            <button class="apply-btn" id="applyBtn" type="button" disabled><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 6 9 17l-5-5"/></svg><span>데이터 적용</span></button>
+          </div>
+          <div class="upload-help"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>선택한 파일은 브라우저 안에서만 처리되며 외부 서버로 전송되지 않습니다. 파일명 날짜와 필수 컬럼을 자동 검증합니다.</div>
+        </div>
+      </section>
+
+      <div class="notice error" id="errorNotice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg><div><div class="notice-title">데이터를 적용하지 못했습니다.</div><div id="errorMessage"></div></div></div>
+      <div class="notice success" id="successNotice"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="9"/><path d="m8 12 2.5 2.5L16 9"/></svg><div><div class="notice-title">데이터 적용 완료</div><div id="successMessage"></div></div></div>
+
+      <section class="kpi-grid" aria-label="핵심 운영 지표">
+        <article class="kpi"><div class="kpi-top"><span class="kpi-label">이용신청</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M7 3h10v4H7zM5 5H3v16h18V5h-2"/><path d="M8 12h8M8 16h5"/></svg></span></div><div class="kpi-value"><span id="kpiApplications">—</span><span class="kpi-unit">건</span></div><div class="kpi-sub" id="subApplications">Excel 데이터를 적용해 주세요.</div></article>
+        <article class="kpi"><div class="kpi-top"><span class="kpi-label">승인 고객사</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8"/><path d="m16 11 2 2 4-5"/></svg></span></div><div class="kpi-value"><span id="kpiApproved">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subApproved">이용신청 승인 기준</div></article>
+        <article class="kpi"><div class="kpi-top"><span class="kpi-label">등록 고객사</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 21V8l9-5 9 5v13M7 21v-8h10v8M9 9h.01M15 9h.01"/></svg></span></div><div class="kpi-value"><span id="kpiCustomers">—</span><span class="kpi-unit">개사</span></div><div class="kpi-sub" id="subCustomers">고객사현황 전체 기준</div></article>
+        <article class="kpi"><div class="kpi-top"><span class="kpi-label">등록 계측기</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 12l4-3M7 17h10"/></svg></span></div><div class="kpi-value"><span id="kpiAssets">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subAssets">총자산 합계</div></article>
+        <article class="kpi danger"><div class="kpi-top"><span class="kpi-label">미매핑 계측기</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/><path d="m4 4 16 16"/></svg></span></div><div class="kpi-value"><span id="kpiUnmapped">—</span><span class="kpi-unit">대</span></div><div class="kpi-sub" id="subUnmapped">CMS 미매핑 합계</div></article>
+        <article class="kpi rate"><div class="kpi-top"><span class="kpi-label">CMS 매핑률</span><span class="kpi-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 19 20 5M7 5h.01M17 19h.01"/><circle cx="7" cy="5" r="3"/><circle cx="17" cy="19" r="3"/></svg></span></div><div class="kpi-value"><span id="kpiRate">—</span><span class="kpi-unit">%</span></div><div class="kpi-sub" id="subRate">(총자산-미매핑) ÷ 총자산</div></article>
+      </section>
+
+      <section class="chart-grid">
+        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>CMS 매핑 현황</strong></div><span class="panel-badge">자산 기준</span></div><div class="chart-body"><div class="donut-wrap"><div class="donut" id="mappingDonut"><div class="donut-center"><strong id="donutRate">—</strong><span>매핑률</span></div></div><div class="legend"><div class="legend-row"><span class="dot mapped"></span><span>매핑 완료</span><b id="legendMapped">—</b></div><div class="legend-row"><span class="dot unmapped"></span><span>미매핑</span><b id="legendUnmapped">—</b></div><div class="legend-total"><span>전체 자산</span><b id="legendTotal">—</b></div></div></div></div></article>
+        <article class="panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong>차기교정 관리 현황</strong><small>계측기 수</small></div><span class="panel-badge">Snapshot</span></div><div class="chart-body"><div class="bars"><div class="bar-row"><span class="bar-label">교정 준비</span><div class="bar-track"><div class="bar prep" id="barPrep"></div></div><div class="bar-value"><b id="valuePrep">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">교정 임박</span><div class="bar-track"><div class="bar near" id="barNear"></div></div><div class="bar-value"><b id="valueNear">—</b><span>대</span></div></div><div class="bar-row"><span class="bar-label">기한 초과</span><div class="bar-track"><div class="bar overdue" id="barOverdue"></div></div><div class="bar-value"><b id="valueOverdue">—</b><span>대</span></div></div><div class="chart-foot"><span>원본 「교정 준비 / 교정 임박 / 기한 초과」 합계</span><span id="calibrationTotal">관리 대상 —</span></div></div></div></article>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 · 승인 업체 현황</strong><small id="applicationTableNote">최근 신청일 순</small></div><div class="table-tools"><select class="select" id="applicationStatus" aria-label="이용신청 상태 필터"><option value="all">전체 상태</option><option value="승인">승인</option><option value="대기">대기</option><option value="반려">반려</option></select><select class="select" id="applicationLimit" aria-label="이용신청 표시 건수"><option value="10">최근 10건</option><option value="all">전체 보기</option></select></div></div>
+        <div class="table-wrap"><table class="applications-table"><thead><tr><th>순번</th><th>신청일자</th><th>상태</th><th>회사명</th><th>사업자등록번호</th><th>신청자</th><th>승인일자</th><th>회사코드</th></tr></thead><tbody id="applicationTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 신청·승인 업체 현황이 표시됩니다.</td></tr></tbody></table></div>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 운영현황 TOP 10</strong><small id="customerTableNote">총자산 기준</small></div><div class="table-tools"><select class="select" id="customerSort" aria-label="고객사 정렬 기준"><option value="assets">총자산 많은 순</option><option value="unmapped">미매핑 많은 순</option><option value="near">교정 임박 많은 순</option><option value="overdue">기한 초과 많은 순</option></select></div></div>
+        <div class="table-wrap"><table><thead><tr><th>순위</th><th>고객사</th><th>총자산</th><th>미매핑</th><th>매핑률</th><th>교정 준비</th><th>교정 임박</th><th>기한 초과</th></tr></thead><tbody id="customerTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 고객사 현황이 표시됩니다.</td></tr></tbody></table></div>
+      </section>
+
+      <section class="panel table-panel">
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>담당자 운영현황</strong><small>고객사 「영업 담당자」 기준</small></div><div class="scope-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg>원본에 담당지사 컬럼이 없어 지사 집계는 제외했습니다.</div></div>
+        <div class="table-wrap"><table><thead><tr><th>순위</th><th>담당자</th><th>고객사 수</th><th>등록 계측기</th><th>미매핑</th><th>매핑률</th><th>기한 초과</th></tr></thead><tbody id="staffTableBody"><tr class="empty-row"><td colspan="7">Excel 데이터를 적용하면 담당자 현황이 표시됩니다.</td></tr></tbody></table></div>
+      </section>
+
+      <footer class="footer"><span><strong>CWIZ Enterprise</strong> · Admin Dashboard Preview</span><span>Jira CW2R-73 · 1단계 운영 대시보드 참고용</span></footer>
+    </main>
+  </div>
+
+  <script>
+  (() => {
+    "use strict";
+
+    const schemas = {
+      applications: {
+        label: "이용신청",
+        required: [["신청일자"], ["상태"], ["회사명"], ["사업자등록번호", "사업자번호"], ["승인일자"], ["회사코드"]]
+      },
+      customers: {
+        label: "고객사현황",
+        required: [["회사코드"], ["회사명"], ["사업자번호", "사업자등록번호"], ["보유자산"], ["상태"], ["영업 담당자", "영업담당자"], ["등록일"]]
+      },
+      instruments: {
+        label: "고객사계측기현황",
+        required: [["회사명"], ["사업자번호", "사업자등록번호"], ["총자산"], ["미매핑"], ["교정 준비", "교정준비"], ["교정 임박", "교정임박"], ["기한 초과", "기한초과"], ["상태"]]
+      }
+    };
+
+    const selectedFiles = { applications:null, customers:null, instruments:null };
+    let dashboardData = null;
+    const $ = (id) => document.getElementById(id);
+    const nf = new Intl.NumberFormat("ko-KR");
+    const pf = new Intl.NumberFormat("ko-KR", { maximumFractionDigits:1, minimumFractionDigits:1 });
+
+    function normalizeHeader(value) {
+      return String(value ?? "").replace(/^\uFEFF/, "").replace(/\*/g, "").replace(/\s+/g, "").trim();
+    }
+    function normalizeBiz(value) { return String(value ?? "").replace(/\D/g, ""); }
+    function toNumber(value) {
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      const n = Number(String(value ?? "").replace(/,/g, "").trim());
+      return Number.isFinite(n) ? n : 0;
+    }
+    function extractDate(fileName) {
+      const m = String(fileName).match(/((?:19|20)\d{2})[-_.](\d{1,2})[-_.](\d{1,2})/);
+      if (!m) return null;
+      const y = m[1], mo = m[2].padStart(2,"0"), d = m[3].padStart(2,"0");
+      const date = new Date(`${y}-${mo}-${d}T00:00:00`);
+      return Number.isNaN(date.getTime()) ? null : `${y}-${mo}-${d}`;
+    }
+    function xml(text, fileName) {
+      const doc = new DOMParser().parseFromString(text, "application/xml");
+      const err = doc.querySelector("parsererror");
+      if (err) throw new Error(`${fileName || "Excel XML"}을 읽는 중 XML 오류가 발생했습니다.`);
+      return doc;
+    }
+    function childText(node, tag) {
+      const el = Array.from(node.children || []).find((child) => child.localName === tag);
+      return el ? el.textContent : null;
+    }
+    function colIndex(ref) {
+      const letters = String(ref || "A1").match(/[A-Z]+/i)?.[0]?.toUpperCase() || "A";
+      let n = 0;
+      for (const ch of letters) n = n * 26 + ch.charCodeAt(0) - 64;
+      return n - 1;
+    }
+    function resolvePath(base, target) {
+      if (target.startsWith("/")) return target.slice(1);
+      const parts = base.split("/"); parts.pop();
+      for (const p of target.replace(/\\/g,"/").split("/")) {
+        if (!p || p === ".") continue;
+        if (p === "..") parts.pop(); else parts.push(p);
+      }
+      return parts.join("/");
+    }
+
+    async function unzip(arrayBuffer) {
+      const bytes = new Uint8Array(arrayBuffer), view = new DataView(arrayBuffer);
+      let eocd = -1;
+      for (let i = bytes.length - 22; i >= Math.max(0, bytes.length - 65557); i--) {
+        if (view.getUint32(i, true) === 0x06054b50) { eocd = i; break; }
+      }
+      if (eocd < 0) throw new Error("올바른 .xlsx 파일이 아닙니다. ZIP 구조를 확인할 수 없습니다.");
+      const total = view.getUint16(eocd + 10, true), centralOffset = view.getUint32(eocd + 16, true);
+      let pos = centralOffset;
+      const entries = new Map();
+      const decoder = new TextDecoder("utf-8");
+      for (let i = 0; i < total; i++) {
+        if (view.getUint32(pos, true) !== 0x02014b50) throw new Error("Excel 압축 디렉터리가 손상되었습니다.");
+        const method = view.getUint16(pos + 10, true), compressedSize = view.getUint32(pos + 20, true);
+        const nameLen = view.getUint16(pos + 28, true), extraLen = view.getUint16(pos + 30, true), commentLen = view.getUint16(pos + 32, true);
+        const localOffset = view.getUint32(pos + 42, true);
+        const name = decoder.decode(bytes.slice(pos + 46, pos + 46 + nameLen)).replace(/\\/g,"/");
+        const localNameLen = view.getUint16(localOffset + 26, true), localExtraLen = view.getUint16(localOffset + 28, true);
+        const dataStart = localOffset + 30 + localNameLen + localExtraLen;
+        const compressed = bytes.slice(dataStart, dataStart + compressedSize);
+        entries.set(name, { method, compressed });
+        pos += 46 + nameLen + extraLen + commentLen;
+      }
+      async function extract(name) {
+        const entry = entries.get(name);
+        if (!entry) return null;
+        if (entry.method === 0) return entry.compressed;
+        if (entry.method !== 8) throw new Error(`지원하지 않는 Excel 압축 방식입니다. (${entry.method})`);
+        if (typeof DecompressionStream === "undefined") throw new Error("이 브라우저는 Excel 압축 해제를 지원하지 않습니다. 최신 Chrome 또는 Edge에서 열어 주세요.");
+        const stream = new Blob([entry.compressed]).stream().pipeThrough(new DecompressionStream("deflate-raw"));
+        return new Uint8Array(await new Response(stream).arrayBuffer());
+      }
+      return { names:[...entries.keys()], extract };
+    }
+
+    async function parseXlsx(file) {
+      const zip = await unzip(await file.arrayBuffer());
+      const decoder = new TextDecoder("utf-8");
+      const readText = async (path, optional=false) => {
+        const data = await zip.extract(path);
+        if (!data) { if (optional) return null; throw new Error(`${file.name}: ${path} 항목이 없습니다.`); }
+        return decoder.decode(data);
+      };
+
+      const workbookPath = "xl/workbook.xml";
+      const workbookDoc = xml(await readText(workbookPath), file.name);
+      const relsDoc = xml(await readText("xl/_rels/workbook.xml.rels"), file.name);
+      const rels = new Map(Array.from(relsDoc.getElementsByTagNameNS("*","Relationship")).map((r) => [r.getAttribute("Id"), resolvePath(workbookPath, r.getAttribute("Target") || "")]));
+      const date1904 = workbookDoc.getElementsByTagNameNS("*","workbookPr")[0]?.getAttribute("date1904") === "1";
+
+      let sharedStrings = [];
+      const sharedText = await readText("xl/sharedStrings.xml", true);
+      if (sharedText) {
+        const sharedDoc = xml(sharedText, file.name);
+        sharedStrings = Array.from(sharedDoc.getElementsByTagNameNS("*","si")).map((si) => Array.from(si.getElementsByTagNameNS("*","t")).map((t) => t.textContent || "").join(""));
+      }
+
+      const dateStyleIndexes = new Set();
+      const stylesText = await readText("xl/styles.xml", true);
+      if (stylesText) {
+        const stylesDoc = xml(stylesText, file.name);
+        const custom = new Map(Array.from(stylesDoc.getElementsByTagNameNS("*","numFmt")).map((n) => [Number(n.getAttribute("numFmtId")), n.getAttribute("formatCode") || ""]));
+        const builtInDate = new Set([14,15,16,17,18,19,20,21,22,27,30,36,45,46,47,50,57]);
+        const cellXfs = stylesDoc.getElementsByTagNameNS("*","cellXfs")[0];
+        Array.from(cellXfs?.children || []).filter((n) => n.localName === "xf").forEach((xf, index) => {
+          const id = Number(xf.getAttribute("numFmtId") || 0);
+          const fmt = (custom.get(id) || "").replace(/"[^"]*"|\\.|\[[^\]]*\]/g, "");
+          if (builtInDate.has(id) || /[ymdhis]/i.test(fmt)) dateStyleIndexes.add(index);
+        });
+      }
+
+      function excelDate(serial) {
+        const epoch = Date.UTC(date1904 ? 1904 : 1899, date1904 ? 0 : 11, date1904 ? 1 : 30);
+        const date = new Date(epoch + serial * 86400000);
+        if (Math.abs(serial - Math.round(serial)) < 1e-9) return date.toISOString().slice(0,10);
+        return date.toISOString().replace("T"," ").slice(0,19);
+      }
+      function cellValue(cell) {
+        const type = cell.getAttribute("t") || "n";
+        if (type === "inlineStr") return Array.from(cell.getElementsByTagNameNS("*","t")).map((t) => t.textContent || "").join("");
+        const raw = childText(cell, "v");
+        if (raw === null) return "";
+        if (type === "s") return sharedStrings[Number(raw)] ?? "";
+        if (type === "b") return raw === "1";
+        if (["str","e","d"].includes(type)) return raw;
+        const n = Number(raw);
+        const style = Number(cell.getAttribute("s") || 0);
+        if (Number.isFinite(n) && dateStyleIndexes.has(style)) return excelDate(n);
+        return Number.isFinite(n) ? n : raw;
+      }
+
+      const sheets = [];
+      for (const sheetNode of Array.from(workbookDoc.getElementsByTagNameNS("*","sheet"))) {
+        const relId = sheetNode.getAttributeNS("http://schemas.openxmlformats.org/officeDocument/2006/relationships","id") || sheetNode.getAttribute("r:id");
+        const path = rels.get(relId);
+        if (!path) continue;
+        const sheetDoc = xml(await readText(path), file.name);
+        const rows = [];
+        for (const rowNode of Array.from(sheetDoc.getElementsByTagNameNS("*","row"))) {
+          const row = [];
+          for (const cell of Array.from(rowNode.children || []).filter((n) => n.localName === "c")) row[colIndex(cell.getAttribute("r"))] = cellValue(cell);
+          rows.push(row.map((v) => v ?? ""));
+        }
+        sheets.push({ name:sheetNode.getAttribute("name") || "Sheet", rows });
+      }
+      return sheets;
+    }
+
+    function datasetFromSheets(sheets, schema, fileName) {
+      let best = null;
+      for (const sheet of sheets) {
+        for (let rowIndex=0; rowIndex<Math.min(10, sheet.rows.length); rowIndex++) {
+          const normalized = sheet.rows[rowIndex].map(normalizeHeader);
+          const matched = schema.required.filter((aliases) => aliases.some((alias) => normalized.includes(normalizeHeader(alias)))).length;
+          if (!best || matched > best.matched) best = { sheet, rowIndex, normalized, matched };
+        }
+      }
+      if (!best || best.matched < schema.required.length) {
+        const found = new Set(best?.normalized || []);
+        const missing = schema.required.filter((aliases) => !aliases.some((alias) => found.has(normalizeHeader(alias)))).map((aliases) => aliases[0]);
+        throw new Error(`${fileName} · ${schema.label}: 필수 컬럼 누락 — ${missing.join(", ")}`);
+      }
+      const headers = best.sheet.rows[best.rowIndex].map((h) => String(h ?? "").trim());
+      const records = best.sheet.rows.slice(best.rowIndex + 1).filter((row) => row.some((value) => String(value ?? "").trim() !== "")).map((row) => {
+        const out = {};
+        headers.forEach((header, i) => { if (header) out[normalizeHeader(header)] = row[i] ?? ""; });
+        return out;
+      });
+      if (!records.length) throw new Error(`${fileName} · ${schema.label}: 데이터 행이 없습니다.`);
+      return records;
+    }
+    function value(record, aliases) {
+      for (const alias of aliases) {
+        const key = normalizeHeader(alias);
+        if (Object.prototype.hasOwnProperty.call(record, key)) return record[key];
+      }
+      return "";
+    }
+    function countStatus(rows, status) { return rows.filter((r) => String(value(r,["상태"])).trim() === status).length; }
+    function sumField(rows, aliases) { return rows.reduce((sum,row) => sum + toNumber(value(row, aliases)), 0); }
+
+    function compute(applications, customers, instruments) {
+      const appTotal = applications.length;
+      const approvedApplications = countStatus(applications,"승인"), waiting = countStatus(applications,"대기"), rejected = countStatus(applications,"반려");
+      const approved = new Set(applications.filter((r) => String(value(r,["상태"])).trim() === "승인").map((r) => normalizeBiz(value(r,["사업자등록번호","사업자번호"])) || String(value(r,["회사명"])).trim()).filter(Boolean)).size;
+      const customerTotal = customers.length, normal = countStatus(customers,"정상"), inactive = countStatus(customers,"비활성");
+      const totalAssets = sumField(instruments,["총자산"]), unmapped = sumField(instruments,["미매핑"]), mapped = Math.max(0,totalAssets-unmapped);
+      const prep = sumField(instruments,["교정 준비","교정준비"]), near = sumField(instruments,["교정 임박","교정임박"]), overdue = sumField(instruments,["기한 초과","기한초과"]);
+      const applicationRows = applications.map((r,index) => ({
+        sourceIndex:index,
+        date:String(value(r,["신청일자"]) || ""),
+        status:String(value(r,["상태"]) || "").trim(),
+        company:String(value(r,["회사명"]) || "회사명 없음"),
+        biz:String(value(r,["사업자등록번호","사업자번호"]) || ""),
+        applicant:String(value(r,["신청자"]) || ""),
+        approvedDate:String(value(r,["승인일자"]) || ""),
+        companyCode:String(value(r,["회사코드"]) || "")
+      })).sort((a,b) => b.date.localeCompare(a.date) || a.sourceIndex-b.sourceIndex);
+      const instrumentRows = instruments.map((r) => {
+        const assets = toNumber(value(r,["총자산"])), miss = toNumber(value(r,["미매핑"]));
+        return { company:String(value(r,["회사명"]) || "회사명 없음"), biz:normalizeBiz(value(r,["사업자번호","사업자등록번호"])), assets, unmapped:miss, rate:assets ? Math.max(0,(assets-miss)/assets) : null, prep:toNumber(value(r,["교정 준비","교정준비"])), near:toNumber(value(r,["교정 임박","교정임박"])), overdue:toNumber(value(r,["기한 초과","기한초과"])) };
+      });
+      const instByBiz = new Map(instrumentRows.filter((r) => r.biz).map((r) => [r.biz,r]));
+      const staffMap = new Map();
+      for (const c of customers) {
+        const staff = String(value(c,["영업 담당자","영업담당자"]) || "담당자 미지정").trim();
+        if (!staffMap.has(staff)) staffMap.set(staff,{name:staff,customers:0,assets:0,unmapped:0,overdue:0});
+        const s = staffMap.get(staff), inst = instByBiz.get(normalizeBiz(value(c,["사업자번호","사업자등록번호"])));
+        s.customers += 1;
+        if (inst) { s.assets += inst.assets; s.unmapped += inst.unmapped; s.overdue += inst.overdue; }
+      }
+      const staff = [...staffMap.values()].map((s) => ({...s,rate:s.assets ? Math.max(0,(s.assets-s.unmapped)/s.assets) : null})).sort((a,b) => b.assets-a.assets || b.customers-a.customers);
+      return { appTotal,approvedApplications,approved,waiting,rejected,customerTotal,normal,inactive,totalAssets,unmapped,mapped,rate:totalAssets?mapped/totalAssets:0,prep,near,overdue,applicationRows,instrumentRows,staff };
+    }
+
+    function setText(id, text) { $(id).textContent = text; }
+    function percent(rate) { return rate === null ? "—" : `${pf.format(rate*100)}%`; }
+    function ratePill(rate) {
+      const cls = rate === null ? "none" : rate < .7 ? "low" : "";
+      return `<span class="rate-pill ${cls}">${percent(rate)}</span>`;
+    }
+    function statusPill(status) {
+      const cls = status === "승인" ? "approved" : status === "대기" ? "waiting" : status === "반려" ? "rejected" : "other";
+      return `<span class="status-pill ${cls}">${escapeHtml(status || "미확인")}</span>`;
+    }
+    function formatBiz(value) {
+      const digits = normalizeBiz(value);
+      return digits.length === 10 ? `${digits.slice(0,3)}-${digits.slice(3,5)}-${digits.slice(5)}` : String(value || "—");
+    }
+    function renderApplicationTable() {
+      if (!dashboardData) return;
+      const status = $("applicationStatus").value, limit = $("applicationLimit").value;
+      const filtered = dashboardData.applicationRows.filter((r) => status === "all" || r.status === status);
+      const rows = limit === "all" ? filtered : filtered.slice(0,Number(limit));
+      const statusLabel = status === "all" ? "전체 상태" : status;
+      setText("applicationTableNote",`${statusLabel} ${nf.format(filtered.length)}건 · 최근 신청일 순`);
+      $("applicationTableBody").innerHTML = rows.length ? rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.date || "—")}</td><td>${statusPill(r.status)}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${escapeHtml(formatBiz(r.biz))}</td><td>${escapeHtml(r.applicant || "—")}</td><td>${escapeHtml(r.approvedDate || "—")}</td><td>${escapeHtml(r.companyCode || "—")}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="8">선택한 상태의 신청 업체가 없습니다.</td></tr>`;
+    }
+    function renderCustomerTable() {
+      if (!dashboardData) return;
+      const sort = $("customerSort").value;
+      const labels = {assets:"총자산",unmapped:"미매핑",near:"교정 임박",overdue:"기한 초과"};
+      const rows = [...dashboardData.instrumentRows].sort((a,b) => b[sort]-a[sort] || b.assets-a.assets).slice(0,10);
+      setText("customerTableNote",`${labels[sort]} 기준`);
+      $("customerTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td>${nf.format(r.prep)}</td><td><span class="risk ${r.near ? "orange":""}">${nf.format(r.near)}</span></td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
+    }
+    function renderStaffTable() {
+      const rows = dashboardData.staff.slice(0,10);
+      $("staffTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${nf.format(r.customers)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
+    }
+    function escapeHtml(value) { return String(value).replace(/[&<>"]/g,(c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+    function render(data, basisDate) {
+      dashboardData = data;
+      setText("basisDate",basisDate); setText("appliedTime",new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",second:"2-digit",hour12:false}).format(new Date()));
+      setText("kpiApplications",nf.format(data.appTotal));
+      $("subApplications").innerHTML = `<span class="good">승인 ${nf.format(data.approvedApplications)}</span> · <span class="pending">대기 ${nf.format(data.waiting)}</span> · <span class="bad">반려 ${nf.format(data.rejected)}</span>`;
+      setText("kpiApproved",nf.format(data.approved)); setText("subApproved",`전체 신청의 ${data.appTotal ? pf.format(data.approved/data.appTotal*100):"0.0"}%`);
+      setText("kpiCustomers",nf.format(data.customerTotal)); $("subCustomers").innerHTML = `<span class="good">정상 ${nf.format(data.normal)}</span> · 비활성 ${nf.format(data.inactive)}`;
+      setText("kpiAssets",nf.format(data.totalAssets)); setText("subAssets",`${nf.format(data.instrumentRows.length)}개 고객사 계측기현황 합계`);
+      setText("kpiUnmapped",nf.format(data.unmapped)); setText("subUnmapped",`전체 자산의 ${data.totalAssets ? pf.format(data.unmapped/data.totalAssets*100):"0.0"}%`);
+      setText("kpiRate",pf.format(data.rate*100)); setText("subRate",`매핑 완료 ${nf.format(data.mapped)}대`);
+      setText("donutRate",percent(data.rate)); $("mappingDonut").style.setProperty("--angle",`${Math.max(0,Math.min(1,data.rate))*360}deg`);
+      setText("legendMapped",`${nf.format(data.mapped)}대`); setText("legendUnmapped",`${nf.format(data.unmapped)}대`); setText("legendTotal",`${nf.format(data.totalAssets)}대`);
+      const max = Math.max(data.prep,data.near,data.overdue,1);
+      [["Prep",data.prep],["Near",data.near],["Overdue",data.overdue]].forEach(([key,n]) => { $("bar"+key).style.width=`${n/max*100}%`; setText("value"+key,nf.format(n)); });
+      setText("calibrationTotal",`관리 대상 ${nf.format(data.prep+data.near+data.overdue)}대`);
+      renderApplicationTable(); renderCustomerTable(); renderStaffTable();
+    }
+
+    function showError(messages) {
+      const list = Array.isArray(messages) ? messages : [messages];
+      $("errorMessage").innerHTML = list.length > 1 ? `<ul>${list.map((m) => `<li>${escapeHtml(m)}</li>`).join("")}</ul>` : escapeHtml(list[0]);
+      $("errorNotice").classList.add("show"); $("successNotice").classList.remove("show");
+      $("errorNotice").scrollIntoView({behavior:"smooth",block:"center"});
+    }
+    function clearNotices() { $("errorNotice").classList.remove("show"); $("successNotice").classList.remove("show"); }
+    function refreshApplyButton() { $("applyBtn").disabled = !Object.values(selectedFiles).every(Boolean); }
+    function setFile(role,file) {
+      if (!file) return;
+      const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
+      if (!/\.xlsx$/i.test(file.name)) { showError(`${schemas[role].label} 파일은 .xlsx 형식만 사용할 수 있습니다.`); return; }
+      selectedFiles[role] = file; slot.classList.add("ready"); slot.querySelector(".file-name").textContent = file.name;
+      slot.querySelector(".file-date").textContent = extractDate(file.name) || "날짜 확인"; refreshApplyButton(); clearNotices();
+    }
+
+    document.querySelectorAll(".file-slot").forEach((slot) => {
+      const role = slot.dataset.role, input = slot.querySelector("input");
+      input.addEventListener("change",() => setFile(role,input.files[0]));
+      ["dragenter","dragover"].forEach((type) => slot.addEventListener(type,(e) => {e.preventDefault();slot.classList.add("dragover")}));
+      ["dragleave","drop"].forEach((type) => slot.addEventListener(type,(e) => {e.preventDefault();slot.classList.remove("dragover")}));
+      slot.addEventListener("drop",(e) => setFile(role,e.dataTransfer.files[0]));
+    });
+
+    $("applyBtn").addEventListener("click", async () => {
+      clearNotices();
+      const dates = Object.entries(selectedFiles).map(([role,file]) => ({role,date:extractDate(file.name),name:file.name}));
+      const dateErrors = dates.filter((x) => !x.date).map((x) => `${x.name}: 파일명에서 기준일(YYYY-MM-DD)을 찾을 수 없습니다.`);
+      if (dateErrors.length) { showError(dateErrors); return; }
+      if (new Set(dates.map((x) => x.date)).size !== 1) { showError(`3개 파일의 기준일이 서로 다릅니다. (${dates.map((x) => `${schemas[x.role].label} ${x.date}`).join(" / ")})`); return; }
+      const btn = $("applyBtn"), icon = btn.querySelector("svg"), label = btn.querySelector("span");
+      btn.disabled = true; icon.classList.add("spin"); label.textContent = "분석 중";
+      try {
+        const parsed = {};
+        for (const role of ["applications","customers","instruments"]) parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
+        render(compute(parsed.applications,parsed.customers,parsed.instruments),dates[0].date);
+        $("successMessage").textContent = `${dates[0].date} 기준 파일 3개를 정상적으로 읽어 화면을 갱신했습니다.`;
+        $("successNotice").classList.add("show"); $("uploadPanel").classList.add("collapsed"); $("toggleUpload").textContent = "다시 불러오기";
+      } catch (error) {
+        console.error(error); showError(error?.message || "알 수 없는 오류가 발생했습니다.");
+      } finally {
+        btn.disabled = false; icon.classList.remove("spin"); label.textContent = "데이터 적용"; refreshApplyButton();
+      }
+    });
+
+    $("applicationStatus").addEventListener("change",renderApplicationTable);
+    $("applicationLimit").addEventListener("change",renderApplicationTable);
+    $("customerSort").addEventListener("change",renderCustomerTable);
+    $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
+    $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
+    $("printBtn").addEventListener("click",() => window.print());
+  })();
+  </script>
+</body>
+</html>
