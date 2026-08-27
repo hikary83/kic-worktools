@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Status Update Modal - Dark Mode</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com" rel="preconnect"/>
+<link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#0b1326",
+                        "surface": "#0b1326",
+                        "on-error": "#690005",
+                        "on-primary-fixed": "#001a42",
+                        "surface-container-high": "#222a3d",
+                        "on-error-container": "#ffdad6",
+                        "surface-main": "#0F172A",
+                        "outline-variant": "#424754",
+                        "text-high-contrast": "#F8FAFC",
+                        "tertiary-fixed-dim": "#bdc2ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "surface-tint": "#aec6ff",
+                        "on-tertiary-fixed-variant": "#2e3aa2",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#5f6bd3",
+                        "surface-container-low": "#131b2e",
+                        "surface-bright": "#31394d",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary": "#002e6a",
+                        "status-amber": "#F59E0B",
+                        "on-tertiary": "#121f8b",
+                        "primary": "#aec6ff",
+                        "inverse-on-surface": "#283044",
+                        "surface-variant": "#2d3449",
+                        "surface-dim": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "on-secondary-container": "#aeb9d0",
+                        "border-subtle": "#334155",
+                        "on-secondary-fixed": "#111c2d",
+                        "outline": "#8c909f",
+                        "inverse-surface": "#dae2fd",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-fixed": "#dfe0ff",
+                        "on-primary-fixed-variant": "#004396",
+                        "on-primary-container": "#fdfbff",
+                        "surface-container-highest": "#2d3449",
+                        "text-muted": "#94A3B8",
+                        "on-secondary": "#263143",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "secondary": "#bcc7de",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "on-tertiary-fixed": "#000965",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary-container": "#fffcff",
+                        "status-blue": "#3B82F6",
+                        "error-container": "#93000a",
+                        "tertiary": "#bdc2ff",
+                        "secondary-container": "#3e495d",
+                        "surface-container": "#171f33",
+                        "on-surface": "#dae2fd",
+                        "status-emerald": "#10B981",
+                        "inverse-primary": "#005ac3",
+                        "secondary-fixed": "#d8e3fb",
+                        "primary-container": "#2170e4",
+                        "surface-elevated": "#1E293B"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "sidebar-width": "240px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(148, 163, 184, 0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+        }
+        .glow-focus:focus-within {
+            box-shadow: 0 0 0 2px rgba(174, 198, 255, 0.2);
+            border-color: #aec6ff;
+        }
+        .ai-glow:hover {
+            box-shadow: 0 0 15px rgba(174, 198, 255, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-surface-main text-text-high-contrast h-screen w-full flex items-center justify-center p-4 antialiased overflow-hidden relative">
+<!-- Background Decoration for context -->
+<div class="absolute inset-0 z-0 overflow-hidden pointer-events-none flex items-center justify-center">
+<div class="absolute w-full h-full bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-primary-container/10 via-surface-main to-surface-main"></div>
+</div>
+<!-- Modal Backdrop Overlay -->
+<div class="fixed inset-0 bg-background/60 backdrop-blur-sm z-40 transition-opacity"></div>
+<!-- Modal Container -->
+<div class="glass-panel w-full max-w-2xl rounded-xl z-50 flex flex-col transform transition-all shadow-2xl relative border border-border-subtle overflow-hidden">
+<!-- Header -->
+<div class="flex items-center justify-between px-6 py-4 border-b border-border-subtle bg-surface-elevated/50">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined text-primary font-variation-settings: 'FILL' 1;" style="font-variation-settings: 'FILL' 1;">update</span>
+<h2 class="font-headline-md text-headline-md text-text-high-contrast">Update Status</h2>
+</div>
+<button class="text-text-muted hover:text-text-high-contrast transition-colors rounded-full p-1 hover:bg-surface-variant">
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="p-6 flex flex-col gap-6">
+<!-- Issue Context -->
+<div class="flex items-center justify-between bg-surface-container-low p-3 rounded-lg border border-border-subtle">
+<div class="flex items-center gap-2">
+<span class="font-label-md text-label-md bg-surface-variant text-text-high-contrast px-2 py-1 rounded border border-outline-variant">NEX-4092</span>
+<span class="font-body-md text-body-md text-text-muted">Database Migration Timeout</span>
+</div>
+<div class="flex items-center gap-2 font-label-md text-label-md">
+<span class="text-status-amber flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] font-variation-settings: 'FILL' 1;" style="font-variation-settings: 'FILL' 1;">warning</span> High Priority
+                    </span>
+</div>
+</div>
+<!-- Status & Assignee Row -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-text-muted uppercase tracking-wider">New Status</label>
+<div class="relative glow-focus rounded-lg transition-all duration-200">
+<select class="w-full bg-surface-container-high border border-border-subtle rounded-lg px-4 py-2.5 appearance-none font-body-md text-body-md text-text-high-contrast focus:outline-none focus:ring-0 focus:border-transparent cursor-pointer">
+<option>In Progress</option>
+<option>Investigating</option>
+<option>Blocked</option>
+<option>Resolved</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">expand_more</span>
+</div>
+</div>
+<div class="flex flex-col gap-1.5">
+<label class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Assign To</label>
+<div class="relative glow-focus rounded-lg transition-all duration-200">
+<select class="w-full bg-surface-container-high border border-border-subtle rounded-lg px-4 py-2.5 pl-10 appearance-none font-body-md text-body-md text-text-high-contrast focus:outline-none focus:ring-0 focus:border-transparent cursor-pointer">
+<option>Sarah Jenkins (Database Team)</option>
+<option>Alex Chen</option>
+<option>Unassigned</option>
+</select>
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none text-[20px]">person</span>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-text-muted pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Update Notes with AI integration -->
+<div class="flex flex-col gap-1.5">
+<div class="flex justify-between items-end">
+<label class="font-label-md text-label-md text-text-muted uppercase tracking-wider">Update Notes</label>
+<button class="flex items-center gap-1 font-label-md text-label-md text-primary hover:text-primary-fixed ai-glow transition-all duration-200 bg-primary/10 px-2 py-1 rounded border border-primary/20">
+<span class="material-symbols-outlined text-[16px]">magic_button</span> Generate Summary
+                    </button>
+</div>
+<textarea class="w-full bg-surface-container-high border border-border-subtle rounded-lg px-4 py-3 font-body-md text-body-md text-text-high-contrast focus:outline-none placeholder:text-text-muted/50 glow-focus transition-all duration-200 resize-none" placeholder="Provide details on the current progress..." rows="4"></textarea>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-6 py-4 border-t border-border-subtle bg-surface-elevated/50 flex flex-col-reverse sm:flex-row items-center justify-between gap-4">
+<!-- Jira Sync Toggle -->
+<div class="flex items-center gap-2 cursor-pointer group">
+<div class="relative inline-block w-10 mr-2 align-middle select-none transition duration-200 ease-in">
+<input checked="" class="toggle-checkbox absolute block w-5 h-5 rounded-full bg-white border-4 border-surface-container-highest appearance-none cursor-pointer transition-transform duration-200 ease-in-out translate-x-5 checked:border-primary" id="toggle" name="toggle" type="checkbox"/>
+<label class="toggle-label block overflow-hidden h-5 rounded-full bg-primary cursor-pointer transition-colors duration-200 ease-in-out" for="toggle"></label>
+</div>
+<label class="font-label-md text-label-md text-text-muted group-hover:text-text-high-contrast cursor-pointer transition-colors flex items-center gap-1" for="toggle">
+<span class="material-symbols-outlined text-[16px]">sync</span> Sync to Jira
+                </label>
+</div>
+<!-- Actions -->
+<div class="flex items-center gap-3 w-full sm:w-auto">
+<button class="flex-1 sm:flex-none px-4 py-2 font-label-md text-label-md text-text-high-contrast border border-border-subtle rounded-lg hover:bg-surface-variant transition-colors duration-200">
+                    Cancel
+                </button>
+<button class="flex-1 sm:flex-none px-4 py-2 font-label-md text-label-md text-on-primary bg-primary rounded-lg hover:bg-primary-fixed hover:shadow-[0_0_15px_rgba(174,198,255,0.3)] transition-all duration-200 flex items-center justify-center gap-2">
+                    Update Status
+                </button>
+</div>
+</div>
+</div>
+</body></html>

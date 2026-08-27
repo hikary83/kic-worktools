@@ -1,0 +1,358 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>AI Technical Blog Content &amp; Asset Studio (KIC)</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#727785",
+                        "warning-amber": "#F59E0B",
+                        "primary": "#0058be",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c2c6d6",
+                        "on-secondary-fixed": "#131b2e",
+                        "surface-container-highest": "#e0e3e5",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001a42",
+                        "on-surface-variant": "#424754",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "background": "#f7f9fb",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary": "#ffffff",
+                        "success-emerald": "#10B981",
+                        "tertiary": "#924700",
+                        "surface-tint": "#005ac2",
+                        "primary-fixed-dim": "#adc6ff",
+                        "border-subtle": "#E2E8F0",
+                        "secondary": "#565e74",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-container": "#b75b00",
+                        "linear-indigo": "#5E6AD2",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "tertiary-fixed": "#ffdcc6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#311400",
+                        "surface-container-low": "#f2f4f6",
+                        "sidebar-dark": "#0F172A",
+                        "on-tertiary-container": "#fffbff",
+                        "surface": "#f7f9fb",
+                        "inverse-primary": "#adc6ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-surface": "#191c1e",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2170e4",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "secondary-container": "#dae2fd",
+                        "on-background": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "sidebar-width": "240px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "display-lg": ["Inter"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { background-color: theme('colors.background'); color: theme('colors.on-surface'); }
+        .glass-panel { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid theme('colors.border-subtle'); }
+        .glass-panel-floating { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(12px); border: 1px solid theme('colors.border-subtle'); box-shadow: 0 4px 12px rgba(0,0,0,0.04); }
+        .card-active { border-left: 2px solid theme('colors.primary'); }
+        .stepper-active { background-color: theme('colors.primary'); color: theme('colors.on-primary'); box-shadow: 0 0 10px rgba(0, 88, 190, 0.5); }
+        .stepper-inactive { background-color: theme('colors.surface-container-high'); color: theme('colors.on-surface-variant'); }
+        .hover-lift { transition: transform 0.2s, box-shadow 0.2s; }
+        .hover-lift:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0, 88, 190, 0.05); }
+        
+        /* Markdown Styles */
+        .markdown-prose h1 { font-size: 1.5rem; font-weight: 600; margin-bottom: 1rem; color: theme('colors.on-surface'); }
+        .markdown-prose p { margin-bottom: 1rem; color: theme('colors.on-surface-variant'); line-height: 1.6; }
+        .markdown-prose blockquote { border-left: 4px solid theme('colors.primary'); padding-left: 1rem; margin-left: 0; margin-bottom: 1rem; background: theme('colors.surface-container-lowest'); padding: 1rem; }
+        .markdown-prose table { width: 100%; border-collapse: collapse; margin-bottom: 1rem; }
+        .markdown-prose th, .markdown-prose td { border: 1px solid theme('colors.border-subtle'); padding: 0.5rem; text-align: left; }
+        .markdown-prose th { background-color: theme('colors.surface-container-low'); font-weight: 600; }
+        
+    </style>
+</head>
+<body class="min-h-screen flex font-body-md text-body-md">
+<!-- SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-sidebar-width bg-sidebar-dark border-r border-outline-variant/10 shadow-xl flex flex-col h-full py-6 px-4 z-50">
+<div class="mb-8">
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary">IT Helpdesk</h1>
+<p class="text-on-surface-variant text-sm mt-1 font-label-sm text-label-sm">Enterprise Support</p>
+</div>
+<button class="w-full bg-primary text-on-primary py-2 px-4 rounded font-label-md text-label-md mb-6 hover:bg-primary-container transition-colors shadow-sm flex justify-center items-center gap-2">
+<span class="material-symbols-outlined" style="font-size: 18px;">add</span> New Issue
+        </button>
+<div class="flex flex-col gap-2 flex-grow">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">dashboard</span> Dashboard
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">auto_awesome</span> AI Reply
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-on-primary bg-primary/20 border-l-2 border-primary font-label-md text-label-md opacity-80 scale-95 transition-all duration-150" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">auto_stories</span> Asset Studio
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">campaign</span> Announcements
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">settings</span> Settings
+            </a>
+</div>
+<div class="mt-auto flex flex-col gap-2 border-t border-outline-variant/10 pt-4">
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">help_center</span> Support
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined" style="font-size: 20px;">logout</span> Sign Out
+            </a>
+</div>
+</nav>
+<!-- Main Content Area -->
+<main class="ml-[240px] flex-1 flex flex-col min-h-screen relative">
+<!-- TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-theme(spacing.sidebar-width))] z-40 bg-surface-container-lowest/80 backdrop-blur-md border-b border-border-subtle shadow-sm flex items-center justify-between px-margin-desktop h-16 w-full">
+<div class="flex items-center gap-4">
+<span class="font-headline-md text-headline-md font-black text-on-surface">Helpdesk OS</span>
+</div>
+<div class="flex items-center gap-6">
+<nav class="hidden md:flex items-center gap-4">
+<a class="text-secondary hover:text-on-surface transition-all font-label-md text-label-md hover:bg-surface-container-low px-2 py-1 rounded" href="#">Queue</a>
+<a class="text-secondary hover:text-on-surface transition-all font-label-md text-label-md hover:bg-surface-container-low px-2 py-1 rounded" href="#">Analytics</a>
+<a class="text-secondary hover:text-on-surface transition-all font-label-md text-label-md hover:bg-surface-container-low px-2 py-1 rounded" href="#">Inventory</a>
+</nav>
+<div class="flex items-center gap-3 border-l border-border-subtle pl-6">
+<button class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-secondary hover:text-on-surface p-1 rounded-full hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined">history</span>
+</button>
+<img class="w-8 h-8 rounded-full border border-border-subtle object-cover ml-2" data-alt="A generic system administrator user avatar featuring a professional minimalist design, neutral background, sharp rendering, professional corporate aesthetic, bright lighting, high quality." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDcOgYFgnJV_tXSiGEgDnSIvusiAH2T5K1tdWZHd6XxLrbtc_Li6q_MUOtu5sDt8ipSn2bSpvk1oz6nwHpZJhRmGcEa7uynxAfFtn8zqSpSiVi_hGob5a7pIq1jC1ko3TAZ1VlwwMbV3rlu90vBAQC1hhed8U7VwqjYA6dBzOizzUigz9O_iIfu52vD4AXb-eNcotyTlGXwdfK7zuf-LjSLwpoxSli1Y9svYBcxdZb_O2HwdXj5akjb"/>
+<button class="bg-primary text-on-primary px-4 py-1.5 rounded font-label-md text-label-md hover:bg-primary-container transition-colors ml-2 hidden lg:block">New Issue</button>
+</div>
+</div>
+</header>
+<!-- Canvas Area -->
+<div class="pt-24 px-margin-desktop pb-margin-desktop flex-1 flex flex-col gap-gutter max-w-7xl mx-auto w-full">
+<!-- Top Stepper -->
+<div class="flex justify-center mb-4">
+<div class="glass-panel-floating rounded-full p-2 flex items-center gap-2">
+<div class="flex items-center gap-2 px-4 py-1.5 rounded-full stepper-inactive font-label-md text-label-md">
+<span class="w-5 h-5 rounded-full bg-on-surface-variant/20 flex items-center justify-center text-[10px]">1</span> 일정 선택
+                    </div>
+<span class="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
+<div class="flex items-center gap-2 px-4 py-1.5 rounded-full stepper-inactive font-label-md text-label-md">
+<span class="w-5 h-5 rounded-full bg-on-surface-variant/20 flex items-center justify-center text-[10px]">2</span> 정보 입력
+                    </div>
+<span class="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
+<div class="flex items-center gap-2 px-4 py-1.5 rounded-full stepper-active font-label-md text-label-md">
+<span class="w-5 h-5 rounded-full bg-on-primary/20 flex items-center justify-center text-[10px]">3</span> 초안 작성
+                    </div>
+<span class="material-symbols-outlined text-outline-variant text-sm">chevron_right</span>
+<div class="flex items-center gap-2 px-4 py-1.5 rounded-full stepper-inactive font-label-md text-label-md">
+<span class="w-5 h-5 rounded-full bg-on-surface-variant/20 flex items-center justify-center text-[10px]">4</span> 에셋 생성
+                    </div>
+</div>
+</div>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Section 1: Calendar Grid (Left Column) -->
+<div class="lg:col-span-4 flex flex-col gap-gutter">
+<div class="glass-panel rounded-lg p-6 hover-lift">
+<h2 class="font-headline-md text-headline-md text-on-surface mb-4">Content Schedule</h2>
+<!-- Mini Calendar (Abstracted for UI) -->
+<div class="grid grid-cols-7 gap-1 text-center font-label-sm text-label-sm mb-2 text-on-surface-variant">
+<div>S</div><div>M</div><div>T</div><div>W</div><div>T</div><div>F</div><div>S</div>
+</div>
+<div class="grid grid-cols-7 gap-1 text-center font-label-md text-label-md">
+<!-- Week 1 -->
+<div class="p-1 text-outline-variant">28</div><div class="p-1 text-outline-variant">29</div><div class="p-1 text-outline-variant">30</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">1</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">2</div>
+<div class="p-1 rounded bg-primary/10 text-primary font-bold border border-primary/20">3</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">4</div>
+<!-- Week 2 -->
+<div class="p-1 rounded bg-surface-container-low text-on-surface">5</div>
+<div class="p-1 rounded bg-success-emerald/10 text-success-emerald font-bold">6</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">7</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">8</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">9</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">10</div>
+<div class="p-1 rounded bg-surface-container-low text-on-surface">11</div>
+</div>
+<div class="mt-6 flex flex-col gap-3">
+<div class="flex items-center gap-3 p-3 rounded bg-surface-container-lowest border border-border-subtle card-active">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="flex-1">
+<div class="font-label-md text-label-md text-on-surface">Kubernetes Networking</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Drafting (Nov 3)</div>
+</div>
+<span class="material-symbols-outlined text-primary text-sm">edit_document</span>
+</div>
+<div class="flex items-center gap-3 p-3 rounded bg-surface-container-lowest border border-border-subtle opacity-70">
+<div class="w-2 h-2 rounded-full bg-success-emerald"></div>
+<div class="flex-1">
+<div class="font-label-md text-label-md text-on-surface">Docker Security</div>
+<div class="font-label-sm text-label-sm text-on-surface-variant">Completed (Nov 6)</div>
+</div>
+<span class="material-symbols-outlined text-success-emerald text-sm">check_circle</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Section 2: Markdown Viewer & Section 3: Asset Cards (Right Column) -->
+<div class="lg:col-span-8 flex flex-col gap-gutter">
+<!-- Section 2: Markdown Viewer -->
+<div class="glass-panel rounded-lg flex flex-col h-full hover-lift">
+<!-- Toolbar -->
+<div class="flex items-center justify-between p-4 border-b border-border-subtle bg-surface-container-lowest/50 rounded-t-lg">
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">
+                                    Words: 1,240
+                                </span>
+<span class="px-2 py-1 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">
+                                    Read: 5m
+                                </span>
+</div>
+<div class="flex items-center gap-2">
+<button class="flex items-center gap-1 px-3 py-1.5 rounded border border-success-emerald text-success-emerald font-label-md text-label-md hover:bg-success-emerald/10 transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">content_copy</span> 네이버 블로그 복사
+                                </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded border border-border-subtle text-on-surface font-label-md text-label-md hover:bg-surface-container-low transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">imagesmode</span> Asset Gen
+                                </button>
+<button class="flex items-center gap-1 px-3 py-1.5 rounded bg-primary text-on-primary font-label-md text-label-md hover:bg-primary-container transition-colors">
+<span class="material-symbols-outlined" style="font-size: 16px;">save</span> Save
+                                </button>
+</div>
+</div>
+<!-- Editor/Viewer Area -->
+<div class="p-6 overflow-y-auto max-h-[400px] markdown-prose flex-1 bg-surface-container-lowest rounded-b-lg">
+<h1>Demystifying Kubernetes Service Mesh Architecture</h1>
+<p>In modern cloud-native environments, managing microservices communication is a critical challenge. A service mesh provides a dedicated infrastructure layer to facilitate service-to-service communications between microservices, using a proxy.</p>
+<blockquote>
+                                "By offloading communication logic to a sidecar proxy, developers can focus entirely on business logic, while operators manage security and routing policies centrally."
+                            </blockquote>
+<p>Here is a comparison of common service mesh implementations:</p>
+<table>
+<thead>
+<tr>
+<th>Feature</th>
+<th>Istio</th>
+<th>Linkerd</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Architecture</td>
+<td>Envoy sidecar proxy</td>
+<td>Rust-based micro-proxy</td>
+</tr>
+<tr>
+<td>Complexity</td>
+<td>High (feature-rich)</td>
+<td>Low (lightweight)</td>
+</tr>
+<tr>
+<td>Primary Use Case</td>
+<td>Enterprise complex routing</td>
+<td>Simple, secure mTLS</td>
+</tr>
+</tbody>
+</table>
+<p>As seen in the table above, choosing the right mesh depends heavily on your team's operational maturity and specific security requirements.</p>
+</div>
+</div>
+<!-- Section 3: Asset Cards -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-2">
+<!-- Asset Card 1 -->
+<div class="glass-panel rounded-lg p-4 hover-lift flex flex-col gap-3">
+<div class="h-32 rounded bg-surface-container border border-border-subtle overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A sleek, modern isometric vector illustration of a Kubernetes cluster architecture featuring glowing nodes, digital network connections, neon blue and cyan accents on a clean white background, high tech aesthetic, sharp edges, professional." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBzL3cL1MNUWE4XcJnICFyt9p0FZ7TrblA1Ma0uqDFaKLcH6LYHF30WQ4NqeqJi-1tqvL5E_90C43dBTxPtQBNhXw5bmzuYIOKrPWYnyt2Sykq7_lHNboFoTnKaDxeyjX1Q6vq8lSjKyJBh3coq916pbB_HXeKi1q8joni4y9SqMy7bcN704LtbXZ5VIqRo4cLqIFvI4Kjo4cUz0EW_b4rU4M7070BJyinmgaTX5koKFlJugfUtR-q1"/>
+<div class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur font-label-sm text-label-sm border border-border-subtle shadow-sm">
+                                    Header Image
+                                </div>
+</div>
+<div class="font-label-sm text-label-sm text-outline p-2 rounded bg-surface-container-lowest border border-border-subtle">
+<strong class="text-on-surface">Prompt:</strong> Isometric vector art of kubernetes nodes connected by glowing lines, clean white background, corporate tech style, blue accents --ar 16:9
+                            </div>
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">#Kubernetes</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">#CloudNative</span>
+</div>
+</div>
+<!-- Asset Card 2 -->
+<div class="glass-panel rounded-lg p-4 hover-lift flex flex-col gap-3">
+<div class="h-32 rounded bg-surface-container border border-border-subtle overflow-hidden relative">
+<img class="w-full h-full object-cover" data-alt="A minimalist abstract technical diagram depicting a service mesh proxy architecture, clean lines, subtle drop shadows, light mode UI aesthetic, modern industrial design, slate and primary blue colors, high resolution." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBJSrReCl8Aqn_YxqjofdwOGn8SRj65elcODxGNof8a31hGHDTUB6l9ogvk-I-9vM2rtbbGPD5LjFxMgd2wN7EzBcsVdvG184eMDlb_iI8QPG1LuZKBis1awrqUXL4rFlyDRR7ECZiARsgO5-8uX_Vlx4fzGI5XXeOIvnNOEDlRUc8aBaN42Cu55pasauCyZamA93PfE9KsXoyqbpFeSiW2yMIAA4Xb3__g6PK_FWSASVM_qaFoCFOS"/>
+<div class="absolute bottom-2 right-2 px-2 py-0.5 rounded bg-surface-container-lowest/80 backdrop-blur font-label-sm text-label-sm border border-border-subtle shadow-sm">
+                                    Diagram
+                                </div>
+</div>
+<div class="font-label-sm text-label-sm text-outline p-2 rounded bg-surface-container-lowest border border-border-subtle">
+<strong class="text-on-surface">Prompt:</strong> Minimalist abstract ui diagram showing data flow through sidecar proxies, light slate background, primary blue highlights, clean tech diagram --ar 4:3
+                            </div>
+<div class="flex flex-wrap gap-1">
+<span class="px-2 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">#ServiceMesh</span>
+<span class="px-2 py-0.5 rounded bg-surface-container-low font-label-sm text-label-sm text-on-surface-variant border border-border-subtle">#Architecture</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+</div>
+</main>
+</body></html>

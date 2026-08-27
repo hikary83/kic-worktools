@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Internal Notice & Announcement Generator</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&family=JetBrains+Mono:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Configuration -->
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#727785",
+                        "warning-amber": "#F59E0B",
+                        "primary": "#0058be",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c2c6d6",
+                        "on-secondary-fixed": "#131b2e",
+                        "surface-container-highest": "#e0e3e5",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001a42",
+                        "on-surface-variant": "#424754",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "background": "#f7f9fb",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary": "#ffffff",
+                        "success-emerald": "#10B981",
+                        "tertiary": "#924700",
+                        "surface-tint": "#005ac2",
+                        "primary-fixed-dim": "#adc6ff",
+                        "border-subtle": "#E2E8F0",
+                        "secondary": "#565e74",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-container": "#b75b00",
+                        "linear-indigo": "#5E6AD2",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "tertiary-fixed": "#ffdcc6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#311400",
+                        "surface-container-low": "#f2f4f6",
+                        "sidebar-dark": "#0F172A",
+                        "on-tertiary-container": "#fffbff",
+                        "surface": "#f7f9fb",
+                        "inverse-primary": "#adc6ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-surface": "#191c1e",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2170e4",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "secondary-container": "#dae2fd",
+                        "on-background": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "sidebar-width": "240px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "display-lg": ["Inter"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        /* Custom scrollbar for minimalist look */
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 9999px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c2c6d6; }
+    </style>
+</head>
+<body class="bg-background text-on-surface font-body-md text-body-md antialiased overflow-hidden selection:bg-primary-fixed selection:text-on-primary-fixed">
+<!-- JSON Component: SideNavBar -->
+<nav class="fixed left-0 top-0 h-screen w-sidebar-width bg-sidebar-dark border-r border-outline-variant/10 shadow-xl flex flex-col py-6 px-4 z-50 transition-all duration-300">
+<!-- Header -->
+<div class="flex items-center gap-3 px-2 mb-8">
+<img alt="System Administrator Profile" class="w-10 h-10 rounded-full border-2 border-surface/20 object-cover" data-alt="A polished, professional headshot of a system administrator in a brightly lit modern office environment. The subject is wearing a dark, tailored blazer over a crisp white shirt, exuding a sense of reliability and technical expertise. The background is a slightly blurred, high-key corporate setting with subtle architectural lines." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAVMBzLbh4AvpdQD2EWMt9fgXmgAybyAdT3np7UJgGuSs75n8idLpzo7sc4cRAnbulgfeiTsVWbznYhDy80VFb_fm76OJyUUW9CuQMPkAh2rT4l_0-Ugl1SSX85RVCXmwFdAEVsZYRJ_yauRG__fIlVQJ5vXZ6Tj4N6eoFmaMp2B_PrJ9ZxmaOzjrEpjKqUuw0wbGwUIlFmazoQGZio5V4J4fZtmQUDe5Q73hLdN6bAu3TIY7veKuMn"/>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-on-primary text-[18px] leading-tight">IT Helpdesk</h1>
+<p class="font-label-sm text-label-sm text-outline-variant">Enterprise Support</p>
+</div>
+</div>
+<!-- CTA -->
+<button class="w-full mb-6 bg-primary text-on-primary hover:bg-primary-container hover:text-on-primary-container transition-colors rounded-lg py-2.5 px-4 font-label-md text-label-md flex items-center justify-center gap-2 shadow-sm">
+<span class="material-symbols-outlined text-[18px]">add</span>
+            New Issue
+        </button>
+<!-- Navigation Tabs -->
+<div class="flex-1 flex flex-col gap-1 overflow-y-auto">
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">dashboard</span>
+                Dashboard
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">auto_awesome</span>
+                AI Reply
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">auto_stories</span>
+                Asset Studio
+            </a>
+<!-- ACTIVE: Announcements maps to Notice Generator -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-on-primary bg-primary/20 border-l-2 border-primary font-body-md text-body-md transition-all duration-150" href="#">
+<span class="material-symbols-outlined text-[20px]">campaign</span>
+                Announcements
+            </a>
+<!-- Inactive -->
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group mt-auto" href="#">
+<span class="material-symbols-outlined text-[20px] group-hover:scale-110 transition-transform">settings</span>
+                Settings
+            </a>
+</div>
+<!-- Footer Tabs -->
+<div class="mt-4 pt-4 border-t border-outline-variant/10 flex flex-col gap-1">
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px]">help_center</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 px-3 py-2.5 rounded-lg text-outline-variant hover:text-on-primary hover:bg-on-surface-variant/10 transition-colors font-body-md text-body-md group" href="#">
+<span class="material-symbols-outlined text-[20px]">logout</span>
+                Sign Out
+            </a>
+</div>
+</nav>
+<!-- JSON Component: TopAppBar -->
+<header class="fixed top-0 right-0 w-[calc(100%-theme(spacing.sidebar-width))] z-40 bg-surface-container-lowest/80 backdrop-blur-md border-b border-border-subtle shadow-sm flex items-center justify-between px-margin-desktop h-16 transition-all duration-300">
+<!-- Brand / Navigation Context -->
+<div class="flex items-center gap-8">
+<span class="font-headline-md text-headline-md font-black text-on-surface tracking-tight">Helpdesk OS</span>
+<nav class="hidden md:flex items-center gap-1 h-full pt-1">
+<a class="px-4 py-5 text-secondary hover:text-on-surface hover:bg-surface-container-low transition-all font-label-md text-label-md uppercase tracking-wider rounded-t-md" href="#">Queue</a>
+<a class="px-4 py-5 text-secondary hover:text-on-surface hover:bg-surface-container-low transition-all font-label-md text-label-md uppercase tracking-wider rounded-t-md" href="#">Analytics</a>
+<a class="px-4 py-5 text-secondary hover:text-on-surface hover:bg-surface-container-low transition-all font-label-md text-label-md uppercase tracking-wider rounded-t-md" href="#">Inventory</a>
+</nav>
+</div>
+<!-- Trailing Actions -->
+<div class="flex items-center gap-3">
+<button class="w-9 h-9 flex items-center justify-center rounded-full text-secondary hover:text-on-surface hover:bg-surface-container-low transition-all">
+<span class="material-symbols-outlined text-[20px]">notifications</span>
+</button>
+<button class="w-9 h-9 flex items-center justify-center rounded-full text-secondary hover:text-on-surface hover:bg-surface-container-low transition-all mr-2">
+<span class="material-symbols-outlined text-[20px]">history</span>
+</button>
+<button class="bg-primary text-on-primary hover:bg-primary-container px-5 py-2 rounded-lg font-label-md text-label-md transition-all shadow-sm hover:shadow active:scale-[0.98]">
+                New Issue
+            </button>
+<div class="ml-2 pl-4 border-l border-border-subtle cursor-pointer">
+<img alt="User avatar" class="w-8 h-8 rounded-full border border-border-subtle object-cover" data-alt="A close-up avatar of a professional enterprise user. The image features a clean, minimalist background in soft grey tones. The lighting is soft and studio-quality, highlighting the details of a modern business casual outfit. The overall mood is crisp, organized, and suited for a high-performance SaaS interface." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCNAokNnctH9oqtbX24YLeJ9jMezbZ6Fsjt43Oqr5WtLnUGeGyog4zKMBbDK6IbkHj3hxcozsr7xyPmjt76DTpZFTrd3X3OZZs16vVqtSaCkQPDR7cYvAktHU3IRMAMUoq--Q2On7KLHOEzxUNJlG4Lf6ur13xefy-pNk1aaWJoVo8oirDXix3QasyITbz5ZDiLFVvqoh2W0pKjl2T2tDtOKIo-LgkBwa2mMVABVaJYvZ94XreQ-nDk"/>
+</div>
+</div>
+</header>
+<!-- Main Workspace (Notice Generator) -->
+<main class="ml-[240px] mt-16 p-margin-desktop h-[calc(100vh-64px)] w-[calc(100%-240px)] flex gap-gutter bg-surface-bright">
+<!-- LEFT COLUMN: Form Controls (50%) -->
+<section class="w-1/2 flex flex-col h-full bg-surface-container-lowest border border-border-subtle rounded-xl shadow-sm overflow-hidden flex-shrink-0">
+<!-- Header -->
+<div class="px-6 py-5 border-b border-border-subtle bg-surface-container-lowest/50 flex justify-between items-center z-10">
+<div>
+<h2 class="font-headline-md text-headline-md text-[20px] text-on-surface">Notice Configuration</h2>
+<p class="font-body-md text-body-md text-secondary mt-1">Define parameters to generate the internal announcement card.</p>
+</div>
+</div>
+<!-- Scrollable Form Body -->
+<div class="p-6 flex-1 overflow-y-auto flex flex-col gap-8">
+<!-- Section 1: Basic Info -->
+<div class="flex flex-col gap-5">
+<!-- Notice Type -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Notice Category</label>
+<div class="relative">
+<select class="w-full appearance-none bg-transparent border border-outline-variant/60 rounded-lg px-4 py-2.5 text-body-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all cursor-pointer shadow-sm">
+<option>System Maintenance</option>
+<option>Security Update</option>
+<option>Feature Release</option>
+<option>General Announcement</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-outline pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Title -->
+<div>
+<label class="block font-label-md text-label-md text-on-surface-variant mb-2">Headline</label>
+<input class="w-full bg-transparent border border-outline-variant/60 rounded-lg px-4 py-2.5 text-body-lg text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm placeholder:text-outline-variant" placeholder="Enter concise headline..." type="text" value="Scheduled Network Infrastructure Upgrade"/>
+</div>
+</div>
+<hr class="border-border-subtle"/>
+<!-- Section 2: Schedule -->
+<div class="flex flex-col gap-5">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Schedule Detail</h3>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="block font-label-sm text-label-sm text-secondary mb-1.5">Start Time</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">calendar_today</span>
+<input class="w-full bg-transparent border border-outline-variant/60 rounded-lg pl-10 pr-3 py-2 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm" type="datetime-local" value="2023-11-15T02:00"/>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-secondary mb-1.5">End Time</label>
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline text-[18px]">event_busy</span>
+<input class="w-full bg-transparent border border-outline-variant/60 rounded-lg pl-10 pr-3 py-2 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm" type="datetime-local" value="2023-11-15T05:00"/>
+</div>
+</div>
+</div>
+<div>
+<label class="block font-label-sm text-label-sm text-secondary mb-1.5">Impact Scope</label>
+<input class="w-full bg-transparent border border-outline-variant/60 rounded-lg px-4 py-2 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all shadow-sm" type="text" value="VPN Services, Internal Dashboard, DB Cluster B"/>
+</div>
+</div>
+<hr class="border-border-subtle"/>
+<!-- Section 3: Dynamic Change Items -->
+<div class="flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-label-md text-on-surface-variant uppercase tracking-wider">Key Details / Changes</h3>
+<button class="text-primary hover:text-primary-container font-label-md text-label-md flex items-center gap-1 transition-colors">
+<span class="material-symbols-outlined text-[16px]">add_circle</span> Add Item
+                        </button>
+</div>
+<!-- Builder List -->
+<div class="flex flex-col gap-2">
+<!-- Item 1 -->
+<div class="group flex items-start gap-3 p-3 bg-surface-container-low border border-border-subtle rounded-lg hover:border-outline-variant/50 transition-colors">
+<div class="cursor-grab text-outline-variant hover:text-on-surface mt-2.5">
+<span class="material-symbols-outlined text-[20px]">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-md px-3 py-1.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="text" value="Database Migration to AWS RDS"/>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-md px-3 py-1.5 text-body-md text-secondary focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none" rows="2">Upgrading storage capacity and establishing multi-AZ redundancy for critical workloads.</textarea>
+</div>
+<button class="text-outline hover:text-error mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+<!-- Item 2 -->
+<div class="group flex items-start gap-3 p-3 bg-surface-container-low border border-border-subtle rounded-lg hover:border-outline-variant/50 transition-colors">
+<div class="cursor-grab text-outline-variant hover:text-on-surface mt-2.5">
+<span class="material-symbols-outlined text-[20px]">drag_indicator</span>
+</div>
+<div class="flex-1 flex flex-col gap-2">
+<input class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-md px-3 py-1.5 text-body-md text-on-surface focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all" type="text" value="Firewall Rule Refresh"/>
+<textarea class="w-full bg-surface-container-lowest border border-outline-variant/40 rounded-md px-3 py-1.5 text-body-md text-secondary focus:border-primary focus:ring-1 focus:ring-primary outline-none transition-all resize-none" rows="2">Implementing zero-trust policies on internal segment boundaries.</textarea>
+</div>
+<button class="text-outline hover:text-error mt-2.5 opacity-0 group-hover:opacity-100 transition-opacity">
+<span class="material-symbols-outlined text-[20px]">delete</span>
+</button>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- RIGHT COLUMN: Live Preview (50%) -->
+<section class="w-1/2 flex flex-col h-full bg-surface-container-high rounded-xl overflow-hidden flex-shrink-0 shadow-[inset_0_0_20px_rgba(0,0,0,0.02)] border border-border-subtle relative">
+<!-- Action Bar (Floating at top) -->
+<div class="absolute top-4 right-4 z-10 flex gap-2">
+<button class="bg-surface-container-lowest/90 backdrop-blur-sm border border-border-subtle text-on-surface hover:bg-surface-container-low px-4 py-2 rounded-md shadow-sm font-label-md text-label-md flex items-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">image</span> Download PNG
+                </button>
+<button class="w-9 h-9 bg-surface-container-lowest/90 backdrop-blur-sm border border-border-subtle text-on-surface hover:bg-surface-container-low rounded-md shadow-sm flex items-center justify-center transition-all" title="Copy Image to Clipboard">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+</button>
+<button class="w-9 h-9 bg-surface-container-lowest/90 backdrop-blur-sm border border-border-subtle text-on-surface hover:bg-surface-container-low rounded-md shadow-sm flex items-center justify-center transition-all" title="Copy Markdown Text">
+<span class="material-symbols-outlined text-[18px]">format_align_left</span>
+</button>
+</div>
+<!-- Preview Canvas Area -->
+<div class="flex-1 flex items-center justify-center p-8 overflow-y-auto">
+<!-- THE CARD NEWS MOCKUP (1:1 Ratio approx) -->
+<div class="w-full max-w-[480px] bg-surface-container-lowest rounded-2xl shadow-xl overflow-hidden border border-border-subtle flex flex-col transform transition-transform hover:scale-[1.01] duration-300 ease-out">
+<!-- Gradient Header -->
+<div class="h-28 w-full bg-gradient-to-r from-primary to-linear-indigo relative overflow-hidden flex items-end p-6">
+<!-- Abstract Background Pattern Overlay -->
+<div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_var(--tw-gradient-stops))] from-white via-transparent to-transparent"></div>
+<!-- Badge -->
+<div class="bg-surface-container-lowest text-primary font-label-md text-label-md px-3 py-1.5 rounded-full flex items-center gap-1.5 shadow-sm absolute top-5 left-6">
+<span class="material-symbols-outlined text-[16px] fill-current" data-weight="fill" style="font-variation-settings: 'FILL' 1;">build</span>
+                            System Maintenance
+                        </div>
+</div>
+<!-- Card Content -->
+<div class="p-8 flex flex-col gap-6">
+<!-- Title -->
+<h1 class="font-display-lg text-display-lg text-[28px] leading-tight text-on-surface tracking-tight">
+                            Scheduled Network Infrastructure Upgrade
+                        </h1>
+<!-- Schedule Table (Minimalist) -->
+<div class="bg-surface-container-low rounded-xl p-4 border border-border-subtle">
+<div class="flex items-start gap-4 mb-3">
+<div class="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0 text-primary">
+<span class="material-symbols-outlined text-[18px]">schedule</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider mb-0.5">Downtime Window</p>
+<p class="font-body-lg text-body-lg text-on-surface font-medium">Nov 15, 02:00 AM – 05:00 AM (EST)</p>
+</div>
+</div>
+<div class="flex items-start gap-4">
+<div class="w-8 h-8 rounded-full bg-warning-amber/10 flex items-center justify-center flex-shrink-0 text-warning-amber">
+<span class="material-symbols-outlined text-[18px]">warning</span>
+</div>
+<div>
+<p class="font-label-sm text-label-sm text-secondary uppercase tracking-wider mb-0.5">Impacted Services</p>
+<p class="font-body-md text-body-md text-on-surface">VPN Services, Internal Dashboard, DB Cluster B</p>
+</div>
+</div>
+</div>
+<!-- Details List -->
+<div class="flex flex-col gap-4">
+<h4 class="font-label-md text-label-md text-secondary uppercase tracking-widest border-b border-border-subtle pb-2">Key Objectives</h4>
+<ul class="flex flex-col gap-3">
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5">check_circle</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface font-semibold">Database Migration to AWS RDS</p>
+<p class="font-body-md text-body-md text-secondary mt-0.5">Upgrading storage capacity and establishing multi-AZ redundancy for critical workloads.</p>
+</div>
+</li>
+<li class="flex gap-3">
+<span class="material-symbols-outlined text-primary text-[20px] flex-shrink-0 mt-0.5">check_circle</span>
+<div>
+<p class="font-body-md text-body-md text-on-surface font-semibold">Firewall Rule Refresh</p>
+<p class="font-body-md text-body-md text-secondary mt-0.5">Implementing zero-trust policies on internal segment boundaries.</p>
+</div>
+</li>
+</ul>
+</div>
+</div>
+<!-- Footer -->
+<div class="mt-auto bg-surface-container px-8 py-5 border-t border-border-subtle flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 bg-secondary text-surface-container-lowest rounded flex items-center justify-center font-bold text-[10px]">OS</div>
+<span class="font-label-md text-label-md text-secondary font-semibold">Helpdesk OS Operations</span>
+</div>
+<span class="font-label-sm text-label-sm text-outline">Ref: INC-99201</span>
+</div>
+</div>
+</div>
+<!-- Bottom Indicator -->
+<div class="absolute bottom-4 left-0 w-full flex justify-center gap-2 z-10">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<div class="w-2 h-2 rounded-full bg-outline-variant"></div>
+</div>
+</section>
+</main>
+</body></html>

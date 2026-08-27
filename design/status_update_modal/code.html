@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Status Update Modal</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;900&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "outline": "#727785",
+                        "warning-amber": "#F59E0B",
+                        "primary": "#0058be",
+                        "surface-bright": "#f7f9fb",
+                        "on-primary": "#ffffff",
+                        "outline-variant": "#c2c6d6",
+                        "on-secondary-fixed": "#131b2e",
+                        "surface-container-highest": "#e0e3e5",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed": "#001a42",
+                        "on-surface-variant": "#424754",
+                        "on-error": "#ffffff",
+                        "inverse-surface": "#2d3133",
+                        "background": "#f7f9fb",
+                        "surface-variant": "#e0e3e5",
+                        "surface-container": "#eceef0",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary": "#ffffff",
+                        "success-emerald": "#10B981",
+                        "tertiary": "#924700",
+                        "surface-tint": "#005ac2",
+                        "primary-fixed-dim": "#adc6ff",
+                        "border-subtle": "#E2E8F0",
+                        "secondary": "#565e74",
+                        "secondary-fixed-dim": "#bec6e0",
+                        "surface-container-high": "#e6e8ea",
+                        "tertiary-container": "#b75b00",
+                        "linear-indigo": "#5E6AD2",
+                        "on-secondary": "#ffffff",
+                        "secondary-fixed": "#dae2fd",
+                        "tertiary-fixed": "#ffdcc6",
+                        "error-container": "#ffdad6",
+                        "on-primary-fixed-variant": "#004395",
+                        "on-tertiary-fixed-variant": "#723600",
+                        "tertiary-fixed-dim": "#ffb786",
+                        "surface-container-lowest": "#ffffff",
+                        "on-tertiary-fixed": "#311400",
+                        "surface-container-low": "#f2f4f6",
+                        "sidebar-dark": "#0F172A",
+                        "on-tertiary-container": "#fffbff",
+                        "surface": "#f7f9fb",
+                        "inverse-primary": "#adc6ff",
+                        "inverse-on-surface": "#eff1f3",
+                        "on-surface": "#191c1e",
+                        "on-secondary-container": "#5c647a",
+                        "primary-container": "#2170e4",
+                        "on-error-container": "#93000a",
+                        "on-primary-container": "#fefcff",
+                        "on-secondary-fixed-variant": "#3f465c",
+                        "surface-dim": "#d8dadc",
+                        "secondary-container": "#dae2fd",
+                        "on-background": "#191c1e"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-mobile": "16px",
+                        "base": "4px",
+                        "margin-desktop": "32px",
+                        "gutter": "24px",
+                        "sidebar-width": "240px"
+                    },
+                    "fontFamily": {
+                        "headline-lg": ["Inter"],
+                        "body-md": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "display-lg": ["Inter"],
+                        "label-sm": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"]
+                    },
+                    "fontSize": {
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 20;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1;
+        }
+    </style>
+</head>
+<body class="bg-background min-h-screen font-body-md text-on-surface antialiased flex items-center justify-center p-margin-mobile md:p-margin-desktop relative">
+<!-- Background Content Mockup -->
+<div class="absolute inset-0 grid grid-cols-12 gap-gutter p-margin-desktop opacity-20 pointer-events-none">
+<div class="col-span-3 h-full bg-surface-container-low rounded-xl border border-border-subtle"></div>
+<div class="col-span-9 h-full bg-surface-container-lowest rounded-xl border border-border-subtle p-gutter">
+<div class="h-8 bg-surface-container w-1/4 rounded mb-6"></div>
+<div class="h-32 bg-surface-container w-full rounded mb-4"></div>
+<div class="h-32 bg-surface-container w-full rounded"></div>
+</div>
+</div>
+<!-- Backdrop & Modal Container -->
+<div class="fixed inset-0 bg-sidebar-dark/60 backdrop-blur-md z-50 flex items-center justify-center p-4">
+<!-- Glass Modal -->
+<div aria-labelledby="modal-title" aria-modal="true" class="bg-surface-container-lowest/80 backdrop-blur-[12px] border border-border-subtle shadow-xl w-full max-w-[640px] rounded-2xl overflow-hidden flex flex-col" role="dialog">
+<!-- Header -->
+<div class="px-gutter py-6 border-b border-border-subtle flex items-start justify-between bg-surface-container-lowest/50">
+<div class="flex flex-col gap-base">
+<div class="flex items-center gap-2 mb-1">
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-1 rounded text-on-surface-variant uppercase tracking-wider">IT-260825-008</span>
+<span class="font-label-sm text-label-sm bg-primary/10 text-primary px-2 py-1 rounded flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">apartment</span> NYC Office
+                        </span>
+<span class="font-label-sm text-label-sm bg-surface-container px-2 py-1 rounded text-on-surface-variant flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">person</span> J. Doe
+                        </span>
+</div>
+<h2 class="font-headline-md text-headline-md text-on-surface m-0" id="modal-title">Update Issue Status</h2>
+</div>
+<button aria-label="Close modal" class="text-on-surface-variant hover:text-on-surface hover:bg-surface-container-low p-2 rounded-lg transition-colors flex items-center gap-2 group">
+<span class="font-label-sm text-label-sm bg-surface-container px-1.5 py-0.5 rounded text-secondary group-hover:bg-surface-variant transition-colors border border-border-subtle">ESC</span>
+<span class="material-symbols-outlined">close</span>
+</button>
+</div>
+<!-- Body -->
+<div class="px-gutter py-6 flex flex-col gap-6 overflow-y-auto max-h-[60vh]">
+<!-- 2-Column Selects -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Assignee -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Assignee</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-border-subtle rounded-lg px-4 py-2.5 font-body-md text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-10 shadow-sm">
+<option>Sarah Jenkins (L2 Support)</option>
+<option>Mike Ross (Network)</option>
+<option>Unassigned</option>
+</select>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+<!-- Status -->
+<div class="flex flex-col gap-2">
+<label class="font-label-md text-label-md text-on-surface-variant">Status</label>
+<div class="relative">
+<select class="w-full bg-surface-container-lowest border border-border-subtle rounded-lg px-4 py-2.5 font-body-md text-on-surface appearance-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all pr-10 shadow-sm pl-10">
+<option>In Progress</option>
+<option>Pending Vendor</option>
+<option>Resolved</option>
+</select>
+<!-- Color Dot Indicator (simulated within select via positioning) -->
+<div class="absolute left-4 top-1/2 -translate-y-1/2 w-2.5 h-2.5 rounded-full bg-warning-amber pointer-events-none"></div>
+<span class="material-symbols-outlined absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant pointer-events-none">expand_more</span>
+</div>
+</div>
+</div>
+<!-- Action Notes -->
+<div class="flex flex-col gap-2">
+<div class="flex items-center justify-between">
+<label class="font-label-md text-label-md text-on-surface-variant">Resolution / Action Notes</label>
+<button class="flex items-center gap-1.5 px-3 py-1 bg-surface-container hover:bg-surface-variant text-on-surface rounded-full transition-colors border border-border-subtle group">
+<span class="material-symbols-outlined text-[16px] text-linear-indigo group-hover:animate-pulse">auto_awesome</span>
+<span class="font-label-md text-label-md font-semibold text-linear-indigo">✨ AI 답변</span>
+</button>
+</div>
+<textarea class="w-full h-28 bg-surface-container-lowest border border-border-subtle rounded-lg p-4 font-body-md text-on-surface resize-none focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all shadow-inner placeholder-outline-variant" placeholder="Describe the steps taken to resolve the issue..."></textarea>
+</div>
+<!-- AI Preview Box (Initially visible for mockup) -->
+<div class="bg-primary/5 border border-primary/20 rounded-xl p-4 flex flex-col gap-3 relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-linear-indigo/10 blur-3xl rounded-full -translate-y-1/2 translate-x-1/2"></div>
+<div class="flex items-center gap-2 text-primary font-label-md text-label-md z-10">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+<span>AI Suggestion Applied</span>
+</div>
+<p class="font-body-md text-body-md text-on-surface-variant z-10 leading-relaxed">
+                        Rebooted the secondary DNS server and flushed the cache on the affected subnet. Connectivity restored. Monitoring for the next 24 hours.
+                    </p>
+</div>
+<!-- Jira Toggle -->
+<div class="flex items-center justify-between py-2 border-t border-border-subtle mt-2">
+<div class="flex items-center gap-3">
+<div class="w-8 h-8 rounded bg-[#0052CC]/10 flex items-center justify-center">
+<span class="material-symbols-outlined text-[#0052CC]">api</span>
+</div>
+<div class="flex flex-col">
+<span class="font-body-md text-body-md font-semibold text-on-surface">Sync with Jira</span>
+<span class="font-label-sm text-label-sm text-on-surface-variant">Update corresponding ticket PROJ-842</span>
+</div>
+</div>
+<!-- Custom Toggle Switch -->
+<label class="relative inline-flex items-center cursor-pointer">
+<input checked="" class="sr-only peer" type="checkbox" value=""/>
+<div class="w-11 h-6 bg-surface-container peer-focus:outline-none peer-focus:ring-2 peer-focus:ring-primary/20 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-border-subtle after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-primary"></div>
+</label>
+</div>
+</div>
+<!-- Footer -->
+<div class="px-gutter py-4 border-t border-border-subtle bg-surface-container-lowest/50 flex items-center justify-end gap-3">
+<button class="px-[12px] py-2 rounded-lg font-body-md text-body-md font-semibold text-on-surface-variant hover:bg-surface-container-low border border-transparent hover:border-border-subtle transition-all">
+                    Cancel
+                </button>
+<button class="px-[12px] py-2 rounded-lg bg-primary text-on-primary font-body-md text-body-md font-semibold hover:bg-primary-container hover:text-on-primary-container hover:shadow-md transition-all flex items-center gap-2">
+                    저장하기
+                    <span class="material-symbols-outlined text-[18px]">check</span>
+</button>
+</div>
+</div>
+</div>
+</body></html>

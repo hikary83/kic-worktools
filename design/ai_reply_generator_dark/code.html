@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Nexus IT Support - AI Reply Generator</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "background": "#0b1326",
+                        "surface": "#0b1326",
+                        "on-error": "#690005",
+                        "on-primary-fixed": "#001a42",
+                        "surface-container-high": "#222a3d",
+                        "on-error-container": "#ffdad6",
+                        "surface-main": "#0F172A",
+                        "outline-variant": "#424754",
+                        "text-high-contrast": "#F8FAFC",
+                        "tertiary-fixed-dim": "#bdc2ff",
+                        "primary-fixed-dim": "#aec6ff",
+                        "surface-tint": "#aec6ff",
+                        "on-tertiary-fixed-variant": "#2e3aa2",
+                        "error": "#ffb4ab",
+                        "tertiary-container": "#5f6bd3",
+                        "surface-container-low": "#131b2e",
+                        "surface-bright": "#31394d",
+                        "surface-container-lowest": "#060e20",
+                        "on-primary": "#002e6a",
+                        "status-amber": "#F59E0B",
+                        "on-tertiary": "#121f8b",
+                        "primary": "#aec6ff",
+                        "inverse-on-surface": "#283044",
+                        "surface-variant": "#2d3449",
+                        "surface-dim": "#0b1326",
+                        "on-background": "#dae2fd",
+                        "on-secondary-container": "#aeb9d0",
+                        "border-subtle": "#334155",
+                        "on-secondary-fixed": "#111c2d",
+                        "outline": "#8c909f",
+                        "inverse-surface": "#dae2fd",
+                        "on-surface-variant": "#c2c6d6",
+                        "tertiary-fixed": "#dfe0ff",
+                        "on-primary-fixed-variant": "#004396",
+                        "on-primary-container": "#fdfbff",
+                        "surface-container-highest": "#2d3449",
+                        "text-muted": "#94A3B8",
+                        "on-secondary": "#263143",
+                        "on-secondary-fixed-variant": "#3c475a",
+                        "secondary": "#bcc7de",
+                        "secondary-fixed-dim": "#bcc7de",
+                        "on-tertiary-fixed": "#000965",
+                        "primary-fixed": "#d8e2ff",
+                        "on-tertiary-container": "#fffcff",
+                        "status-blue": "#3B82F6",
+                        "error-container": "#93000a",
+                        "tertiary": "#bdc2ff",
+                        "secondary-container": "#3e495d",
+                        "surface-container": "#171f33",
+                        "on-surface": "#dae2fd",
+                        "status-emerald": "#10B981",
+                        "inverse-primary": "#005ac3",
+                        "secondary-fixed": "#d8e3fb",
+                        "primary-container": "#2170e4",
+                        "surface-elevated": "#1E293B"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "margin-desktop": "32px",
+                        "sidebar-width": "240px",
+                        "margin-mobile": "16px",
+                        "gutter": "24px",
+                        "base": "4px"
+                    },
+                    "fontFamily": {
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "display-lg": ["Inter"],
+                        "label-md": ["JetBrains Mono"],
+                        "label-sm": ["JetBrains Mono"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "body-md": ["14px", { "lineHeight": "20px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-lg-mobile": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "600" }],
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.04em", "fontWeight": "700" }],
+                        "label-md": ["12px", { "lineHeight": "16px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "label-sm": ["11px", { "lineHeight": "14px", "letterSpacing": "0.05em", "fontWeight": "500" }],
+                        "body-lg": ["16px", { "lineHeight": "24px", "letterSpacing": "0em", "fontWeight": "400" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "letterSpacing": "-0.01em", "fontWeight": "600" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.4);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(71, 85, 105, 0.5);
+        }
+        .glow-focus:focus-within {
+            box-shadow: 0 0 0 2px rgba(174, 198, 255, 0.2);
+            border-color: #aec6ff;
+        }
+        
+        /* Custom Scrollbar for dark theme */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0F172A; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+    </style>
+</head>
+<body class="bg-surface-main text-on-surface font-body-md min-h-screen flex antialiased">
+<!-- SideNavBar (Shared Component) -->
+<aside class="fixed left-0 top-0 h-full w-sidebar-width border-r border-border-subtle bg-surface-container-lowest flex flex-col py-6 gap-2 z-40 hidden md:flex">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-8 h-8 rounded-lg bg-primary-container flex items-center justify-center">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">terminal</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md text-text-high-contrast">Nexus IT</h1>
+<p class="font-label-sm text-label-sm text-text-muted">Enterprise Suite</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 hover:bg-surface-container-high transition-all font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<!-- Active State: AI Reply Generator falls under Tickets/Support logically, assuming Tickets active for now as it's a common integration point -->
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-high-contrast bg-primary-container/20 border-l-4 border-primary font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">confirmation_number</span>
+                Tickets
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 hover:bg-surface-container-high transition-all font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Assets
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 hover:bg-surface-container-high transition-all font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined">menu_book</span>
+                Knowledge Base
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 hover:bg-surface-container-high transition-all font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined">group</span>
+                Users
+            </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 hover:bg-surface-container-high transition-all font-label-md text-label-md group" href="#">
+<span class="material-symbols-outlined">analytics</span>
+                Reports
+            </a>
+</nav>
+<div class="px-4 mt-auto space-y-4">
+<button class="w-full flex items-center justify-center gap-2 py-2 px-4 bg-primary text-on-primary rounded-lg font-label-md text-label-md hover:bg-primary/90 transition-colors">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                Create Ticket
+            </button>
+<div class="space-y-1">
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]">contact_support</span>
+                    Support
+                </a>
+<a class="flex items-center gap-3 px-3 py-2 rounded-lg text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/30 transition-all font-label-md text-label-md" href="#">
+<span class="material-symbols-outlined text-[18px]">logout</span>
+                    Sign Out
+                </a>
+</div>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 md:ml-sidebar-width flex flex-col min-h-screen">
+<!-- TopNavBar (Shared Component) -->
+<header class="h-16 w-full flex justify-between items-center px-margin-desktop bg-surface/80 dark:bg-surface/80 backdrop-blur-xl border-b border-border-subtle shadow-sm z-30 sticky top-0">
+<div class="flex items-center gap-4 w-1/3">
+<!-- Search Bar Placeholder -->
+<div class="relative w-full max-w-md hidden md:block">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-text-muted text-[18px]">search</span>
+<input class="w-full bg-surface-container-high border border-border-subtle rounded-full py-1.5 pl-10 pr-4 text-body-md text-text-high-contrast placeholder:text-text-muted focus:outline-none focus:border-primary focus:ring-1 focus:ring-primary transition-all" placeholder="Search resources..." type="text"/>
+</div>
+</div>
+<div class="flex items-center justify-end gap-2 w-1/3">
+<button class="p-2 text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/50 rounded-full transition-all duration-200 active:scale-95 duration-100">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/50 rounded-full transition-all duration-200 active:scale-95 duration-100">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-text-muted hover:text-text-high-contrast hover:bg-surface-variant/50 rounded-full transition-all duration-200 active:scale-95 duration-100">
+<span class="material-symbols-outlined">settings</span>
+</button>
+<div class="ml-2 w-8 h-8 rounded-full bg-surface-variant border border-border-subtle overflow-hidden">
+<img alt="Administrator Profile" class="w-full h-full object-cover" data-alt="A macro photography shot of a sleek, dark metallic orb floating in a minimalist studio environment, softly illuminated by high-key blue rim lighting, creating a sharp modern avatar silhouette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDIAuFqr8CEusDRArWiP62Q9Il7zimhppuzqK7TO8d4dUKrRrBskfQeTDhi6R4JtfbyyXceoTozOwzjWbIoY0woRvK6-2QEzHb9P0guUA1eIgbm_KB7Jr1WL0b5eF_t8zGXaPQtoCfUjKR7N02e-AVG2IVa5RRqdH4sQoUdZ1SOAU-pVozqCSVcIDg0CspUYyLyjskggwb1uw6be-wsqeqSPx7hmumBvCgXMsF-HWe7HGjMml2lKPna"/>
+</div>
+</div>
+</header>
+<!-- Page Content -->
+<div class="flex-1 p-margin-mobile md:p-margin-desktop max-w-7xl mx-auto w-full">
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-text-high-contrast">AI Reply Generator</h2>
+<p class="font-body-lg text-body-lg text-text-muted mt-2">Draft intelligent, context-aware responses to user requests.</p>
+</div>
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-gutter">
+<!-- Input Column -->
+<div class="flex flex-col gap-6">
+<!-- Context Section -->
+<section class="bg-surface-elevated rounded-xl border border-border-subtle p-6 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-label-md text-text-high-contrast uppercase tracking-wider">User Request Context</h3>
+<span class="material-symbols-outlined text-text-muted text-[18px]">chat</span>
+</div>
+<div class="glow-focus rounded-lg border border-border-subtle bg-surface-container-low transition-all">
+<textarea class="w-full h-32 bg-transparent border-none text-body-md text-text-high-contrast p-4 placeholder-text-muted focus:ring-0 resize-none" placeholder="Paste the user's email, ticket description, or chat message here..."></textarea>
+</div>
+</section>
+<!-- Screenshot Dropzone -->
+<section class="bg-surface-elevated rounded-xl border border-border-subtle p-6 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-label-md text-text-high-contrast uppercase tracking-wider">Visual Context (Optional)</h3>
+<span class="material-symbols-outlined text-text-muted text-[18px]">image</span>
+</div>
+<div class="border-2 border-dashed border-border-subtle rounded-lg bg-surface-container-lowest p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-primary hover:bg-surface-variant/20 transition-all group">
+<div class="w-12 h-12 rounded-full bg-surface-variant flex items-center justify-center mb-3 group-hover:bg-primary-container/20 group-hover:text-primary transition-colors">
+<span class="material-symbols-outlined text-text-muted group-hover:text-primary">upload_file</span>
+</div>
+<p class="font-body-md text-body-md text-text-high-contrast mb-1">Drag &amp; drop screenshots here</p>
+<p class="font-label-sm text-label-sm text-text-muted">or click to browse files</p>
+</div>
+</section>
+<!-- Action Points -->
+<section class="bg-surface-elevated rounded-xl border border-border-subtle p-6 flex flex-col gap-4">
+<div class="flex items-center justify-between">
+<h3 class="font-label-md text-label-md text-text-high-contrast uppercase tracking-wider">Key Action Points</h3>
+<span class="material-symbols-outlined text-text-muted text-[18px]">list_alt</span>
+</div>
+<div class="glow-focus rounded-lg border border-border-subtle bg-surface-container-low transition-all">
+<textarea class="w-full h-24 bg-transparent border-none text-body-md text-text-high-contrast p-4 placeholder-text-muted focus:ring-0 resize-none" placeholder="- Acknowledge the issue
+- Provide step-by-step troubleshooting
+- Request system logs if unresolved"></textarea>
+</div>
+<button class="mt-2 w-full py-2.5 bg-primary/10 text-primary border border-primary/30 hover:bg-primary/20 rounded-lg font-label-md text-label-md flex items-center justify-center gap-2 transition-all">
+<span class="material-symbols-outlined text-[18px]">auto_awesome</span>
+                            Generate Reply
+                        </button>
+</section>
+</div>
+<!-- Output Column -->
+<div class="flex flex-col h-full">
+<section class="glass-panel rounded-xl flex-1 flex flex-col overflow-hidden border-t-4 border-t-primary relative">
+<!-- Decorative background glow for AI panel -->
+<div class="absolute -top-24 -right-24 w-48 h-48 bg-primary/10 rounded-full blur-3xl pointer-events-none"></div>
+<div class="p-4 border-b border-border-subtle/50 flex items-center justify-between bg-surface-elevated/50 backdrop-blur-sm z-10">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-[20px]">psychology</span>
+<h3 class="font-label-md text-label-md text-text-high-contrast">AI Suggested Reply</h3>
+</div>
+<div class="flex items-center gap-2">
+<span class="px-2 py-1 bg-surface-container-high rounded text-text-muted font-label-sm text-label-sm border border-border-subtle">Formal Tone</span>
+</div>
+</div>
+<div class="p-6 flex-1 overflow-y-auto z-10">
+<!-- Placeholder empty state / generated state -->
+<div class="h-full flex flex-col">
+<!-- Example Generated Content -->
+<div class="space-y-4 text-body-md text-on-surface-variant leading-relaxed">
+<p>Hi there,</p>
+<p>Thank you for reaching out regarding the connection issues you're experiencing with the VPN client. I understand how disruptive this can be to your workflow.</p>
+<p>Based on the details provided, let's try the following steps to resolve this:</p>
+<ol class="list-decimal list-inside space-y-2 ml-2">
+<li>Open the Nexus IT Client and navigate to Settings &gt; Network.</li>
+<li>Click "Clear Cache" and restart the application.</li>
+<li>Attempt to reconnect using the secondary gateway (Gateway-B).</li>
+</ol>
+<p>If the issue persists after these steps, please attach your recent error logs (found in <code>C:\Nexus\Logs</code>) to this ticket so we can investigate further.</p>
+<p>Best regards,<br/>IT Support Team</p>
+</div>
+</div>
+</div>
+<!-- Action Bar -->
+<div class="p-4 bg-surface-container-highest border-t border-border-subtle/50 flex items-center justify-between z-10">
+<button class="flex items-center gap-2 px-4 py-2 text-text-muted hover:text-text-high-contrast hover:bg-surface-variant rounded-lg transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">refresh</span>
+                                Regenerate
+                            </button>
+<div class="flex items-center gap-3">
+<button class="flex items-center gap-2 px-4 py-2 text-text-high-contrast border border-border-subtle hover:bg-surface-variant rounded-lg transition-colors font-label-md text-label-md">
+<span class="material-symbols-outlined text-[18px]">edit</span>
+                                    Edit
+                                </button>
+<button class="flex items-center gap-2 px-6 py-2 bg-primary text-on-primary hover:bg-primary/90 rounded-lg transition-colors font-label-md text-label-md shadow-[0_0_15px_rgba(174,198,255,0.2)]">
+<span class="material-symbols-outlined text-[18px]">content_copy</span>
+                                    Copy Reply
+                                </button>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+</main>
+</body></html>
