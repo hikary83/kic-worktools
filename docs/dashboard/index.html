@@ -217,6 +217,9 @@
         <div class="brand-copy"><strong>CWIZ Enterprise</strong><span>OPERATION DASHBOARD</span></div>
       </div>
       <div class="top-actions">
+        <button class="top-btn" id="criteriaBtn" type="button" title="대시보드 지표의 집계 기준과 데이터 출처를 확인합니다.">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg><span>통계 기준</span>
+        </button>
         <button class="top-btn" id="reportModeBtn" type="button" title="업로드 영역을 숨기고 보고 화면만 표시합니다.">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M3 4h18v12H3z"/><path d="M8 20h8M12 16v4"/></svg><span>보고 모드</span>
         </button>
@@ -499,6 +502,7 @@
     };
 
     const selectedFiles = { applications:null, customers:null, instruments:null, activities:null, access:null };
+    const selectedFileDates = { applications:null, customers:null, instruments:null, activities:null, access:null };
     let dashboardData = null;
     let dashboardBasisDate = null;
     let dashboardPeriodStart = null;
@@ -1106,7 +1110,6 @@
       [["Prep",data.prep],["Near",data.near],["Overdue",data.overdue]].forEach(([key,n]) => { $("bar"+key).style.width=`${n/max*100}%`; setText("value"+key,nf.format(n)); });
       setText("calibrationTotal",`관리 대상 ${nf.format(data.prep+data.near+data.overdue)}대`);
       renderCustomerTable(); renderStaffTable(); initializePeriodControls();
-      saveLocalCache(data, basisDate);
     }
 
     function showError(messages) {
@@ -1219,8 +1222,8 @@
         openTokenModal();
         return;
       }
-      const dates = Object.entries(selectedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
-      const basisDate = dates.find(x => x.date)?.date || new Date().toISOString().slice(0, 10);
+      const basisDate = getSelectedBasisDate();
+      if (!basisDate) return;
       $("deployBasisDateText").textContent = basisDate + " 기준";
       $("deployProgress").style.display = "none";
       $("deployButtonsWrap").style.display = "flex";
@@ -1240,8 +1243,8 @@
       const token = getGhToken();
       if (!token) { closeDeployConfirmModal(); openTokenModal(); return; }
 
-      const dates = Object.entries(selectedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
-      const basisDate = dates.find(x => x.date)?.date || new Date().toISOString().slice(0, 10);
+      const basisDate = getSelectedBasisDate();
+      if (!basisDate) { closeDeployConfirmModal(); return; }
 
       $("deployProgress").style.display = "block";
       $("deployButtonsWrap").style.display = "none";
@@ -1281,12 +1284,17 @@
         $("successMessage").textContent = `🎉 ${basisDate} 기준 5개 엑셀 파일이 GitHub 저장소(data/)에 성공적으로 저장(Save)되었습니다! (약 1~2분 후 GitHub Pages에 반영되어 모든 직원이 열람할 수 있습니다.)`;
         $("successNotice").classList.add("show");
 
-        // 로컬 뷰도 렌더링
+        // 로컬 뷰와 원본 파일을 함께 보존한다. GitHub Pages 배포 전 새로고침해도 이 상태가 우선된다.
         const parsed = {};
         for (const role of roles) {
           parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]), schemas[role], selectedFiles[role].name);
         }
-        render(compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access), basisDate);
+        const computed = compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access);
+        render(computed, basisDate);
+        await saveLocalCache(computed, basisDate, selectedFiles, {
+          source: "save-pending",
+          contentUpdatedAt: manifestObj.updatedAt
+        });
 
       } catch (err) {
         console.error(err);
@@ -1307,6 +1315,7 @@
     function resetSelectedFiles() {
       Object.keys(selectedFiles).forEach((role) => {
         selectedFiles[role] = null;
+        selectedFileDates[role] = null;
         const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
         if (slot) {
           slot.classList.remove("ready");
@@ -1334,9 +1343,25 @@
       slot.classList.add("ready");
       slot.querySelector(".file-name").textContent = file.name;
       const fileDate = overrideDate || extractDate(file.name) || "";
+      selectedFileDates[role] = fileDate || null;
       slot.querySelector(".file-date").textContent = fileDate;
       refreshApplyButton();
       clearNotices();
+    }
+
+    function getSelectedBasisDate() {
+      const dates = Object.entries(selectedFiles).map(([role, file]) => ({
+        role,
+        date:selectedFileDates[role] || extractDate(file?.name),
+        name:file?.name || schemas[role].label
+      }));
+      const dateErrors = dates.filter((item) => !item.date).map((item) => `${item.name}: 파일명에서 기준일(YYYY-MM-DD)을 찾을 수 없습니다.`);
+      if (dateErrors.length) { showError(dateErrors); return null; }
+      if (new Set(dates.map((item) => item.date)).size !== 1) {
+        showError(`5개 파일의 기준일이 서로 다릅니다. (${dates.map((item) => `${schemas[item.role].label} ${item.date}`).join(" / ")})`);
+        return null;
+      }
+      return dates[0].date;
     }
 
     document.querySelectorAll(".file-slot").forEach((slot) => {
@@ -1350,19 +1375,17 @@
 
     $("applyBtn").addEventListener("click", async () => {
       clearNotices();
-      const dates = Object.entries(selectedFiles).map(([role,file]) => ({role,date:extractDate(file.name),name:file.name}));
-      const dateErrors = dates.filter((x) => !x.date).map((x) => `${x.name}: 파일명에서 기준일(YYYY-MM-DD)을 찾을 수 없습니다.`);
-      if (dateErrors.length) { showError(dateErrors); return; }
-      if (new Set(dates.map((x) => x.date)).size !== 1) { showError(`5개 파일의 기준일이 서로 다릅니다. (${dates.map((x) => `${schemas[x.role].label} ${x.date}`).join(" / ")})`); return; }
+      const basisDate = getSelectedBasisDate();
+      if (!basisDate) return;
       const btn = $("applyBtn"), icon = btn.querySelector("svg"), label = btn.querySelector("span");
       btn.disabled = true; icon.classList.add("spin"); label.textContent = "분석 중";
       try {
         const parsed = {};
         for (const role of ["applications","customers","instruments","activities","access"]) parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
         const computed = compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities,parsed.access);
-        render(computed, dates[0].date);
-        saveLocalCache(computed, dates[0].date, selectedFiles);
-        $("successMessage").textContent = `${dates[0].date} 기준 파일 5개를 정상적으로 읽어 화면에 표시했습니다. 이제 [Save]를 눌러 저장소에 반영할 수 있습니다.`;
+        render(computed, basisDate);
+        await saveLocalCache(computed, basisDate, selectedFiles, { source:"local-upload" });
+        $("successMessage").textContent = `${basisDate} 기준 파일 5개를 정상적으로 읽어 화면에 표시했습니다. 이제 [Save]를 눌러 저장소에 반영할 수 있습니다.`;
         $("successNotice").classList.add("show");
       } catch (error) {
         console.error(error); showError(error?.message || "알 수 없는 오류가 발생했습니다.");
@@ -1371,8 +1394,10 @@
       }
     });
 
-    // 💾 localStorage + IndexedDB 하이브리드 로컬 캐시 매니저 (새로고침 즉시 100% 복원)
-    const CACHE_KEY = "CWIZ_DASHBOARD_DATA_V1";
+    // 💾 localStorage + IndexedDB 하이브리드 로컬 캐시 매니저
+    // 계산 결과/메타데이터는 localStorage에, 실제 Excel File 객체는 IndexedDB에 함께 보존한다.
+    const CACHE_KEY = "CWIZ_DASHBOARD_DATA_V2";
+    const LEGACY_CACHE_KEY = "CWIZ_DASHBOARD_DATA_V1";
     const DB_NAME = "CWIZ_Dashboard_DB";
     const DB_VERSION = 1;
     const STORE_NAME = "latest_data";
@@ -1391,50 +1416,130 @@
       });
     }
 
-    async function saveLocalCache(computedData, basisDate, files = null) {
+    function isValidCache(payload) {
+      return Boolean(payload && payload.data && /^\d{4}-\d{2}-\d{2}$/.test(payload.basisDate || ""));
+    }
+
+    function cacheSavedAt(payload) {
+      const timestamp = Date.parse(payload?.savedAt || "");
+      return Number.isFinite(timestamp) ? timestamp : 0;
+    }
+
+    async function saveLocalCache(computedData, basisDate, files = null, options = {}) {
       const fileNames = {};
+      const cachedFiles = {};
       if (files) {
-        Object.entries(files).forEach(([k, f]) => { if (f) fileNames[k] = f.name; });
+        Object.entries(files).forEach(([key, file]) => {
+          if (!file) return;
+          fileNames[key] = file.name;
+          cachedFiles[key] = file;
+        });
       }
-      const payload = { data: computedData, basisDate, fileNames, savedAt: new Date().toISOString() };
-      // 1. localStorage 즉시 동기 저장 (용량 허용 시)
+      const payload = {
+        cacheVersion:2,
+        data:computedData,
+        basisDate,
+        fileNames,
+        source:options.source || "local-upload",
+        contentUpdatedAt:options.contentUpdatedAt || null,
+        savedAt:new Date().toISOString()
+      };
+
+      // 1. 계산 결과는 localStorage에 즉시 저장한다. File 객체는 JSON에 넣지 않는다.
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+        localStorage.removeItem(LEGACY_CACHE_KEY);
       } catch (e) {
         console.warn("localStorage save failed (quota exceeded?), will rely on IndexedDB:", e);
       }
-      // 2. IndexedDB 영구 저장
+
+      // 2. IndexedDB에는 실제 File 객체까지 구조화 복제하고 transaction 완료를 기다린다.
       try {
         const db = await openDb();
-        const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).put(payload, "current");
+        await new Promise((resolve, reject) => {
+          const tx = db.transaction(STORE_NAME, "readwrite");
+          tx.objectStore(STORE_NAME).put({ ...payload, files:cachedFiles }, "current");
+          tx.oncomplete = () => resolve();
+          tx.onerror = () => reject(tx.error || new Error("IndexedDB 저장 transaction 오류"));
+          tx.onabort = () => reject(tx.error || new Error("IndexedDB 저장 transaction 중단"));
+        });
+        db.close();
       } catch (e) {
         console.warn("IndexedDB save failed:", e);
       }
     }
 
     async function loadLocalCache() {
-      // 1. localStorage에서 0ms 즉시 읽기
+      let localCache = null;
       try {
-        const raw = localStorage.getItem(CACHE_KEY);
+        const raw = localStorage.getItem(CACHE_KEY) || localStorage.getItem(LEGACY_CACHE_KEY);
         if (raw) {
           const parsed = JSON.parse(raw);
-          if (parsed && parsed.data && parsed.basisDate) return parsed;
+          if (isValidCache(parsed)) localCache = parsed;
         }
       } catch (e) {}
 
-      // 2. IndexedDB에서 읽기
+      let indexedCache = null;
       try {
         const db = await openDb();
-        return new Promise((resolve) => {
+        indexedCache = await new Promise((resolve) => {
           const tx = db.transaction(STORE_NAME, "readonly");
           const req = tx.objectStore(STORE_NAME).get("current");
           req.onsuccess = () => resolve(req.result || null);
           req.onerror = () => resolve(null);
         });
+        db.close();
       } catch (e) {
-        return null;
+        console.warn("IndexedDB load failed:", e);
       }
+
+      if (!isValidCache(indexedCache)) indexedCache = null;
+      if (!localCache) return indexedCache;
+      if (!indexedCache) return localCache;
+
+      // localStorage 쓰기는 성공했지만 IndexedDB 쓰기가 실패한 경우 더 최신 계산 결과를 우선한다.
+      if (cacheSavedAt(localCache) > cacheSavedAt(indexedCache)) return localCache;
+      return indexedCache;
+    }
+
+    function remoteDataIsNewer(manifest, cached, force = false) {
+      if (force || !isValidCache(cached)) return true;
+      if (cached.source === "local-upload") return false;
+
+      const remoteBasisDate = manifest?.basisDate || "";
+      if (remoteBasisDate && cached.basisDate) {
+        if (remoteBasisDate > cached.basisDate) return true;
+        if (remoteBasisDate < cached.basisDate) return false;
+      }
+
+      const remoteUpdatedAt = Date.parse(manifest?.updatedAt || "");
+      const cachedUpdatedAt = Date.parse(cached.contentUpdatedAt || "");
+      if (Number.isFinite(remoteUpdatedAt) && Number.isFinite(cachedUpdatedAt)) {
+        return remoteUpdatedAt > cachedUpdatedAt;
+      }
+
+      // 버전 정보가 없는 기존 캐시는 자동으로 덮지 않는다. 사용자가 '다시 불러오기'로 강제 갱신할 수 있다.
+      return false;
+    }
+
+    function restoreCachedFiles(cached) {
+      let restoredCount = 0;
+      const roles = ["applications", "customers", "instruments", "activities", "access"];
+      roles.forEach((role) => {
+        const stored = cached?.files?.[role];
+        if (!stored) return;
+        const name = stored.name || cached.fileNames?.[role] || `${role}.xlsx`;
+        const file = stored instanceof File
+          ? stored
+          : new File([stored], name, {
+              type:stored.type || "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+              lastModified:stored.lastModified || Date.now()
+            });
+        setFile(role, file, cached.basisDate);
+        restoredCount += 1;
+      });
+      refreshApplyButton();
+      return restoredCount;
     }
 
     function getDataBaseUrl() {
@@ -1448,9 +1553,11 @@
       return loc + "data/";
     }
 
-    async function loadEmbeddedData(showManualNoticeIfMissing = false) {
+    async function loadEmbeddedData({ showManualNoticeIfMissing = false, force = false, cached = null } = {}) {
       const base = getDataBaseUrl();
       let manifestBasisDate = null;
+      let manifest = null;
+      let manifestLoaded = false;
       let fileMap = {
         applications: base + "이용신청.xlsx",
         customers: base + "고객사현황.xlsx",
@@ -1463,7 +1570,8 @@
         const manifestUrl = encodeURI(base + "manifest.json") + `?t=${Date.now()}`;
         const manifestRes = await fetch(manifestUrl, { cache: "no-cache" });
         if (manifestRes.ok) {
-          const manifest = await manifestRes.json();
+          manifest = await manifestRes.json();
+          manifestLoaded = true;
           if (manifest && manifest.basisDate) manifestBasisDate = manifest.basisDate;
           if (manifest && manifest.files) {
             Object.keys(manifest.files).forEach((key) => {
@@ -1472,6 +1580,9 @@
           }
         }
       } catch (e) {}
+
+      // 캐시가 있는 자동 로드에서는 manifest 확인 실패나 구버전 서버 응답으로 현재 화면을 덮지 않는다.
+      if (!force && cached && (!manifestLoaded || !remoteDataIsNewer(manifest, cached))) return;
 
       const roles = ["applications", "customers", "instruments", "activities", "access"];
       const fetchedFiles = {};
@@ -1495,7 +1606,6 @@
           const fileName = decodeURIComponent(path.split("/").pop().split("?")[0]) || `${role}.xlsx`;
           const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           fetchedFiles[role] = file;
-          setFile(role, file, manifestBasisDate);
         }
 
         if (Object.keys(fetchedFiles).length === 5) {
@@ -1506,8 +1616,12 @@
             parsed[role] = datasetFromSheets(await parseXlsx(fetchedFiles[role]), schemas[role], fetchedFiles[role].name);
           }
           const computed = compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access);
+          roles.forEach((role) => setFile(role, fetchedFiles[role], basisDate));
           render(computed, basisDate);
-          saveLocalCache(computed, basisDate, fetchedFiles);
+          await saveLocalCache(computed, basisDate, fetchedFiles, {
+            source:"server",
+            contentUpdatedAt:manifest?.updatedAt || null
+          });
           $("successMessage").textContent = `저장소(data/)에 보관된 최신 주간 데이터(${basisDate} 기준)를 성공적으로 불러왔습니다.`;
           $("successNotice").classList.add("show");
           $("uploadPanel").classList.add("collapsed");
@@ -1538,29 +1652,24 @@
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
     const reloadBtn = $("reloadEmbeddedBtn");
-    if (reloadBtn) reloadBtn.addEventListener("click", () => loadEmbeddedData(true));
+    if (reloadBtn) reloadBtn.addEventListener("click", () => loadEmbeddedData({ showManualNoticeIfMissing:true, force:true }));
     setupStatInfo();
 
     async function initDashboard() {
-      // 1. 로컬 캐시에서 먼저 즉시 복원 (새로고침 시 0.01초 만에 화면 및 슬롯 그대로 복원!)
+      // 1. 로컬 캐시에서 계산 결과와 실제 Excel File 객체를 함께 복원한다.
       const cached = await loadLocalCache();
       if (cached && cached.data && cached.basisDate) {
         render(cached.data, cached.basisDate);
-        if (cached.fileNames) {
-          Object.entries(cached.fileNames).forEach(([role, name]) => {
-            const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
-            if (slot && name) {
-              slot.classList.add("ready");
-              slot.querySelector(".file-name").textContent = name;
-              slot.querySelector(".file-date").textContent = cached.basisDate;
-            }
-          });
-        }
+        const restoredFiles = restoreCachedFiles(cached);
+        $("successMessage").textContent = restoredFiles === 5
+          ? `${cached.basisDate} 기준 작업 상태와 Excel 파일 5개를 브라우저에서 복원했습니다.`
+          : `${cached.basisDate} 기준 계산 결과를 복원했습니다. 이전 형식의 캐시는 Excel 원본을 다시 선택해야 Save할 수 있습니다.`;
+        $("successNotice").classList.add("show");
         $("uploadPanel").classList.add("collapsed");
         $("toggleUpload").textContent = "파일 수동 업로드";
       }
-      // 2. 백그라운드에서 저장소(data/) 최신 파일 가져와 동기화
-      loadEmbeddedData(false);
+      // 2. 서버 manifest가 실제로 더 최신일 때만 저장소 데이터를 적용한다.
+      await loadEmbeddedData({ cached });
     }
 
     initDashboard();
