@@ -1226,6 +1226,18 @@
     const GH_REPO = "hikary83/kic-worktools";
     const GH_BRANCH = "main";
     const GH_DATA_PATH = "docs/dashboard/data";
+    const SAVE_RELOAD_NOTICE_KEY = "cwiz_dashboard_save_reload_notice";
+
+    function consumeSaveReloadNotice() {
+      try {
+        const raw=sessionStorage.getItem(SAVE_RELOAD_NOTICE_KEY);
+        if (!raw) return null;
+        sessionStorage.removeItem(SAVE_RELOAD_NOTICE_KEY);
+        return JSON.parse(raw);
+      } catch (err) {
+        return null;
+      }
+    }
 
     function getGhToken() {
       return localStorage.getItem("kic_gh_token") || "";
@@ -1377,11 +1389,8 @@
         const manifestBase64 = btoa(unescape(encodeURIComponent(JSON.stringify(manifestObj, null, 2))));
         await commitFileToGitHub(`${GH_DATA_PATH}/manifest.json`, manifestBase64, `data: update manifest.json for ${basisDate}`, token);
 
-        closeDeployConfirmModal();
-        $("successMessage").textContent = `🎉 ${basisDate} 기준 5개 엑셀 파일이 GitHub 저장소(data/)에 성공적으로 저장(Save)되었습니다! (약 1~2분 후 GitHub Pages에 반영되어 모든 직원이 열람할 수 있습니다.)`;
-        $("successNotice").classList.add("show");
-
         // 로컬 뷰와 원본 파일을 함께 보존한다. GitHub Pages 배포 전 새로고침해도 이 상태가 우선된다.
+        statusEl.textContent = "저장된 데이터를 확인하고 로컬 화면을 준비하는 중...";
         const parsed = {};
         for (const role of roles) {
           parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]), schemas[role], selectedFiles[role].name);
@@ -1392,6 +1401,14 @@
           source: "save-pending",
           contentUpdatedAt: manifestObj.updatedAt
         });
+
+        try {
+          sessionStorage.setItem(SAVE_RELOAD_NOTICE_KEY,JSON.stringify({basisDate,savedAt:manifestObj.updatedAt}));
+        } catch (err) {
+          console.warn("저장 완료 안내 상태를 보존하지 못했습니다.",err);
+        }
+        statusEl.textContent = "저장 완료 · 최신 화면을 다시 불러오는 중...";
+        window.setTimeout(() => window.location.reload(),800);
 
       } catch (err) {
         console.error(err);
@@ -1759,17 +1776,23 @@
     setupDetailJumps();
 
     async function initDashboard() {
+      const saveReloadNotice=consumeSaveReloadNotice();
       // 1. 로컬 캐시에서 계산 결과와 실제 Excel File 객체를 함께 복원한다.
       const cached = await loadLocalCache();
       if (cached && cached.data && cached.basisDate) {
         render(cached.data, cached.basisDate);
         const restoredFiles = restoreCachedFiles(cached);
-        $("successMessage").textContent = restoredFiles === 5
-          ? `${cached.basisDate} 기준 작업 상태와 Excel 파일 5개를 브라우저에서 복원했습니다.`
-          : `${cached.basisDate} 기준 계산 결과를 복원했습니다. 이전 형식의 캐시는 Excel 원본을 다시 선택해야 Save할 수 있습니다.`;
+        $("successMessage").textContent = saveReloadNotice?.basisDate === cached.basisDate
+          ? `🎉 ${cached.basisDate} 기준 5개 엑셀 파일을 저장하고 최신 화면으로 새로고침했습니다. GitHub Pages 공동 화면은 약 1~2분 후 반영됩니다.`
+          : restoredFiles === 5
+            ? `${cached.basisDate} 기준 작업 상태와 Excel 파일 5개를 브라우저에서 복원했습니다.`
+            : `${cached.basisDate} 기준 계산 결과를 복원했습니다. 이전 형식의 캐시는 Excel 원본을 다시 선택해야 Save할 수 있습니다.`;
         $("successNotice").classList.add("show");
         $("uploadPanel").classList.add("collapsed");
         $("toggleUpload").textContent = "파일 수동 업로드";
+      } else if (saveReloadNotice?.basisDate) {
+        $("successMessage").textContent = `🎉 ${saveReloadNotice.basisDate} 기준 파일 저장을 완료했습니다. GitHub Pages 공동 화면은 약 1~2분 후 반영됩니다.`;
+        $("successNotice").classList.add("show");
       }
       // 2. 서버 manifest가 실제로 더 최신일 때만 저장소 데이터를 적용한다.
       await loadEmbeddedData({ cached });
