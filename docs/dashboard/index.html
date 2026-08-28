@@ -1325,12 +1325,18 @@
     const resetFilesBtn = $("resetFilesBtn");
     if (resetFilesBtn) resetFilesBtn.addEventListener("click", resetSelectedFiles);
 
-    function setFile(role,file) {
+    function setFile(role, file, overrideDate = null) {
       if (!file) return;
       const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
+      if (!slot) return;
       if (!/\.xlsx$/i.test(file.name)) { showError(`${schemas[role].label} 파일은 .xlsx 형식만 사용할 수 있습니다.`); return; }
-      selectedFiles[role] = file; slot.classList.add("ready"); slot.querySelector(".file-name").textContent = file.name;
-      slot.querySelector(".file-date").textContent = extractDate(file.name) || "날짜 확인"; refreshApplyButton(); clearNotices();
+      selectedFiles[role] = file;
+      slot.classList.add("ready");
+      slot.querySelector(".file-name").textContent = file.name;
+      const fileDate = overrideDate || extractDate(file.name) || "";
+      slot.querySelector(".file-date").textContent = fileDate;
+      refreshApplyButton();
+      clearNotices();
     }
 
     document.querySelectorAll(".file-slot").forEach((slot) => {
@@ -1353,7 +1359,9 @@
       try {
         const parsed = {};
         for (const role of ["applications","customers","instruments","activities","access"]) parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
-        render(compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities,parsed.access),dates[0].date);
+        const computed = compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities,parsed.access);
+        render(computed, dates[0].date);
+        saveLocalCache(computed, dates[0].date, selectedFiles);
         $("successMessage").textContent = `${dates[0].date} 기준 파일 5개를 정상적으로 읽어 화면에 표시했습니다. 이제 [Save]를 눌러 저장소에 반영할 수 있습니다.`;
         $("successNotice").classList.add("show");
       } catch (error) {
@@ -1383,8 +1391,12 @@
       });
     }
 
-    async function saveLocalCache(computedData, basisDate) {
-      const payload = { data: computedData, basisDate, savedAt: new Date().toISOString() };
+    async function saveLocalCache(computedData, basisDate, files = null) {
+      const fileNames = {};
+      if (files) {
+        Object.entries(files).forEach(([k, f]) => { if (f) fileNames[k] = f.name; });
+      }
+      const payload = { data: computedData, basisDate, fileNames, savedAt: new Date().toISOString() };
       // 1. localStorage 즉시 동기 저장 (용량 허용 시)
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
@@ -1483,7 +1495,7 @@
           const fileName = decodeURIComponent(path.split("/").pop().split("?")[0]) || `${role}.xlsx`;
           const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           fetchedFiles[role] = file;
-          setFile(role, file);
+          setFile(role, file, manifestBasisDate);
         }
 
         if (Object.keys(fetchedFiles).length === 5) {
@@ -1495,7 +1507,7 @@
           }
           const computed = compute(parsed.applications, parsed.customers, parsed.instruments, parsed.activities, parsed.access);
           render(computed, basisDate);
-          saveLocalCache(computed, basisDate);
+          saveLocalCache(computed, basisDate, fetchedFiles);
           $("successMessage").textContent = `저장소(data/)에 보관된 최신 주간 데이터(${basisDate} 기준)를 성공적으로 불러왔습니다.`;
           $("successNotice").classList.add("show");
           $("uploadPanel").classList.add("collapsed");
@@ -1530,10 +1542,20 @@
     setupStatInfo();
 
     async function initDashboard() {
-      // 1. 로컬 캐시에서 먼저 즉시 복원 (새로고침 시 0.01초 만에 화면 그대로 유지!)
+      // 1. 로컬 캐시에서 먼저 즉시 복원 (새로고침 시 0.01초 만에 화면 및 슬롯 그대로 복원!)
       const cached = await loadLocalCache();
       if (cached && cached.data && cached.basisDate) {
         render(cached.data, cached.basisDate);
+        if (cached.fileNames) {
+          Object.entries(cached.fileNames).forEach(([role, name]) => {
+            const slot = document.querySelector(`.file-slot[data-role="${role}"]`);
+            if (slot && name) {
+              slot.classList.add("ready");
+              slot.querySelector(".file-name").textContent = name;
+              slot.querySelector(".file-date").textContent = cached.basisDate;
+            }
+          });
+        }
         $("uploadPanel").classList.add("collapsed");
         $("toggleUpload").textContent = "파일 수동 업로드";
       }
