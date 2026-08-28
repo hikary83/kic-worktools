@@ -1,6 +1,6 @@
-﻿# 🛠️ KIC 업무 도구 (KIC Worktools)
+# 🛠️ KIC 업무 도구 (KIC Worktools)
 
-> **한국계측산업(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
+> **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
 > **현재 버전**: `v2.4.0` (2026-08-28 기준)
 
