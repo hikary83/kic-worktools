@@ -3,6 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
   <title>CWIZ Enterprise 운영 현황</title>
   <style>
     :root {
@@ -1435,6 +1438,7 @@
 
     async function loadEmbeddedData(showManualNoticeIfMissing = false) {
       const base = getDataBaseUrl();
+      let manifestBasisDate = null;
       let fileMap = {
         applications: base + "이용신청.xlsx",
         customers: base + "고객사현황.xlsx",
@@ -1448,6 +1452,7 @@
         const manifestRes = await fetch(manifestUrl, { cache: "no-cache" });
         if (manifestRes.ok) {
           const manifest = await manifestRes.json();
+          if (manifest && manifest.basisDate) manifestBasisDate = manifest.basisDate;
           if (manifest && manifest.files) {
             Object.keys(manifest.files).forEach((key) => {
               if (manifest.files[key]) fileMap[key] = base + manifest.files[key];
@@ -1474,6 +1479,7 @@
             continue;
           }
           const blob = await res.blob();
+          if (blob.size < 100) continue; // 비정상/빈 응답 방지
           const fileName = decodeURIComponent(path.split("/").pop().split("?")[0]) || `${role}.xlsx`;
           const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           fetchedFiles[role] = file;
@@ -1482,7 +1488,7 @@
 
         if (Object.keys(fetchedFiles).length === 5) {
           const dates = Object.entries(fetchedFiles).map(([role, file]) => ({ role, date: extractDate(file.name), name: file.name }));
-          let basisDate = dates.find((x) => x.date)?.date || new Date().toISOString().slice(0, 10);
+          let basisDate = manifestBasisDate || dates.find((x) => x.date)?.date || new Date().toISOString().slice(0, 10);
           const parsed = {};
           for (const role of roles) {
             parsed[role] = datasetFromSheets(await parseXlsx(fetchedFiles[role]), schemas[role], fetchedFiles[role].name);
