@@ -305,7 +305,7 @@
         <div class="period-controls">
           <label class="date-field"><span>시작일</span><input id="periodStart" type="date" disabled /></label><span class="date-divider">~</span><label class="date-field"><span>종료일</span><input id="periodEnd" type="date" disabled /></label>
           <button class="query-btn" id="periodQueryBtn" type="button" disabled>조회</button>
-          <div class="quick-periods"><button class="quick-btn" type="button" data-preset="week" disabled>이번 주</button><button class="quick-btn" type="button" data-preset="7days" disabled>최근 7일</button><button class="quick-btn" type="button" data-preset="month" disabled>이번 달</button><button class="quick-btn" type="button" data-preset="all" disabled>파일 전체</button></div>
+          <div class="quick-periods"><button class="quick-btn" type="button" data-preset="lastweek" disabled>저번 주</button><button class="quick-btn" type="button" data-preset="week" disabled>이번 주</button><button class="quick-btn" type="button" data-preset="7days" disabled>최근 7일</button><button class="quick-btn" type="button" data-preset="month" disabled>이번 달</button><button class="quick-btn" type="button" data-preset="all" disabled>파일 전체</button></div>
         </div>
         <div class="period-applied"><span>적용기간</span><b id="periodApplied">—</b></div>
       </section>
@@ -1172,12 +1172,18 @@
     }
     function applyPreset(preset) {
       if (!dashboardData) return;
-      let start;
-      if (preset === "week") start=weekStartIso(dashboardBasisDate);
+      let start, end=dashboardBasisDate;
+      if (preset === "lastweek") {
+        const currentWeekStart=weekStartIso(dashboardBasisDate);
+        start=addDaysIso(currentWeekStart,-7);
+        end=addDaysIso(currentWeekStart,-1);
+      } else if (preset === "week") start=weekStartIso(dashboardBasisDate);
       else if (preset === "7days") start=addDaysIso(dashboardBasisDate,-6);
       else if (preset === "month") start=`${dashboardBasisDate.slice(0,7)}-01`;
       else start=dashboardPeriodMin;
-      applyPeriodRange(clampPeriodStart(start),dashboardBasisDate,preset);
+      const availableStart=clampPeriodStart(start);
+      if (availableStart > end) { showError(`저번 주(${start} ~ ${end}) 데이터가 업로드 범위에 없습니다.`); return; }
+      applyPeriodRange(availableStart,end,preset);
     }
     function initializePeriodControls() {
       const validDate = /^\d{4}-\d{2}-\d{2}$/;
