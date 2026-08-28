@@ -219,11 +219,9 @@
         <button onclick="closeApiModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-[#383838] text-slate-400 hover:text-slate-600 dark:hover:text-[#ECECEC] flex items-center justify-center transition-all text-sm font-bold">✕</button>
       </div>
 
-      <!-- 본문 iframe 박스 (CSS 테마 규칙에 따라 다크/라이트 자동 최적화) -->
-      <div class="p-6 bg-slate-50/50 dark:bg-[#212121]/50">
-        <div class="w-full h-48 border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#212121] rounded-2xl p-3 shadow-inner overflow-hidden flex flex-col justify-center">
-          <iframe id="apiIframe" class="w-full h-full border-0 outline-none font-mono text-xs"></iframe>
-        </div>
+      <!-- 본문 iframe 박스 -->
+      <div class="p-6">
+        <iframe id="apiIframe" class="w-full h-48 border border-slate-200 dark:border-[#424242] rounded-2xl p-4 font-mono text-xs outline-none shadow-sm"></iframe>
       </div>
 
       <!-- 푸터 액션 -->
