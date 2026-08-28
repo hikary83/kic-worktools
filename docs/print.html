@@ -194,6 +194,43 @@
     </div>
   </main>
 
+  <!-- 🪟 CMS API 응답 모달 (팝업 차단 걱정 없음) -->
+  <div id="apiModal" hidden class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden transition-all">
+      <!-- 헤더 -->
+      <div class="px-6 py-4 border-b border-slate-100 dark:border-[#383838] flex items-center justify-between">
+        <div class="flex items-center gap-2.5">
+          <span class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">📋</span>
+          <div>
+            <h3 class="text-base font-extrabold text-slate-900 dark:text-[#ECECEC]">CMS API 응답 확인</h3>
+            <p class="text-xs text-slate-500 dark:text-[#8E8E8E]">아래 박스 안의 JSON 내용을 복사(Ctrl+A ➔ Ctrl+C)하세요.</p>
+          </div>
+        </div>
+        <button onclick="closeApiModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-[#383838] text-slate-400 hover:text-slate-600 dark:hover:text-[#ECECEC] flex items-center justify-center transition-all text-sm font-bold">✕</button>
+      </div>
+
+      <!-- 안내 배너 -->
+      <div class="bg-indigo-50/70 dark:bg-[#1E2038] border-b border-indigo-100 dark:border-[#2F3560] px-6 py-3 text-xs text-indigo-900 dark:text-indigo-300 font-medium flex items-center justify-between gap-3">
+        <span>💡 <b>Tip:</b> 아래 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 모달을 닫으시면 <b>자동으로 분석 카드가 생성</b>됩니다!</span>
+      </div>
+
+      <!-- iframe 본문 -->
+      <div class="p-6 bg-slate-50/50 dark:bg-[#212121]/50">
+        <iframe id="apiIframe" class="w-full h-56 border border-slate-200 dark:border-[#424242] rounded-2xl bg-white dark:bg-[#1E1E1E] shadow-inner font-mono text-xs"></iframe>
+      </div>
+
+      <!-- 푸터 액션 -->
+      <div class="px-6 py-4 border-t border-slate-100 dark:border-[#383838] flex items-center justify-between bg-white dark:bg-[#2F2F2F]">
+        <button onclick="openGeneratedUrl()" class="text-xs text-slate-500 dark:text-[#8E8E8E] hover:text-indigo-600 dark:hover:text-indigo-400 font-bold flex items-center gap-1.5 transition-colors">
+          <i class="fas fa-external-link-alt"></i> 새 탭에서 열기
+        </button>
+        <button onclick="closeApiModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all">
+          복사 완료 및 닫기
+        </button>
+      </div>
+    </div>
+  </div>
+
   <script>
     const BASE_URL = 'https://cms.kic21.co.kr/correction/get_correct_excel_info.php';
     const FIXED_CMD = 'resp_print_label';
@@ -324,10 +361,38 @@
           setStatus('formStatus', '데이터를 가져와 카드 분석을 완료했습니다.', 'ok');
         }
       } else {
-        // CORS 차단 시 스마트 소형 팝업 오픈
-        setStatus('formStatus', '💡 팝업 창에서 [Ctrl+A ➔ Ctrl+C] 후 이 창으로 돌아오시면 자동으로 분석 카드가 생성됩니다.', 'ok');
-        window.open(url, 'kic_api_popup', 'width=680,height=380,top=150,left=200,scrollbars=yes');
+        // 🪟 브라우저 팝업 차단 없는 인앱 모달 오픈!
+        openApiModal(url);
       }
+    }
+
+    function openApiModal(url){
+      const modal = $('apiModal');
+      const iframe = $('apiIframe');
+      iframe.src = url;
+      modal.hidden = false;
+      document.body.style.overflow = 'hidden';
+      setStatus('formStatus', '💡 모달 창의 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 모달을 닫으시면 자동으로 분석 카드가 생성됩니다.', 'ok');
+    }
+
+    async function closeApiModal(){
+      const modal = $('apiModal');
+      const iframe = $('apiIframe');
+      modal.hidden = true;
+      iframe.src = 'about:blank';
+      document.body.style.overflow = '';
+      
+      // 모달 닫을 때 클립보드 자동 읽어 분석 시도
+      try {
+        if (navigator.clipboard && navigator.clipboard.readText) {
+          const text = await navigator.clipboard.readText();
+          if (text && text.includes('list') && (text.includes('koc_calibration_no') || text.includes('kcs_machine') || text.includes('label_type'))) {
+            $('apiResponse').value = text.trim();
+            analyzeApiResponse();
+            setStatus('formStatus', '🎉 클립보드에 복사된 API 응답으로 카드 분석을 완료했습니다!', 'ok');
+          }
+        }
+      } catch(e) {}
     }
 
     function openGeneratedUrl(){
