@@ -43,6 +43,16 @@
     .status.ok { color: #10b981; }
     .status.err { color: #ef4444; }
     .status.warn { color: #f59e0b; }
+    #apiIframe {
+      filter: none;
+      background-color: #ffffff;
+      color: #0f172a;
+    }
+    .dark #apiIframe, html.dark #apiIframe, body.dark #apiIframe {
+      filter: invert(0.9) hue-rotate(180deg) brightness(1.2);
+      background-color: #212121;
+      color: #ececec;
+    }
   </style>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] min-h-screen transition-colors duration-200">
@@ -214,10 +224,10 @@
         <span>💡 <b>Tip:</b> 아래 박스 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 <b>[복사 완료 및 닫기]</b>를 누르세요!</span>
       </div>
 
-      <!-- 다크 테마 본문 iframe 박스 -->
+      <!-- 본문 iframe 박스 (CSS 테마 규칙에 따라 다크/라이트 자동 최적화) -->
       <div class="p-6 bg-slate-50/50 dark:bg-[#212121]/50">
         <div class="w-full h-48 border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#212121] rounded-2xl p-3 shadow-inner overflow-hidden flex flex-col justify-center">
-          <iframe id="apiIframe" class="w-full h-full bg-transparent border-0 outline-none font-mono text-xs" style="filter: invert(0.9) hue-rotate(180deg) brightness(1.2);"></iframe>
+          <iframe id="apiIframe" class="w-full h-full border-0 outline-none font-mono text-xs"></iframe>
         </div>
       </div>
 
