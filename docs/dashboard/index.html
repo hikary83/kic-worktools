@@ -382,7 +382,7 @@
       </section>
 
       <section class="panel table-panel" id="applicationDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 · 승인 업체 현황</strong><small id="applicationTableNote">최근 신청일 순</small></div><div class="table-tools"><select class="select" id="applicationStatus" aria-label="이용신청 상태 필터"><option value="all">전체 상태</option><option value="승인">승인</option><option value="대기">대기</option><option value="반려">반려</option></select><select class="select" id="applicationLimit" aria-label="이용신청 표시 건수"><option value="10">최근 10건</option><option value="all">전체 보기</option></select></div></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 · 승인 업체 현황</strong><small id="applicationTableNote">최근 신청일 순</small></div><div class="table-tools"><select class="select" id="applicationStatus" aria-label="이용신청 상태 필터"><option value="all">전체 상태</option><option value="승인">승인</option><option value="대기">대기 · 전체 기간</option><option value="반려">반려</option></select><select class="select" id="applicationLimit" aria-label="이용신청 표시 건수"><option value="10">최근 10건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table class="applications-table"><thead><tr><th>순번</th><th>신청일자</th><th>상태</th><th>회사명</th><th>사업자등록번호</th><th>신청자</th><th>승인일자</th><th>회사코드</th></tr></thead><tbody id="applicationTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 신청·승인 업체 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
@@ -878,10 +878,12 @@
       if (!dashboardData) return;
       const status = $("applicationStatus").value, limit = $("applicationLimit").value;
       const periodRows = rowsInRange(dashboardData.applicationRows,dashboardPeriodStart,dashboardPeriodEnd);
-      const filtered = periodRows.filter((r) => status === "all" || r.status === status);
+      const sourceRows = status === "대기" ? dashboardData.applicationRows : periodRows;
+      const filtered = sourceRows.filter((r) => status === "all" || r.status === status);
       const rows = limit === "all" ? filtered : filtered.slice(0,Number(limit));
       const statusLabel = status === "all" ? "전체 상태" : status;
-      setText("applicationTableNote",`${periodText()} · ${statusLabel} ${nf.format(filtered.length)}건`);
+      const scopeLabel = status === "대기" ? "전체 기간" : periodText();
+      setText("applicationTableNote",`${scopeLabel} · ${statusLabel} ${nf.format(filtered.length)}건`);
       $("applicationTableBody").innerHTML = rows.length ? rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.date || "—")}</td><td>${statusPill(r.status)}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${escapeHtml(formatBiz(r.biz))}</td><td>${escapeHtml(r.applicant || "—")}</td><td>${escapeHtml(r.approvedDate || "—")}</td><td>${escapeHtml(r.companyCode || "—")}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="8">선택한 상태의 신청 업체가 없습니다.</td></tr>`;
     }
     function weekStartIso(basisDate) {
