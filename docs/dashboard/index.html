@@ -202,16 +202,17 @@
     .two-col{display:grid;grid-template-columns:1fr;gap:15px}
     .scope-note{display:flex;align-items:center;gap:7px;color:#78857e;font-size:10.5px}.scope-note svg{width:14px;height:14px;color:var(--amber)}
     .footer{display:flex;justify-content:space-between;align-items:center;color:#8a9690;font-size:10.5px;padding:2px 4px 0}.footer strong{color:#607068}
+    .scroll-top-btn{position:fixed;right:26px;bottom:26px;z-index:28;width:44px;height:44px;border:1px solid rgba(255,255,255,.45);border-radius:14px;background:linear-gradient(145deg,var(--green-700),var(--green-900));color:#fff;display:grid;place-items:center;box-shadow:0 9px 24px rgba(7,59,43,.24);opacity:0;visibility:hidden;pointer-events:none;transform:translateY(10px);transition:opacity .18s ease,transform .18s ease,visibility .18s}.scroll-top-btn.show{opacity:1;visibility:visible;pointer-events:auto;transform:none}.scroll-top-btn:hover{filter:brightness(1.08);transform:translateY(-2px)}.scroll-top-btn:focus-visible{outline:3px solid rgba(22,184,108,.28);outline-offset:3px}.scroll-top-btn svg{width:20px;height:20px}
     .spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
     .modal-backdrop{position:fixed;inset:0;background:rgba(6,30,21,.5);display:grid;place-items:center;padding:24px;z-index:100}.modal-backdrop[hidden]{display:none}.criteria-modal{width:min(900px,92vw);max-height:86vh;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column}.modal-head{padding:18px 21px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.modal-head strong{font-size:18px}.modal-head span{display:block;color:#77847d;font-size:11px;margin-top:4px}.modal-close{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:20px;color:#68766e}.modal-body{overflow:auto;padding:18px 21px 22px}.criteria-current{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:17px}.criteria-current div{background:var(--green-50);border:1px solid #cce9d8;border-radius:11px;padding:11px 13px;color:#597067;font-size:11px}.criteria-current b{display:block;color:var(--green-800);font-size:13px;margin-top:3px}.criteria-group{margin-top:16px}.criteria-group h3{margin:0 0 8px;font-size:13px}.criteria-row{display:grid;grid-template-columns:128px 80px 1fr 190px;gap:10px;padding:9px 10px;border-top:1px solid #edf1ef;font-size:10.5px;align-items:start}.criteria-row.focus{background:#f0fbf5}.criteria-row strong{font-size:11px}.criteria-row .source{color:#77847d}.criteria-note{margin-top:17px;border-radius:11px;background:#fff8e7;border:1px solid #f3dda3;color:#795a13;padding:11px 13px;font-size:10.5px;line-height:1.55}
 
-    .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn,.report-mode .period-controls{display:none!important}
+    .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn,.report-mode .period-controls,.report-mode .scroll-top-btn{display:none!important}
     .report-mode .main{padding-top:24px}
     @media print{
       @page{size:A3 landscape;margin:12mm}
       body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
-      .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice,.period-controls,.stat-info{display:none!important}.main{max-width:none;padding:18px 0 0}
+      .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice,.period-controls,.stat-info,.scroll-top-btn{display:none!important}.main{max-width:none;padding:18px 0 0}
       .kpi,.panel{box-shadow:none}.chart-body{height:205px}.footer{margin-top:8px}
     }
   </style>
@@ -340,10 +341,10 @@
 
         <div class="tab-panel" id="tabUsage" role="tabpanel" aria-labelledby="tabBtnUsage" hidden>
       <section class="usage-summary">
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="loginCompanies">로그인 경험 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessCompanies">—</b><small>개사</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="returningCompanies">2일 이상 재방문</span><span class="scope-badge period">기간 적용</span></div><b id="usageReturningCompanies">—</b><small>개사</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="activityCompanies">업무활동 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="usageActivityCompanies">—</b><small>개사</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessUsers">접속 사용자</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessUsers">—</b><small>명</small></article>
+        <article class="mini-kpi" data-jump-tab="usage" data-jump-target="usageCompanyDetail"><div class="mini-kpi-top"><span data-stat="loginCompanies">로그인 경험 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessCompanies">—</b><small>개사</small></article>
+        <article class="mini-kpi" data-jump-tab="usage" data-jump-target="usageCompanyDetail"><div class="mini-kpi-top"><span data-stat="returningCompanies">2일 이상 재방문</span><span class="scope-badge period">기간 적용</span></div><b id="usageReturningCompanies">—</b><small>개사</small></article>
+        <article class="mini-kpi" data-jump-tab="usage" data-jump-target="activityDetail"><div class="mini-kpi-top"><span data-stat="activityCompanies">업무활동 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="usageActivityCompanies">—</b><small>개사</small></article>
+        <article class="mini-kpi" data-jump-tab="usage" data-jump-target="usageCompanyDetail"><div class="mini-kpi-top"><span data-stat="accessUsers">접속 사용자</span><span class="scope-badge period">기간 적용</span></div><b id="usageAccessUsers">—</b><small>명</small></article>
         <article class="mini-kpi caution" data-jump-tab="usage" data-jump-target="unusedCustomerDetail"><div class="mini-kpi-top"><span data-stat="unusedCustomers">미이용</span><span class="scope-badge source">전체 로그</span></div><b id="usageUnusedCompanies">—</b><small>개사</small></article>
       </section>
 
@@ -374,10 +375,10 @@
 
         <div class="tab-panel" id="tabCustomers" role="tabpanel" aria-labelledby="tabBtnCustomers" hidden>
       <section class="period-summary-grid">
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="applications">기간 신규 신청</span><span class="scope-badge period">기간 적용</span></div><b id="periodApplications">—</b><small>건</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="approved">기간 신청분 승인</span><span class="scope-badge period">기간 적용</span></div><b id="periodApproved">—</b><small>건</small></article>
+        <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="all"><div class="mini-kpi-top"><span data-stat="applications">기간 신규 신청</span><span class="scope-badge period">기간 적용</span></div><b id="periodApplications">—</b><small>건</small></article>
+        <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="승인"><div class="mini-kpi-top"><span data-stat="approved">기간 신청분 승인</span><span class="scope-badge period">기간 적용</span></div><b id="periodApproved">—</b><small>건</small></article>
         <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="newCustomers">신규 등록 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="periodNewCustomers">—</b><small>개사</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="applicationBacklog">현재 대기</span><span class="scope-badge snapshot">기준일 현재</span></div><b id="periodCurrentWaiting">—</b><small>건</small></article>
+        <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="대기"><div class="mini-kpi-top"><span data-stat="applicationBacklog">현재 대기</span><span class="scope-badge snapshot">기준일 현재</span></div><b id="periodCurrentWaiting">—</b><small>건</small></article>
       </section>
 
       <section class="panel table-panel" id="applicationDetail" data-detail-target>
@@ -398,15 +399,15 @@
 
         <div class="tab-panel" id="tabSecurity" role="tabpanel" aria-labelledby="tabBtnSecurity" hidden>
       <section class="security-summary">
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="accessAttempts">로그인 시도</span><span class="scope-badge period">기간 적용</span></div><b id="securityAttempts">—</b><small>건</small></article>
-        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="accessFailure">로그인 실패</span><span class="scope-badge period">기간 적용</span></div><b id="securityFailures">—</b><small>건</small></article>
-        <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="repeatFailure">반복 실패 ID</span><span class="scope-badge period">기간 적용</span></div><b id="securityRepeatIds">—</b><small>개</small></article>
+        <article class="mini-kpi" data-jump-tab="security" data-jump-target="securityDailyDetail"><div class="mini-kpi-top"><span data-stat="accessAttempts">로그인 시도</span><span class="scope-badge period">기간 적용</span></div><b id="securityAttempts">—</b><small>건</small></article>
+        <article class="mini-kpi danger" data-jump-tab="security" data-jump-target="securityFailureDetail"><div class="mini-kpi-top"><span data-stat="accessFailure">로그인 실패</span><span class="scope-badge period">기간 적용</span></div><b id="securityFailures">—</b><small>건</small></article>
+        <article class="mini-kpi danger" data-jump-tab="security" data-jump-target="repeatFailureDetail"><div class="mini-kpi-top"><span data-stat="repeatFailure">반복 실패 ID</span><span class="scope-badge period">기간 적용</span></div><b id="securityRepeatIds">—</b><small>개</small></article>
         <article class="mini-kpi danger"><div class="mini-kpi-top"><span data-stat="repeatFailure">반복 실패 IP</span><span class="scope-badge period">기간 적용</span></div><b id="securityRepeatIps">—</b><small>개</small></article>
       </section>
 
       <section class="access-grid">
-        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessAttempts">일자별 로그인 결과</strong></div><span class="panel-badge period">기간 적용</span></div><div class="access-body"><div class="access-list" id="securityDailyList"><div class="activity-empty">Excel 데이터를 적용하면 로그인 결과가 표시됩니다.</div></div></div></article>
-        <article class="panel access-panel"><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="repeatFailure">반복 실패 ID TOP 5</strong></div><small>동일 ID 5회 이상 표시</small></div><div class="access-body"><div class="repeat-head"><span>순위</span><span>마스킹 ID</span><span style="text-align:right">고객사</span><span style="text-align:right">실패</span><span style="text-align:right">최근 실패</span></div><div id="repeatFailureList"><div class="activity-empty">반복 실패 내역이 없습니다.</div></div></div></article>
+        <article class="panel access-panel" id="securityDailyDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessAttempts">일자별 로그인 결과</strong></div><span class="panel-badge period">기간 적용</span></div><div class="access-body"><div class="access-list" id="securityDailyList"><div class="activity-empty">Excel 데이터를 적용하면 로그인 결과가 표시됩니다.</div></div></div></article>
+        <article class="panel access-panel" id="repeatFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="repeatFailure">반복 실패 ID TOP 5</strong></div><small>동일 ID 5회 이상 표시</small></div><div class="access-body"><div class="repeat-head"><span>순위</span><span>마스킹 ID</span><span style="text-align:right">고객사</span><span style="text-align:right">실패</span><span style="text-align:right">최근 실패</span></div><div id="repeatFailureList"><div class="activity-empty">반복 실패 내역이 없습니다.</div></div></div></article>
       </section>
 
       <section class="security-box" id="securityFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessFailure">로그인 실패 내역</strong><small>아이디와 IP는 화면에서 마스킹</small></div><div class="table-tools"><span id="securityRecentNote" class="panel-badge period">전체 —건</span><select class="select" id="securityRecentLimit" aria-label="로그인 실패 표시 건수"><option value="8">최근 8건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div><div class="table-wrap"><table class="security-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>아이디</th><th>접속 IP</th><th>결과</th></tr></thead><tbody id="securityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 접속 실패 내역이 표시됩니다.</td></tr></tbody></table></div></section>
@@ -416,6 +417,10 @@
       <footer class="footer"><span><strong>CWIZ Enterprise</strong> · Admin Dashboard Preview</span><span>Jira CW2R-73 · 1단계 운영 대시보드 참고용</span></footer>
     </main>
   </div>
+
+  <button class="scroll-top-btn" id="scrollTopBtn" type="button" aria-label="맨 위로 이동" title="맨 위로 이동">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 15 6-6 6 6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </button>
 
   <div class="modal-backdrop" id="criteriaModal" hidden>
     <section class="criteria-modal" role="dialog" aria-modal="true" aria-labelledby="criteriaTitle">
@@ -1744,6 +1749,10 @@
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
+    const updateScrollTopButton=() => $("scrollTopBtn").classList.toggle("show",window.scrollY > 420);
+    $("scrollTopBtn").addEventListener("click",() => window.scrollTo({top:0,behavior:"smooth"}));
+    window.addEventListener("scroll",updateScrollTopButton,{passive:true});
+    updateScrollTopButton();
     const reloadBtn = $("reloadEmbeddedBtn");
     if (reloadBtn) reloadBtn.addEventListener("click", () => loadEmbeddedData({ showManualNoticeIfMissing:true, force:true }));
     setupStatInfo();
