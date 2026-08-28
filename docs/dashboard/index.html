@@ -173,7 +173,7 @@
     .rate-pill.low{background:#fff1db;color:#a66100}.rate-pill.none{background:#eff2f0;color:#859088}
     .risk{display:inline-flex;min-width:30px;justify-content:flex-end}.risk.red{color:var(--red);font-weight:850}.risk.orange{color:var(--orange);font-weight:850}
     .status-pill{display:inline-flex;align-items:center;justify-content:center;min-width:48px;padding:4px 8px;border-radius:99px;font-size:10.5px;font-weight:850}
-    .status-pill.approved{background:var(--green-100);color:var(--green-800)}.status-pill.waiting{background:#fff2c9;color:#9d6c00}.status-pill.rejected{background:#ffe4e7;color:#b52d3a}.status-pill.other{background:#edf1ef;color:#728078}
+    .status-pill.approved,.status-pill.normal{background:var(--green-100);color:var(--green-800)}.status-pill.waiting{background:#fff2c9;color:#9d6c00}.status-pill.rejected{background:#ffe4e7;color:#b52d3a}.status-pill.inactive,.status-pill.other{background:#edf1ef;color:#728078}
     .applications-table thead th:nth-child(2),.applications-table tbody td:nth-child(2){text-align:center;font-weight:650;color:#5d6b64}
     .applications-table thead th:nth-child(3),.applications-table tbody td:nth-child(3){text-align:center}
     .applications-table thead th:nth-child(4),.applications-table tbody td:nth-child(4){text-align:left;max-width:330px;overflow:hidden;text-overflow:ellipsis;font-weight:750;color:#27332d}
@@ -206,6 +206,10 @@
     .spin{animation:spin .8s linear infinite}@keyframes spin{to{transform:rotate(360deg)}}
 
     .modal-backdrop{position:fixed;inset:0;background:rgba(6,30,21,.5);display:grid;place-items:center;padding:24px;z-index:100}.modal-backdrop[hidden]{display:none}.criteria-modal{width:min(900px,92vw);max-height:86vh;background:#fff;border-radius:18px;box-shadow:0 24px 70px rgba(0,0,0,.28);overflow:hidden;display:flex;flex-direction:column}.modal-head{padding:18px 21px;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between}.modal-head strong{font-size:18px}.modal-head span{display:block;color:#77847d;font-size:11px;margin-top:4px}.modal-close{width:34px;height:34px;border:1px solid var(--line);border-radius:9px;background:#fff;font-size:20px;color:#68766e}.modal-body{overflow:auto;padding:18px 21px 22px}.criteria-current{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:17px}.criteria-current div{background:var(--green-50);border:1px solid #cce9d8;border-radius:11px;padding:11px 13px;color:#597067;font-size:11px}.criteria-current b{display:block;color:var(--green-800);font-size:13px;margin-top:3px}.criteria-group{margin-top:16px}.criteria-group h3{margin:0 0 8px;font-size:13px}.criteria-row{display:grid;grid-template-columns:128px 80px 1fr 190px;gap:10px;padding:9px 10px;border-top:1px solid #edf1ef;font-size:10.5px;align-items:start}.criteria-row.focus{background:#f0fbf5}.criteria-row strong{font-size:11px}.criteria-row .source{color:#77847d}.criteria-note{margin-top:17px;border-radius:11px;background:#fff8e7;border:1px solid #f3dda3;color:#795a13;padding:11px 13px;font-size:10.5px;line-height:1.55}
+    .staff-detail-btn{border:0;background:transparent;color:var(--green-800);padding:2px 0;font:inherit;font-weight:850;text-decoration:underline;text-decoration-color:#91d7b2;text-underline-offset:4px}.staff-detail-btn:hover{color:var(--green-500);text-decoration-color:currentColor}.staff-detail-btn:focus-visible{outline:3px solid rgba(22,184,108,.22);outline-offset:3px;border-radius:4px}
+    .staff-modal{width:min(980px,94vw)}.staff-modal-body{overflow:hidden;display:flex;flex-direction:column;gap:15px}.staff-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px}.staff-summary-card{border:1px solid #dceae2;background:linear-gradient(145deg,#fff,#f4fbf7);border-radius:12px;padding:11px 13px}.staff-summary-card span{display:block;color:#76847c;font-size:10.5px;font-weight:750}.staff-summary-card b{display:inline-block;margin-top:4px;font-size:20px;letter-spacing:-.035em}.staff-summary-card small{margin-left:2px;color:#7e8b84;font-size:10px}.staff-company-scroll{max-height:50vh;overflow:auto;border:1px solid var(--line);border-radius:12px}.staff-company-table thead{position:sticky;top:0;z-index:1}.staff-company-table thead th{border-top:0;border-radius:0}.staff-company-table thead th:nth-child(2),.staff-company-table tbody td:nth-child(2),.staff-company-table thead th:nth-child(3),.staff-company-table tbody td:nth-child(3){text-align:left}.staff-company-table tbody td:nth-child(2){max-width:330px;font-weight:800;overflow:hidden;text-overflow:ellipsis}.staff-company-table tbody td:nth-child(3){color:#68766f}.staff-company-table thead th:nth-child(6),.staff-company-table tbody td:nth-child(6){text-align:center}.staff-company-note{color:#7b8881;font-size:10.5px;line-height:1.5}
+
+    @media(max-width:760px){.staff-summary{grid-template-columns:1fr 1fr}.staff-modal-body{padding-left:14px;padding-right:14px}.staff-company-table{min-width:680px}}
 
     .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn,.report-mode .period-controls,.report-mode .scroll-top-btn{display:none!important}
     .report-mode .main{padding-top:24px}
@@ -429,6 +433,24 @@
     </section>
   </div>
 
+  <div class="modal-backdrop" id="staffModal" hidden>
+    <section class="criteria-modal staff-modal" role="dialog" aria-modal="true" aria-labelledby="staffModalTitle" aria-describedby="staffModalSubtitle">
+      <div class="modal-head"><div><strong id="staffModalTitle">담당 업체 상세</strong><span id="staffModalSubtitle">기준일 현재 · 고객사 영업 담당자 기준</span></div><button class="modal-close" id="staffModalClose" type="button" aria-label="담당 업체 상세 닫기">×</button></div>
+      <div class="modal-body staff-modal-body">
+        <div class="staff-summary" aria-label="담당 업체 요약">
+          <div class="staff-summary-card"><span>고객사</span><b id="staffModalCustomers">—</b><small>개사</small></div>
+          <div class="staff-summary-card"><span>총자산</span><b id="staffModalAssets">—</b><small>대</small></div>
+          <div class="staff-summary-card"><span>미매핑</span><b id="staffModalUnmapped">—</b><small>대</small></div>
+          <div class="staff-summary-card"><span>매핑률</span><b id="staffModalRate">—</b></div>
+        </div>
+        <div class="staff-company-scroll">
+          <table class="staff-company-table"><thead><tr><th>순번</th><th>회사명</th><th>지역</th><th>총자산</th><th>미매핑</th><th>상태</th></tr></thead><tbody id="staffModalTableBody"><tr class="empty-row"><td colspan="6">담당자 이름을 선택하면 업체 정보가 표시됩니다.</td></tr></tbody></table>
+        </div>
+        <div class="staff-company-note">고객사현황의 영업 담당자를 기준으로 고객사계측기현황을 사업자등록번호로 연결했습니다. 연결되지 않은 계측기 수치는 ‘—’로 표시됩니다.</div>
+      </div>
+    </section>
+  </div>
+
   <!-- 🔐 GitHub 토큰 설정 모달 -->
   <div class="modal-backdrop" id="tokenModal" hidden>
     <div class="criteria-modal" style="max-width:500px">
@@ -536,6 +558,7 @@
     let dashboardPeriodStart = null;
     let dashboardPeriodEnd = null;
     let dashboardPeriodMin = null;
+    let staffModalReturnFocus = null;
     const $ = (id) => document.getElementById(id);
     const nf = new Intl.NumberFormat("ko-KR");
     const pf = new Intl.NumberFormat("ko-KR", { maximumFractionDigits:1, minimumFractionDigits:1 });
@@ -755,13 +778,14 @@
         sourceIndex:index,
         date:String(value(r,["등록일"]) || "").slice(0,10),
         company:String(value(r,["회사명"]) || "회사명 없음"),
+        region:String(value(r,["지역","주소","소재지"]) || "").trim(),
         biz:normalizeBiz(value(r,["사업자번호","사업자등록번호"])),
         status:String(value(r,["상태"]) || "").trim(),
         staff:String(value(r,["영업 담당자","영업담당자"]) || "담당자 미지정").trim()
       })).sort((a,b) => b.date.localeCompare(a.date) || a.sourceIndex-b.sourceIndex);
       const instrumentRows = instruments.map((r) => {
         const assets = toNumber(value(r,["총자산"])), miss = toNumber(value(r,["미매핑"]));
-        return { company:String(value(r,["회사명"]) || "회사명 없음"), biz:normalizeBiz(value(r,["사업자번호","사업자등록번호"])), assets, unmapped:miss, rate:assets ? Math.max(0,(assets-miss)/assets) : null, prep:toNumber(value(r,["교정 준비","교정준비"])), near:toNumber(value(r,["교정 임박","교정임박"])), overdue:toNumber(value(r,["기한 초과","기한초과"])) };
+        return { company:String(value(r,["회사명"]) || "회사명 없음"), region:String(value(r,["지역","주소","소재지"]) || "").trim(), biz:normalizeBiz(value(r,["사업자번호","사업자등록번호"])), assets, unmapped:miss, rate:assets ? Math.max(0,(assets-miss)/assets) : null, prep:toNumber(value(r,["교정 준비","교정준비"])), near:toNumber(value(r,["교정 임박","교정임박"])), overdue:toNumber(value(r,["기한 초과","기한초과"])), status:String(value(r,["상태"]) || "").trim() };
       });
       const activityRows = activities.map((r,index) => {
         const timestamp = String(value(r,["일시"]) || "");
@@ -799,12 +823,19 @@
       const staffMap = new Map();
       for (const c of customers) {
         const staff = String(value(c,["영업 담당자","영업담당자"]) || "담당자 미지정").trim();
-        if (!staffMap.has(staff)) staffMap.set(staff,{name:staff,customers:0,assets:0,unmapped:0,overdue:0});
+        if (!staffMap.has(staff)) staffMap.set(staff,{name:staff,customers:0,assets:0,unmapped:0,overdue:0,companies:[]});
         const s = staffMap.get(staff), inst = instByBiz.get(normalizeBiz(value(c,["사업자번호","사업자등록번호"])));
         s.customers += 1;
         if (inst) { s.assets += inst.assets; s.unmapped += inst.unmapped; s.overdue += inst.overdue; }
+        s.companies.push({
+          company:inst?.company || String(value(c,["회사명"]) || "회사명 없음"),
+          region:inst?.region || String(value(c,["지역","주소","소재지"]) || "").trim(),
+          assets:inst ? inst.assets : null,
+          unmapped:inst ? inst.unmapped : null,
+          status:String(value(c,["상태"]) || "").trim() || inst?.status || ""
+        });
       }
-      const staff = [...staffMap.values()].map((s) => ({...s,rate:s.assets ? Math.max(0,(s.assets-s.unmapped)/s.assets) : null})).sort((a,b) => b.assets-a.assets || b.customers-a.customers);
+      const staff = [...staffMap.values()].map((s) => ({...s,rate:s.assets ? Math.max(0,(s.assets-s.unmapped)/s.assets) : null,companies:s.companies.sort((a,b) => (b.assets ?? -1)-(a.assets ?? -1) || a.company.localeCompare(b.company,"ko"))})).sort((a,b) => b.assets-a.assets || b.customers-a.customers);
       return { appTotal,approvedApplications,approved,waiting,rejected,customerTotal,normal,inactive,totalAssets,unmapped,mapped,rate:totalAssets?mapped/totalAssets:0,prep,near,overdue,applicationRows,customerRows,instrumentRows,activityRows,accessRows,staff };
     }
 
@@ -867,7 +898,7 @@
       return `<span class="rate-pill ${cls}">${percent(rate)}</span>`;
     }
     function statusPill(status) {
-      const cls = status === "승인" ? "approved" : status === "대기" ? "waiting" : status === "반려" ? "rejected" : "other";
+      const cls = status === "승인" ? "approved" : status === "대기" ? "waiting" : status === "반려" ? "rejected" : status === "정상" ? "normal" : status === "비활성" ? "inactive" : "other";
       return `<span class="status-pill ${cls}">${escapeHtml(status || "미확인")}</span>`;
     }
     function formatBiz(value) {
@@ -1101,7 +1132,29 @@
     }
     function renderStaffTable() {
       const rows = dashboardData.staff.slice(0,10);
-      $("staffTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td>${escapeHtml(r.name)}</td><td>${nf.format(r.customers)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
+      $("staffTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td><button type="button" class="staff-detail-btn" data-staff-index="${i}" aria-haspopup="dialog" aria-label="${escapeHtml(r.name)} 담당 업체 상세 보기">${escapeHtml(r.name)}</button></td><td>${nf.format(r.customers)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
+    }
+    function openStaffModal(staff, trigger=null) {
+      if (!staff) return;
+      const rows=staff.companies || [];
+      staffModalReturnFocus=trigger || document.activeElement;
+      setText("staffModalTitle",`${staff.name} 담당 업체`);
+      setText("staffModalSubtitle",`${dashboardBasisDate || "기준일 미확인"} 기준 · 고객사 영업 담당자 기준`);
+      setText("staffModalCustomers",nf.format(staff.customers));
+      setText("staffModalAssets",nf.format(staff.assets));
+      setText("staffModalUnmapped",nf.format(staff.unmapped));
+      setText("staffModalRate",percent(staff.rate));
+      $("staffModalTableBody").innerHTML = rows.length ? rows.map((row,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(row.company)}">${escapeHtml(row.company)}</td><td>${escapeHtml(row.region || "—")}</td><td>${row.assets === null ? "—" : nf.format(row.assets)}</td><td>${row.unmapped === null ? "—" : nf.format(row.unmapped)}</td><td>${statusPill(row.status)}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">연결된 담당 업체 상세 정보가 없습니다.</td></tr>`;
+      $("staffModal").hidden=false;
+      document.body.style.overflow="hidden";
+      $("staffModalClose").focus();
+    }
+    function closeStaffModal() {
+      if ($("staffModal").hidden) return;
+      $("staffModal").hidden=true;
+      document.body.style.overflow="";
+      if (staffModalReturnFocus?.isConnected) staffModalReturnFocus.focus();
+      staffModalReturnFocus=null;
     }
     function escapeHtml(value) { return String(value).replace(/[&<>"']/g,(c) => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c])); }
     function setPresetActive(preset) {
@@ -1512,8 +1565,8 @@
 
     // 💾 localStorage + IndexedDB 하이브리드 로컬 캐시 매니저
     // 계산 결과/메타데이터는 localStorage에, 실제 Excel File 객체는 IndexedDB에 함께 보존한다.
-    const CACHE_KEY = "CWIZ_DASHBOARD_DATA_V2";
-    const LEGACY_CACHE_KEY = "CWIZ_DASHBOARD_DATA_V1";
+    const CACHE_KEY = "CWIZ_DASHBOARD_DATA_V3";
+    const LEGACY_CACHE_KEYS = ["CWIZ_DASHBOARD_DATA_V2","CWIZ_DASHBOARD_DATA_V1"];
     const DB_NAME = "CWIZ_Dashboard_DB";
     const DB_VERSION = 1;
     const STORE_NAME = "latest_data";
@@ -1552,7 +1605,7 @@
         });
       }
       const payload = {
-        cacheVersion:2,
+        cacheVersion:3,
         data:computedData,
         basisDate,
         fileNames,
@@ -1564,7 +1617,7 @@
       // 1. 계산 결과는 localStorage에 즉시 저장한다. File 객체는 JSON에 넣지 않는다.
       try {
         localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
-        localStorage.removeItem(LEGACY_CACHE_KEY);
+        LEGACY_CACHE_KEYS.forEach((key) => localStorage.removeItem(key));
       } catch (e) {
         console.warn("localStorage save failed (quota exceeded?), will rely on IndexedDB:", e);
       }
@@ -1588,7 +1641,7 @@
     async function loadLocalCache() {
       let localCache = null;
       try {
-        const raw = localStorage.getItem(CACHE_KEY) || localStorage.getItem(LEGACY_CACHE_KEY);
+        const raw = localStorage.getItem(CACHE_KEY) || LEGACY_CACHE_KEYS.map((key) => localStorage.getItem(key)).find(Boolean);
         if (raw) {
           const parsed = JSON.parse(raw);
           if (isValidCache(parsed)) localCache = parsed;
@@ -1620,6 +1673,7 @@
 
     function remoteDataIsNewer(manifest, cached, force = false) {
       if (force || !isValidCache(cached)) return true;
+      if ((cached.cacheVersion || 1) < 3 && cached.source !== "local-upload") return true;
       if (cached.source === "local-upload") return false;
 
       const remoteBasisDate = manifest?.basisDate || "";
@@ -1656,6 +1710,27 @@
       });
       refreshApplyButton();
       return restoredCount;
+    }
+
+    async function migrateCachedData(cached, restoredFileCount) {
+      if (!cached || (cached.cacheVersion || 1) >= 3 || restoredFileCount !== 5) return cached;
+      try {
+        const parsed = {};
+        for (const role of ["applications","customers","instruments","activities","access"]) {
+          parsed[role] = datasetFromSheets(await parseXlsx(selectedFiles[role]),schemas[role],selectedFiles[role].name);
+        }
+        const computed = compute(parsed.applications,parsed.customers,parsed.instruments,parsed.activities,parsed.access);
+        render(computed,cached.basisDate);
+        const savedAt = new Date().toISOString();
+        await saveLocalCache(computed,cached.basisDate,selectedFiles,{
+          source:cached.source || "local-upload",
+          contentUpdatedAt:cached.contentUpdatedAt || null
+        });
+        return {...cached,cacheVersion:3,data:computed,savedAt};
+      } catch (err) {
+        console.warn("기존 대시보드 캐시 마이그레이션 실패:",err);
+        return cached;
+      }
     }
 
     function getDataBaseUrl() {
@@ -1764,6 +1839,14 @@
     $("criteriaClose").addEventListener("click",closeCriteriaModal);
     $("criteriaModal").addEventListener("click",(event) => { if (event.target === $("criteriaModal")) closeCriteriaModal(); });
     document.addEventListener("keydown",(event) => { if (event.key === "Escape" && !$("criteriaModal").hidden) closeCriteriaModal(); });
+    $("staffTableBody").addEventListener("click",(event) => {
+      const trigger=event.target.closest("[data-staff-index]");
+      if (!trigger || !dashboardData) return;
+      openStaffModal(dashboardData.staff[Number(trigger.dataset.staffIndex)],trigger);
+    });
+    $("staffModalClose").addEventListener("click",closeStaffModal);
+    $("staffModal").addEventListener("click",(event) => { if (event.target === $("staffModal")) closeStaffModal(); });
+    document.addEventListener("keydown",(event) => { if (event.key === "Escape" && !$("staffModal").hidden) closeStaffModal(); });
     $("customerSort").addEventListener("change",renderCustomerTable);
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
@@ -1780,10 +1863,11 @@
     async function initDashboard() {
       const saveReloadNotice=consumeSaveReloadNotice();
       // 1. 로컬 캐시에서 계산 결과와 실제 Excel File 객체를 함께 복원한다.
-      const cached = await loadLocalCache();
+      let cached = await loadLocalCache();
       if (cached && cached.data && cached.basisDate) {
         render(cached.data, cached.basisDate);
         const restoredFiles = restoreCachedFiles(cached);
+        cached = await migrateCachedData(cached,restoredFiles);
         $("successMessage").textContent = saveReloadNotice?.basisDate === cached.basisDate
           ? `🎉 ${cached.basisDate} 기준 5개 엑셀 파일을 저장하고 최신 화면으로 새로고침했습니다. GitHub Pages 공동 화면은 약 1~2분 후 반영됩니다.`
           : restoredFiles === 5
