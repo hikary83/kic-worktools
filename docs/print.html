@@ -194,7 +194,7 @@
     </div>
   </main>
 
-  <!-- 🪟 CMS API 응답 모달 (팝업 차단 걱정 없음) -->
+  <!-- 🪟 CMS API 응답 모달 -->
   <div id="apiModal" style="display:none;" class="fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden transition-all">
       <!-- 헤더 -->
@@ -203,7 +203,7 @@
           <span class="w-8 h-8 rounded-xl bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 flex items-center justify-center font-bold text-sm">📋</span>
           <div>
             <h3 class="text-base font-extrabold text-slate-900 dark:text-[#ECECEC]">CMS API 응답 확인</h3>
-            <p class="text-xs text-slate-500 dark:text-[#8E8E8E]">아래 박스 안의 JSON 내용을 복사(Ctrl+A ➔ Ctrl+C)하세요.</p>
+            <p class="text-xs text-slate-500 dark:text-[#8E8E8E]">아래 박스의 JSON 내용을 확인하고 복사하세요.</p>
           </div>
         </div>
         <button onclick="closeApiModal()" class="w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-[#383838] text-slate-400 hover:text-slate-600 dark:hover:text-[#ECECEC] flex items-center justify-center transition-all text-sm font-bold">✕</button>
@@ -211,14 +211,12 @@
 
       <!-- 안내 배너 -->
       <div class="bg-indigo-50/70 dark:bg-[#1E2038] border-b border-indigo-100 dark:border-[#2F3560] px-6 py-3 text-xs text-indigo-900 dark:text-indigo-300 font-medium flex items-center justify-between gap-3">
-        <span>💡 <b>Tip:</b> 아래 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 모달을 닫으시면 <b>자동으로 분석 카드가 생성</b>됩니다!</span>
+        <span>💡 <b>Tip:</b> <b>[클립보드 복사 및 분석]</b>을 누르면 내용이 클립보드에 복사되고 카드가 자동 생성됩니다!</span>
       </div>
 
-      <!-- iframe 본문 (다크모드에서도 글자가 또렷하게 보이도록 흰색 배경 적용) -->
-      <div class="p-6 bg-slate-100 dark:bg-[#1A1A1A]">
-        <div class="rounded-2xl overflow-hidden border-2 border-indigo-200 dark:border-indigo-900/60 bg-white p-2 shadow-inner">
-          <iframe id="apiIframe" class="w-full h-52 bg-white rounded-xl font-mono text-xs text-slate-900"></iframe>
-        </div>
+      <!-- 다크 테마 본문 텍스트 박스 -->
+      <div class="p-6 bg-slate-50/50 dark:bg-[#212121]/50">
+        <textarea id="modalApiText" onclick="this.select()" class="w-full h-48 border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#212121] text-slate-800 dark:text-[#ECECEC] rounded-2xl px-4 py-3.5 font-mono text-xs focus:border-emerald-500 focus:ring-4 focus:ring-emerald-500/10 outline-none transition-all placeholder-slate-400 dark:placeholder-[#737373] resize-none" placeholder="API 응답 내용이 여기에 표시됩니다."></textarea>
       </div>
 
       <!-- 푸터 액션 -->
@@ -226,9 +224,14 @@
         <button onclick="openGeneratedUrl()" class="text-xs text-slate-500 dark:text-[#8E8E8E] hover:text-indigo-600 dark:hover:text-indigo-400 font-bold flex items-center gap-1.5 transition-colors">
           <i class="fas fa-external-link-alt"></i> 새 탭에서 열기
         </button>
-        <button onclick="closeApiModal()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5">
-          <i class="fas fa-check"></i> 복사 완료 및 닫기
-        </button>
+        <div class="flex items-center gap-2">
+          <button onclick="closeApiModal()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#262626] text-slate-600 dark:text-[#B4B4B4] text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#383838] transition-all">
+            취소
+          </button>
+          <button onclick="copyModalContentAndClose()" class="px-5 py-2.5 rounded-xl bg-indigo-600 hover:bg-indigo-700 text-white text-xs font-bold shadow-md shadow-indigo-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5">
+            <i class="fas fa-copy"></i> 클립보드 복사 및 분석
+          </button>
+        </div>
       </div>
     </div>
   </div>
@@ -368,35 +371,66 @@
       }
     }
 
-    function openApiModal(url){
+    async function openApiModal(url){
       const modal = $('apiModal');
-      const iframe = $('apiIframe');
-      iframe.src = url;
+      const textEl = $('modalApiText');
       modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
-      setStatus('formStatus', '💡 모달 창의 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 모달을 닫으시면 자동으로 분석 카드가 생성됩니다.', 'ok');
-    }
-
-    async function closeApiModal(){
-      const modal = $('apiModal');
-      const iframe = $('apiIframe');
-      modal.style.display = 'none';
-      iframe.src = 'about:blank';
-      document.body.style.overflow = '';
       
-      // 모달 닫을 때 클립보드 자동 읽어 분석 시도
+      // 클립보드에 이미 복사된 텍스트가 있다면 바로 넣어주기
       try {
         if (navigator.clipboard && navigator.clipboard.readText) {
-          const text = await navigator.clipboard.readText();
-          if (text && text.includes('list') && (text.includes('koc_calibration_no') || text.includes('kcs_machine') || text.includes('label_type') || text.includes('top_customer'))) {
-            $('apiResponse').value = text.trim();
-            analyzeApiResponse();
-            setStatus('formStatus', '🎉 클립보드에 복사된 API 응답으로 우측 카드 분석을 완료했습니다!', 'ok');
-            return;
+          const clipText = await navigator.clipboard.readText();
+          if (clipText && clipText.includes('list') && (clipText.includes('koc_calibration_no') || clipText.includes('kcs_machine') || clipText.includes('label_type'))) {
+            textEl.value = clipText.trim();
+          } else if ($('apiResponse').value.trim()) {
+            textEl.value = $('apiResponse').value.trim();
           }
         }
       } catch(e) {}
-      setStatus('formStatus', '모달이 닫혔습니다. 복사한 내용이 있다면 우측 [API 응답 붙여넣기]에 넣고 [응답 분석]을 누르세요.', '');
+
+      setStatus('formStatus', '💡 [클립보드 복사 및 분석] 버튼을 누르면 클립보드 복사 및 분석이 완료됩니다.', 'ok');
+    }
+
+    function closeApiModal(){
+      const modal = $('apiModal');
+      modal.style.display = 'none';
+      document.body.style.overflow = '';
+    }
+
+    async function copyModalContentAndClose(){
+      const text = $('modalApiText').value.trim();
+      if (!text) {
+        alert('복사할 API 응답 내용이 비어 있습니다. 내용을 붙여넣거나 새 탭에서 열어 복사해 주세요.');
+        return;
+      }
+
+      // 1. 클립보드에 진짜로 복사!
+      let copied = false;
+      try {
+        await navigator.clipboard.writeText(text);
+        copied = true;
+      } catch(e) {
+        const temp = document.createElement('textarea');
+        temp.value = text;
+        document.body.appendChild(temp);
+        temp.select();
+        copied = document.execCommand('copy');
+        temp.remove();
+      }
+
+      // 2. 우측 입력창에 넣고 분석 실행
+      $('apiResponse').value = text;
+      analyzeApiResponse();
+
+      // 3. 모달 닫기
+      closeApiModal();
+
+      if (copied) {
+        setStatus('formStatus', '🎉 [클립보드 복사 완료] 우측에 분석 카드가 정상 생성되었습니다!', 'ok');
+      } else {
+        setStatus('formStatus', '우측에 분석 카드가 정상 생성되었습니다.', 'ok');
+      }
     }
 
     function openGeneratedUrl(){
