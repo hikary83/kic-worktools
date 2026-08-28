@@ -1360,7 +1360,8 @@
       }
     });
 
-    // 💾 IndexedDB 로컬 캐시 매니저 (새로고침 즉시 복원)
+    // 💾 localStorage + IndexedDB 하이브리드 로컬 캐시 매니저 (새로고침 즉시 100% 복원)
+    const CACHE_KEY = "CWIZ_DASHBOARD_DATA_V1";
     const DB_NAME = "CWIZ_Dashboard_DB";
     const DB_VERSION = 1;
     const STORE_NAME = "latest_data";
@@ -1380,16 +1381,34 @@
     }
 
     async function saveLocalCache(computedData, basisDate) {
+      const payload = { data: computedData, basisDate, savedAt: new Date().toISOString() };
+      // 1. localStorage 즉시 동기 저장 (용량 허용 시)
+      try {
+        localStorage.setItem(CACHE_KEY, JSON.stringify(payload));
+      } catch (e) {
+        console.warn("localStorage save failed (quota exceeded?), will rely on IndexedDB:", e);
+      }
+      // 2. IndexedDB 영구 저장
       try {
         const db = await openDb();
         const tx = db.transaction(STORE_NAME, "readwrite");
-        tx.objectStore(STORE_NAME).put({ data: computedData, basisDate, savedAt: new Date().toISOString() }, "current");
+        tx.objectStore(STORE_NAME).put(payload, "current");
       } catch (e) {
-        console.warn("Local cache save failed:", e);
+        console.warn("IndexedDB save failed:", e);
       }
     }
 
     async function loadLocalCache() {
+      // 1. localStorage에서 0ms 즉시 읽기
+      try {
+        const raw = localStorage.getItem(CACHE_KEY);
+        if (raw) {
+          const parsed = JSON.parse(raw);
+          if (parsed && parsed.data && parsed.basisDate) return parsed;
+        }
+      } catch (e) {}
+
+      // 2. IndexedDB에서 읽기
       try {
         const db = await openDb();
         return new Promise((resolve) => {
@@ -1403,22 +1422,35 @@
       }
     }
 
+    function getDataBaseUrl() {
+      let loc = window.location.href.split(/[?#]/)[0];
+      if (loc.endsWith(".html") || loc.endsWith(".htm")) {
+        loc = loc.substring(0, loc.lastIndexOf("/"));
+      } else if (!loc.endsWith("/")) {
+        loc = loc + "/";
+      }
+      if (!loc.endsWith("/")) loc += "/";
+      return loc + "data/";
+    }
+
     async function loadEmbeddedData(showManualNoticeIfMissing = false) {
+      const base = getDataBaseUrl();
       let fileMap = {
-        applications: "./data/이용신청.xlsx",
-        customers: "./data/고객사현황.xlsx",
-        instruments: "./data/고객사계측기현황.xlsx",
-        activities: "./data/데이터변경이력.xlsx",
-        access: "./data/보안접속이력.xlsx"
+        applications: base + "이용신청.xlsx",
+        customers: base + "고객사현황.xlsx",
+        instruments: base + "고객사계측기현황.xlsx",
+        activities: base + "데이터변경이력.xlsx",
+        access: base + "보안접속이력.xlsx"
       };
 
       try {
-        const manifestRes = await fetch(`./data/manifest.json?t=${Date.now()}`, { cache: "no-cache" });
+        const manifestUrl = encodeURI(base + "manifest.json") + `?t=${Date.now()}`;
+        const manifestRes = await fetch(manifestUrl, { cache: "no-cache" });
         if (manifestRes.ok) {
           const manifest = await manifestRes.json();
           if (manifest && manifest.files) {
             Object.keys(manifest.files).forEach((key) => {
-              if (manifest.files[key]) fileMap[key] = "./data/" + manifest.files[key];
+              if (manifest.files[key]) fileMap[key] = base + manifest.files[key];
             });
           }
         }
@@ -1435,10 +1467,14 @@
       try {
         for (const role of roles) {
           const path = fileMap[role];
-          const res = await fetch(`${path}?t=${Date.now()}`, { cache: "no-cache" });
-          if (!res.ok) continue;
+          const reqUrl = encodeURI(path) + `?t=${Date.now()}`;
+          const res = await fetch(reqUrl, { cache: "no-cache" });
+          if (!res.ok) {
+            console.warn(`Fetch failed for ${role}: ${reqUrl} (Status ${res.status})`);
+            continue;
+          }
           const blob = await res.blob();
-          const fileName = path.split("/").pop().split("?")[0] || `${role}.xlsx`;
+          const fileName = decodeURIComponent(path.split("/").pop().split("?")[0]) || `${role}.xlsx`;
           const file = new File([blob], fileName, { type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet" });
           fetchedFiles[role] = file;
           setFile(role, file);
@@ -1488,14 +1524,14 @@
     setupStatInfo();
 
     async function initDashboard() {
-      // 1. 로컬 캐시에서 먼저 복원 (0.01초 만에 화면 표시!)
+      // 1. 로컬 캐시에서 먼저 즉시 복원 (새로고침 시 0.01초 만에 화면 그대로 유지!)
       const cached = await loadLocalCache();
       if (cached && cached.data && cached.basisDate) {
         render(cached.data, cached.basisDate);
         $("uploadPanel").classList.add("collapsed");
         $("toggleUpload").textContent = "파일 수동 업로드";
       }
-      // 2. 백그라운드에서 저장소(data/) 최신 파일 동기화
+      // 2. 백그라운드에서 저장소(data/) 최신 파일 가져와 동기화
       loadEmbeddedData(false);
     }
 
