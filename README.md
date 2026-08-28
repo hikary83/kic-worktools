@@ -74,3 +74,35 @@ git push origin main
 
 ### 2) 배포 확인
 * 배포 후 1~2분 뒤 <https://hikary83.github.io/kic-worktools/> 에서 반영 확인.
+
+---
+
+## 🤖 다른 AI 어시스턴트가 작업을 이어받을 때 (AI Handover Guide)
+
+> **[필독]** 이 저장소에서 새로운 작업이나 수정을 진행하는 모든 AI 모델은 아래 원칙과 아키텍처를 반드시 준수해야 합니다.
+
+### 1. 회사명 및 도메인 표기 절대 원칙
+* 회사의 공식 국문 명칭은 **`코리아인스트루먼트(주)`** 입니다. (구 명칭이나 유사 명칭을 절대 사용하지 마십시오.)
+* 사내 시스템 명칭: **`CMS`**, **`CWIZ Enterprise`**, **`KIC 업무 도구`**.
+
+### 2. 기술 스택 및 아키텍처 구조
+* **프론트엔드**: 빌드 도구(Webpack/Vite 등)가 없는 **순수 정적 웹(Pure Vanilla JS + HTML5 + CSS3)** 구조입니다.
+  * 스타일링: Tailwind CSS CDN (`<script src="https://cdn.tailwindcss.com"></script>`) + `docs/css/kic-theme.css`
+  * 폰트: `Pretendard Variable` (CDN)
+  * 아이콘: `FontAwesome 6.0` (CDN)
+  * 공통 모듈: `docs/js/kic-common.js` (테마 토글, 토스트, LNB, 모달)
+* **백엔드/API 연동**:
+  * `docs/js/config.js`에 설정된 Google Apps Script(GAS) 웹앱 엔드포인트를 통해 스프레드시트 DB 및 Jira/Gemini AI와 통신합니다.
+* **배포 환경**: GitHub Pages (`main` 브랜치 `/docs` 디렉토리 기반 호스팅).
+
+### 3. 기능별 핵심 주의사항
+1. **필증 출력 확인 (`print.html`)**:
+   * `cms.kic21.co.kr`은 CORS 헤더를 내려주지 않으므로 브라우저 직접 `fetch`가 차단됩니다.
+   * `iframe` 내부 DOM 텍스트 역시 브라우저 SOP(동일 출처 정책)로 인해 자바스크립트가 직접 읽을 수 없으므로, 다크모드 반전 필터(`invert(0.88)`) 및 클립보드 복사 안내 워크플로우를 유지하십시오.
+2. **CWIZ 주간 대시보드 (`docs/dashboard/`)**:
+   * 자세한 인수인계 문서는 [`docs/dashboard/README.md`](docs/dashboard/README.md)에 380줄 이상으로 완벽하게 정리되어 있으니 작업 전 필독하십시오.
+   * 원본 Excel 5개(`이용신청`, `고객사현황`, `고객사계측기현황`, `데이터변경이력`, `보안접속이력`)의 컬럼 스키마와 집계 정책(`compute()`)을 임의로 변경하거나 하드코딩하지 마십시오.
+   * 새로고침 시 데이터 유실 방지를 위한 `localStorage` + `IndexedDB` 하이브리드 캐시 복원 로직을 반드시 보존하십시오.
+3. **버전 관리 및 Changelog 동기화**:
+   * 작업을 완료한 후에는 반드시 이 `README.md`의 버전 번호(Semantic Versioning)와 **Changelog** 섹션을 갱신하고 푸시하십시오.
+
