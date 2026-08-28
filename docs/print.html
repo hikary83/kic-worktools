@@ -45,13 +45,11 @@
     .status.warn { color: #f59e0b; }
     #apiIframe {
       filter: none;
-      background-color: #ffffff;
-      color: #0f172a;
+      background: #ffffff;
     }
     .dark #apiIframe, html.dark #apiIframe, body.dark #apiIframe {
-      filter: invert(0.9) hue-rotate(180deg) brightness(1.2);
-      background-color: #212121;
-      color: #ececec;
+      filter: invert(1) hue-rotate(180deg);
+      background: #000000;
     }
   </style>
 </head>
@@ -221,7 +219,7 @@
 
       <!-- 본문 iframe 박스 -->
       <div class="p-6">
-        <iframe id="apiIframe" class="w-full h-48 border border-slate-200 dark:border-[#424242] rounded-2xl p-4 font-mono text-xs outline-none shadow-sm"></iframe>
+        <iframe id="apiIframe" class="w-full h-48 border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#212121] rounded-2xl p-4 font-mono text-xs outline-none shadow-sm"></iframe>
       </div>
 
       <!-- 푸터 액션 -->
