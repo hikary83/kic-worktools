@@ -195,7 +195,7 @@
   </main>
 
   <!-- 🪟 CMS API 응답 모달 (팝업 차단 걱정 없음) -->
-  <div id="apiModal" hidden class="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
+  <div id="apiModal" style="display:none;" class="fixed inset-0 z-50 items-center justify-center p-4 bg-slate-900/60 backdrop-blur-sm">
     <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl max-w-2xl w-full flex flex-col overflow-hidden transition-all">
       <!-- 헤더 -->
       <div class="px-6 py-4 border-b border-slate-100 dark:border-[#383838] flex items-center justify-between">
@@ -370,7 +370,7 @@
       const modal = $('apiModal');
       const iframe = $('apiIframe');
       iframe.src = url;
-      modal.hidden = false;
+      modal.style.display = 'flex';
       document.body.style.overflow = 'hidden';
       setStatus('formStatus', '💡 모달 창의 내용을 복사(Ctrl+A ➔ Ctrl+C)한 후 모달을 닫으시면 자동으로 분석 카드가 생성됩니다.', 'ok');
     }
@@ -378,7 +378,7 @@
     async function closeApiModal(){
       const modal = $('apiModal');
       const iframe = $('apiIframe');
-      modal.hidden = true;
+      modal.style.display = 'none';
       iframe.src = 'about:blank';
       document.body.style.overflow = '';
       
