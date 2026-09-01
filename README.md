@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.4.1` (2026-08-31 기준)
+> **현재 버전**: `v2.4.2` (2026-09-01 기준)
 
 ---
 
@@ -15,7 +15,7 @@
 | **📢 공지사항 생성** | [`docs/notice.html`](docs/notice.html) | `v2.0.0` | 사내 전산 시스템 점검 및 업데이트 공지 템플릿 생성 |
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.0.0` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
-| **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.0` | AI 교정 기술 블로그 포스팅 초안 및 키워드 생성기 |
+| **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.3.0` | 주간 엑셀 5종 기반 기업 지표 분석, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -31,6 +31,10 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.4.2` (2026-09-01)
+* **블로그 마케터 (`marketer.html` v2.1.1)**:
+  * 🌐 **공식 블로그 바로가기 버튼 추가**: 캘린더 상단 우측 컨트롤 바에 네이버 블로그(`https://blog.naver.com/kicblog`) 새 창 열기 퀵 버튼 탑재
 
 ### `v2.4.1` (2026-08-31)
 * **IT 헬프데스크 (`index.html` v2.2.1)**:
