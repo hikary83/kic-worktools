@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.4.3` (2026-09-01 기준)
+> **현재 버전**: `v2.4.4` (2026-09-01 기준)
 
 ---
 
@@ -13,7 +13,7 @@
 | **📈 IT 헬프데스크** | [`docs/index.html`](docs/index.html) | `v2.2.2` | 전사 IT 이슈 접수, 상태별 칸반 보드 및 주간(월~일) 자동 집계 관리 |
 | **💬 IT 헬프데스크 답변** | [`docs/reply.html`](docs/reply.html) | `v2.1.1` | AI 기반 헬프데스크 맞춤형 표준 답변 자동 생성 (줄간격 1.4 서식 복사) |
 | **📢 공지사항 생성** | [`docs/notice.html`](docs/notice.html) | `v2.0.0` | 사내 전산 시스템 점검 및 업데이트 공지 템플릿 생성 |
-| **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.0.0` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 |
+| **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.0` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (고해상도 렌더링 & 센터 정렬) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.3.0` | 주간 엑셀 5종 기반 기업 지표 분석, GitHub 원클릭 Save/배포 및 캐시 시스템 |
@@ -31,6 +31,11 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.4.4` (2026-09-01)
+* **교정 지연 안내 (`delay.html` v2.1.0)**:
+  * 🎯 **수직 중앙 정렬 최적화**: 썸네일(Notice, 제목, 구분선, 품목, 보드 아이콘) 및 본문 카드의 상하 여백과 텍스트 수직 센터 밸런스 재조정
+  * 🔍 **고해상도(Retina 2x) 렌더링 적용**: `html2canvas` 캡처 시 `scale: 2` 및 Canvas 이미지 고품질 스무딩을 적용하여 폰트 번짐 및 뿌연 현상 완벽 제거
 
 ### `v2.4.3` (2026-09-01)
 * **IT 헬프데스크 & 답변 생성기 (`index.html` v2.2.2, `reply.html` v2.1.1)**:
