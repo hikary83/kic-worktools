@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.5.1` (2026-09-03 기준)
+> **현재 버전**: `v2.6.0` (2026-09-03 기준)
 
 ---
 
@@ -16,6 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.0` | 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인과 프로젝트·담당자·상태 필터로 통합 조회 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.4.0` | 주간 엑셀 5종 기반 기업 지표 분석, 상세 드릴다운, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -31,6 +32,16 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.6.0` (2026-09-03)
+* **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.0)**:
+  * 🗓️ **통합 타임라인 화면 신설**: C21R·CW2R·CWIZ·ITM·WWWMR의 진행 업무를 프로젝트별 일정 막대와 단일 날짜 포인트로 표시
+  * 🔎 **조회 필터 및 기간 이동**: Issue 검색, 프로젝트·담당자·상태 필터와 월·분기 보기, 이전·다음·오늘 이동 기능 제공
+  * 📋 **일정 누락 분리 표시**: 시작일과 기한이 모두 없는 이슈는 별도 목록으로 유지하여 업무 누락을 방지
+  * 🔗 **Jira 원본 바로가기**: 타임라인 항목과 일정 미지정 Issue Key 클릭 시 Jira 원본을 새 창에서 열도록 구성
+  * 🔐 **읽기 전용 GAS 연동 기반**: API Token은 Script Properties에서만 읽고, 웹 조회 활성화 값을 별도로 두어 설정 전 데이터 노출을 방지
+  * 🛡️ **로그인 보호 화면 연동**: 실제 Jira 데이터는 Apps Script의 로그인 보호 화면을 통해 전달하고 `kic21.co.kr` Workspace 사용자만 조회하도록 제한
+  * 🧪 **안전한 화면 검증 모드**: 실제 Jira 데이터 없이 UI를 확인할 수 있는 로컬 샘플 모드를 제공
 
 ### `v2.5.1` (2026-09-03)
 * **공통 사이드바 구조 개선**:
@@ -99,6 +110,20 @@
 ---
 
 ## 💻 로컬 개발 및 배포 가이드
+
+### Jira 통합 일정 Script Properties
+
+Jira 인증정보는 저장소에 작성하지 않고 Apps Script 프로젝트 설정의 **Script Properties**에 저장합니다.
+
+| 속성 | 설명 |
+|---|---|
+| `JIRA_BASE_URL` | 선택값. 미설정 시 `https://kic-itsd.atlassian.net` 사용 |
+| `JIRA_ACCOUNT_EMAIL` | Jira 조회 계정 이메일 |
+| `JIRA_API_TOKEN` | Jira API Token |
+| `JIRA_START_DATE_FIELD_ID` | 선택값. 미설정 시 `Start date` 날짜 필드를 자동 탐색 |
+| `JIRA_TIMELINE_WEB_ENABLED` | 접근 범위 확인 후 `true`로 설정해야 웹 조회 허용 |
+
+스프레드시트의 `KIC 헬프데스크 → Jira 통합 일정 설정`에서 이메일과 API Token을 저장한 뒤 연결 테스트를 실행합니다. 실제 일정 화면은 GitHub Pages에서 Apps Script 로그인 보호 화면으로 이동해 열립니다.
 
 ### 1) Git 커밋 및 GitHub Pages 배포
 ```powershell

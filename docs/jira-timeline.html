@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <base target="_top" />
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>KIC 업무 도구 · IT전략실 통합 일정</title>
+  <link rel="icon" type="image/x-icon" href="favicon.ico" />
+  <link rel="icon" type="image/png" sizes="16x16" href="favicon-16x16.png" />
+  <link rel="icon" type="image/png" sizes="32x32" href="favicon-32x32.png" />
+  <link rel="apple-touch-icon" sizes="180x180" href="apple-touch-icon.png" />
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = { darkMode: 'class' };
+  </script>
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
+  <link href="css/kic-theme.css" rel="stylesheet" />
+  <link href="https://cdn.jsdelivr.net/npm/vis-timeline@8.5.1/styles/vis-timeline-graph2d.min.css" rel="stylesheet" />
+  <link href="css/jira-timeline.css" rel="stylesheet" />
+  <script src="js/config.js"></script>
+  <script src="js/kic-sidebar.js"></script>
+  <script src="js/kic-common.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/vis-timeline@8.5.1/standalone/umd/vis-timeline-graph2d.min.js"></script>
+</head>
+<body class="jira-timeline-page relative text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
+  <aside class="kic-lnb" data-kic-sidebar data-active-page="jira-timeline"></aside>
+
+  <main class="kic-tool-offset">
+    <header class="bg-white dark:bg-[#2F2F2F] border-b border-slate-200 dark:border-[#424242] px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40 transition-colors">
+      <div>
+        <h1 class="text-xl font-extrabold text-slate-900 dark:text-[#ECECEC] tracking-tight flex items-center gap-2">🗓️ IT전략실 통합 일정</h1>
+        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1">5개 Jira 프로젝트의 진행 업무를 일정 중심으로 한눈에 확인합니다.</p>
+      </div>
+      <div class="jira-header-actions">
+        <span class="jira-readonly-badge"><i class="fa-solid fa-shield-halved"></i> Jira 조회 전용</span>
+        <span class="jira-updated-badge" id="lastUpdated"><i class="fa-regular fa-clock"></i> 아직 조회하지 않음</span>
+        <button class="jira-button primary" id="refreshButton" type="button">
+          <i class="fa-solid fa-rotate"></i> 새로고침
+        </button>
+      </div>
+    </header>
+
+    <div class="jira-shell">
+
+      <div class="jira-status" id="jiraStatus" data-state="loading" role="status" aria-live="polite">
+        <i class="fa-solid fa-circle-notch fa-spin" aria-hidden="true"></i>
+        <span>Jira 통합 일정을 불러오는 중입니다.</span>
+      </div>
+
+      <section class="jira-setup-guide" id="setupGuide" aria-labelledby="setupGuideTitle">
+        <div>
+          <h2 id="setupGuideTitle">Jira 연동 설정이 필요합니다</h2>
+          <p>Apps Script의 Script Properties에 조회 계정 정보를 저장한 다음 연결 테스트를 실행하세요. 웹 조회는 접근 범위를 확인한 뒤 활성화합니다.</p>
+        </div>
+        <div class="jira-property-list" id="missingProperties"></div>
+      </section>
+
+      <section class="jira-stats" aria-label="통합 일정 요약">
+        <article class="jira-stat-card">
+          <span class="jira-stat-label">필터 결과</span>
+          <strong class="jira-stat-value"><span id="totalCount">0</span><small>건</small></strong>
+          <span class="jira-stat-icon"><i class="fa-solid fa-list-check"></i></span>
+        </article>
+        <article class="jira-stat-card success">
+          <span class="jira-stat-label">일정 등록</span>
+          <strong class="jira-stat-value"><span id="scheduledCount">0</span><small>건</small></strong>
+          <span class="jira-stat-icon"><i class="fa-solid fa-calendar-check"></i></span>
+        </article>
+        <article class="jira-stat-card warning">
+          <span class="jira-stat-label">일정 미지정</span>
+          <strong class="jira-stat-value"><span id="unscheduledCount">0</span><small>건</small></strong>
+          <span class="jira-stat-icon"><i class="fa-solid fa-calendar-xmark"></i></span>
+        </article>
+        <article class="jira-stat-card danger">
+          <span class="jira-stat-label">기한 초과</span>
+          <strong class="jira-stat-value"><span id="overdueCount">0</span><small>건</small></strong>
+          <span class="jira-stat-icon"><i class="fa-solid fa-triangle-exclamation"></i></span>
+        </article>
+      </section>
+
+      <section class="jira-panel" aria-label="일정 필터">
+        <div class="jira-toolbar">
+          <label class="jira-control">
+            <i class="fa-solid fa-magnifying-glass" aria-hidden="true"></i>
+            <input id="searchInput" type="search" placeholder="Issue Key 또는 업무명 검색" autocomplete="off" />
+          </label>
+          <label class="jira-control">
+            <i class="fa-solid fa-folder-tree" aria-hidden="true"></i>
+            <select id="projectFilter" aria-label="프로젝트 필터">
+              <option value="">전체 프로젝트</option>
+            </select>
+          </label>
+          <label class="jira-control">
+            <i class="fa-solid fa-user" aria-hidden="true"></i>
+            <select id="assigneeFilter" aria-label="담당자 필터">
+              <option value="">전체 담당자</option>
+            </select>
+          </label>
+          <label class="jira-control">
+            <i class="fa-solid fa-bars-progress" aria-hidden="true"></i>
+            <select id="statusFilter" aria-label="상태 필터">
+              <option value="">전체 상태</option>
+            </select>
+          </label>
+          <button class="jira-button" id="resetFiltersButton" type="button">
+            <i class="fa-solid fa-filter-circle-xmark"></i> 필터 초기화
+          </button>
+        </div>
+      </section>
+
+      <section class="jira-panel" aria-labelledby="timelineTitle">
+        <div class="jira-timeline-heading">
+          <h2 class="jira-section-title" id="timelineTitle">
+            프로젝트 통합 타임라인 <span class="jira-count-badge" id="timelineCount">0건</span>
+          </h2>
+          <div class="jira-range-controls">
+            <div class="jira-segmented" aria-label="기간 보기">
+              <button type="button" class="is-active" data-zoom="month" aria-pressed="true">월</button>
+              <button type="button" data-zoom="quarter" aria-pressed="false">분기</button>
+            </div>
+            <button class="jira-button icon-only" id="previousRangeButton" type="button" title="이전 기간" aria-label="이전 기간"><i class="fa-solid fa-chevron-left"></i></button>
+            <strong class="jira-range-label" id="rangeLabel">-</strong>
+            <button class="jira-button icon-only" id="nextRangeButton" type="button" title="다음 기간" aria-label="다음 기간"><i class="fa-solid fa-chevron-right"></i></button>
+            <button class="jira-button" id="todayButton" type="button">오늘</button>
+          </div>
+        </div>
+        <div class="jira-legend" aria-label="프로젝트 색상 안내">
+          <span><i class="c21r"></i>CMS</span>
+          <span><i class="cw2r"></i>CWIZ 2.0</span>
+          <span><i class="cwiz"></i>CWIZ 1.0</span>
+          <span><i class="itm"></i>IT 업무</span>
+          <span><i class="wwwmr"></i>홈페이지</span>
+          <span><i style="background:var(--text-muted)"></i>점 표시는 시작일 또는 기한만 등록된 업무</span>
+        </div>
+        <div id="jiraTimeline" aria-label="Jira 통합 일정 타임라인"></div>
+        <div class="jira-empty" id="timelineEmpty">
+          <i class="fa-regular fa-calendar-xmark" aria-hidden="true"></i>
+          <strong>표시할 일정이 없습니다.</strong>
+          <span>필터를 변경하거나 Jira에서 시작일·기한을 확인해 주세요.</span>
+        </div>
+        <div class="jira-footer-note">일정 막대나 날짜 포인트를 클릭하면 해당 Jira Issue가 새 창에서 열립니다.</div>
+      </section>
+
+      <section class="jira-panel" id="unscheduledPanel" aria-labelledby="unscheduledTitle">
+        <div class="jira-timeline-heading">
+          <h2 class="jira-section-title" id="unscheduledTitle">
+            일정 미지정 업무 <span class="jira-count-badge" id="unscheduledTableCount">0건</span>
+          </h2>
+        </div>
+        <div class="jira-table-wrap">
+          <table class="jira-table">
+            <thead>
+              <tr>
+                <th>Issue</th>
+                <th>프로젝트</th>
+                <th>업무명</th>
+                <th>상태</th>
+                <th>담당자</th>
+                <th>최근 수정</th>
+              </tr>
+            </thead>
+            <tbody id="unscheduledTableBody"></tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </main>
+
+  <script src="js/jira-timeline.js"></script>
+</body>
+</html>

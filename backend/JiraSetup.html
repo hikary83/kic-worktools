@@ -1,0 +1,137 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <base target="_top">
+  <meta charset="utf-8">
+  <style>
+    :root { color-scheme: light; font-family: Arial, "Noto Sans KR", sans-serif; }
+    * { box-sizing: border-box; }
+    body { margin: 0; padding: 22px; color: #17212b; background: #f7faf9; font-size: 13px; }
+    .intro { margin: 0 0 18px; color: #5c6b76; line-height: 1.6; }
+    .field { display: block; margin-bottom: 14px; }
+    .field span { display: block; margin-bottom: 7px; font-weight: 700; }
+    input[type="email"], input[type="password"], input[type="url"] {
+      width: 100%; height: 42px; border: 1px solid #d5dfdb; border-radius: 10px;
+      padding: 0 12px; background: #fff; color: #17212b; outline: none;
+    }
+    input:focus { border-color: #10a37f; box-shadow: 0 0 0 3px rgba(16,163,127,.12); }
+    .token-note { margin-top: 6px; color: #73817c; font-size: 11px; line-height: 1.5; }
+    .switch-box { margin: 18px 0; padding: 14px; border: 1px solid #f0c36d; border-radius: 12px; background: #fff8e8; }
+    .switch-label { display: flex; gap: 10px; align-items: flex-start; font-weight: 700; cursor: pointer; }
+    .switch-label input { margin-top: 2px; accent-color: #10a37f; }
+    .warning { margin: 8px 0 0 24px; color: #8a5a00; font-size: 11px; line-height: 1.5; }
+    .status { min-height: 46px; margin: 14px 0; padding: 11px 13px; border-radius: 10px; background: #edf3f1; color: #4f625c; line-height: 1.55; }
+    .status.success { background: #e9f9f3; color: #087657; }
+    .status.error { background: #fff0f0; color: #c62828; }
+    .actions { display: flex; justify-content: flex-end; gap: 8px; }
+    button { height: 39px; padding: 0 15px; border: 1px solid #d5dfdb; border-radius: 10px; background: #fff; font-weight: 700; cursor: pointer; }
+    button.primary { color: #fff; border-color: #10a37f; background: #10a37f; }
+    button:disabled { opacity: .55; cursor: wait; }
+  </style>
+</head>
+<body>
+  <p class="intro">입력한 정보는 Apps Script의 비공개 Script Properties에 저장되며 대시보드 HTML이나 GitHub에는 포함되지 않습니다.</p>
+
+  <label class="field">
+    <span>Jira 주소</span>
+    <input id="baseUrl" type="url" value="https://kic-itsd.atlassian.net" autocomplete="url">
+  </label>
+  <label class="field">
+    <span>Jira 로그인 이메일</span>
+    <input id="email" type="email" autocomplete="username" placeholder="name@company.com">
+  </label>
+  <label class="field">
+    <span>Jira API Token</span>
+    <input id="apiToken" type="password" autocomplete="new-password" placeholder="저장된 토큰이 있으면 비워두어도 됩니다">
+    <div class="token-note" id="tokenNote">API Token은 화면에 다시 표시되지 않습니다.</div>
+  </label>
+
+  <div class="switch-box">
+    <label class="switch-label">
+      <input id="webEnabled" type="checkbox">
+      <span>웹 대시보드에서 Jira 조회 활성화</span>
+    </label>
+    <p class="warning">현재 웹앱이 전체 공개 배포라면 링크를 아는 사람이 업무명·담당자·일정을 조회할 수 있습니다. 연결 테스트가 끝난 뒤 공개 범위를 확인하고 켜는 것을 권장합니다.</p>
+  </div>
+
+  <div class="status" id="status">설정 정보를 확인하고 있습니다.</div>
+  <div class="actions">
+    <button id="closeButton" type="button">닫기</button>
+    <button id="testButton" type="button">연결 테스트</button>
+    <button id="saveButton" class="primary" type="button">저장</button>
+  </div>
+
+  <script>
+    const $ = id => document.getElementById(id);
+    const buttons = ['saveButton', 'testButton', 'closeButton'].map($);
+
+    function setBusy(busy) {
+      buttons.forEach(button => button.disabled = busy);
+    }
+
+    function setStatus(message, type) {
+      $('status').textContent = message;
+      $('status').className = 'status' + (type ? ' ' + type : '');
+    }
+
+    function loadState() {
+      google.script.run
+        .withSuccessHandler(state => {
+          $('baseUrl').value = state.baseUrl || 'https://kic-itsd.atlassian.net';
+          $('email').value = state.email || '';
+          $('webEnabled').checked = state.webEnabled === true;
+          $('tokenNote').textContent = state.hasApiToken
+            ? '저장된 토큰이 있습니다. 변경할 때만 새 토큰을 입력하세요.'
+            : '아직 저장된 토큰이 없습니다.';
+          setStatus(state.configured ? 'Jira 계정 정보가 저장되어 있습니다.' : 'Jira 이메일과 API Token을 입력해 주세요.');
+          setBusy(false);
+        })
+        .withFailureHandler(error => { setStatus(error.message || String(error), 'error'); setBusy(false); })
+        .getJiraTimelineSetupState();
+    }
+
+    function saveSettings(afterSave) {
+      const webEnabled = $('webEnabled').checked;
+      if (webEnabled && !confirm('웹 대시보드 조회를 활성화하면 현재 웹앱 공개 범위에 따라 Jira 정보가 노출될 수 있습니다. 계속할까요?')) return;
+      setBusy(true);
+      setStatus('설정을 저장하고 있습니다.');
+      google.script.run
+        .withSuccessHandler(state => {
+          $('apiToken').value = '';
+          $('tokenNote').textContent = '저장된 토큰이 있습니다. 변경할 때만 새 토큰을 입력하세요.';
+          setStatus('설정이 안전하게 저장되었습니다.', 'success');
+          setBusy(false);
+          if (afterSave) afterSave(state);
+        })
+        .withFailureHandler(error => { setStatus(error.message || String(error), 'error'); setBusy(false); })
+        .saveJiraTimelineSettings({
+          baseUrl: $('baseUrl').value,
+          email: $('email').value,
+          apiToken: $('apiToken').value,
+          webEnabled: webEnabled
+        });
+    }
+
+    function testConnection() {
+      saveSettings(() => {
+        setBusy(true);
+        setStatus('Jira에서 실제 진행 업무를 조회하고 있습니다.');
+        google.script.run
+          .withSuccessHandler(result => {
+            const suffix = result.truncated ? ' (조회 상한 도달)' : '';
+            setStatus('연결 성공 · 전체 ' + result.total + '건 / 일정 있음 ' + result.scheduled + '건 / 일정 없음 ' + result.unscheduled + '건' + suffix, 'success');
+            setBusy(false);
+          })
+          .withFailureHandler(error => { setStatus(error.message || String(error), 'error'); setBusy(false); })
+          .testJiraTimelineConnectionForDialog();
+      });
+    }
+
+    $('saveButton').addEventListener('click', () => saveSettings());
+    $('testButton').addEventListener('click', testConnection);
+    $('closeButton').addEventListener('click', () => google.script.host.close());
+    setBusy(true);
+    loadState();
+  </script>
+</body>
+</html>

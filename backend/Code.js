@@ -193,6 +193,9 @@ function onOpen() {
     .addSeparator()
     .addItem('🔐 Gemini API 키 설정', 'setGeminiApiKey')
     .addItem('🧪 Gemini 연결 테스트', 'testGeminiConnection')
+    .addSeparator()
+    .addItem('⚙️ Jira 통합 일정 설정', 'showJiraTimelineSetup')
+    .addItem('🗓️ Jira 통합 일정 연결 테스트', 'testJiraTimelineConnection')
     .addToUi();
 }
 
@@ -352,6 +355,10 @@ function onSelectionChange(e) {
 
 function doGet(e) {
   try {
+    if (e.parameter.page === 'jiraTimeline') {
+      return getJiraTimelineHostPage_();
+    }
+
     const action = e.parameter.action;
     let result = { success: false, error: 'Invalid action' };
     
@@ -359,6 +366,12 @@ function doGet(e) {
       const startDate = e.parameter.startDate;
       const endDate = e.parameter.endDate;
       const data = getDashboardData(startDate, endDate);
+      return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
+        .setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    if (action === 'getJiraTimelineIssues') {
+      const data = getJiraTimelineIssuesForWeb();
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
         .setMimeType(ContentService.MimeType.TEXT);
     }
@@ -415,6 +428,9 @@ function doPost(e) {
 
     if (action === 'getDashboardData') {
       const stats = getDashboardData(data.startDate, data.endDate);
+      result = { success: true, data: stats };
+    } else if (action === 'getJiraTimelineIssues') {
+      const stats = getJiraTimelineIssuesForWeb();
       result = { success: true, data: stats };
     } else if (action === 'addIssue') {
       const stats = addIssueFromDashboard(data);
