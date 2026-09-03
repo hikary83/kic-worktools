@@ -20,8 +20,7 @@
     anchorDate: new Date(),
     zoom: 'month',
     demoMode: new URLSearchParams(window.location.search).get('demo') === '1',
-    publicConfig: null,
-    googleIdToken: sessionStorage.getItem('kic_jira_google_id_token') || ''
+    publicConfig: null
   };
 
   const elements = {};
@@ -34,14 +33,12 @@
       loadIssues();
       return;
     }
-    await initializeGoogleLogin();
+    await initializeJiraTimeline();
   });
 
   function collectElements() {
     elements.status = document.getElementById('jiraStatus');
     elements.setupGuide = document.getElementById('setupGuide');
-    elements.loginPanel = document.getElementById('jiraLoginPanel');
-    elements.googleSignInButton = document.getElementById('googleSignInButton');
     elements.missingProperties = document.getElementById('missingProperties');
     elements.lastUpdated = document.getElementById('lastUpdated');
     elements.refreshButton = document.getElementById('refreshButton');
@@ -94,23 +91,14 @@
   }
 
   async function loadIssues() {
-    if (!state.demoMode && !state.googleIdToken) {
-      showLoginPanel();
-      setStatus('warning', 'Jira 일정을 보려면 회사 Google 계정으로 로그인해 주세요.');
-      return;
-    }
-
     setLoading(true);
     hideSetupGuide();
-    hideLoginPanel();
     setStatus('loading', 'Jira 통합 일정을 불러오는 중입니다.', true);
 
     try {
       const payload = state.demoMode
         ? buildDemoPayload()
-        : await callJiraTimelineApi('getJiraTimelineIssues', {
-            googleIdToken: state.googleIdToken
-          }, 'POST');
+        : await callJiraTimelineApi('getJiraTimelineIssues', {}, 'POST');
 
       if (!payload || payload.enabled === false) {
         state.issues = [];
@@ -138,8 +126,7 @@
       } else if (!meta.startDateFieldFound) {
         setStatus('warning', 'Jira Issue ' + state.issues.length + '건을 조회했습니다. Start date 필드는 찾지 못해 기한 중심으로 표시합니다.');
       } else {
-        setStatus('success', '5개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다.' +
-          (meta.authenticatedEmail ? ' · ' + meta.authenticatedEmail : ''));
+        setStatus('success', '5개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다. · 테스트 공개 모드');
       }
     } catch (error) {
       console.error('Jira timeline load error:', error);
@@ -148,21 +135,16 @@
       renderFilteredData();
       const errorMessage = normalizeErrorMessage(error);
       setStatus('error', errorMessage);
-      if (/로그인|인증|@kic21\.co\.kr/.test(errorMessage)) {
-        clearGoogleSession();
-        showLoginPanel();
-      } else {
-        showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL', 'JIRA_TIMELINE_GOOGLE_CLIENT_ID'] });
-      }
+      showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL'] });
       elements.lastUpdated.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 조회 실패';
     } finally {
       setLoading(false);
     }
   }
 
-  async function initializeGoogleLogin() {
+  async function initializeJiraTimeline() {
     setLoading(true);
-    setStatus('loading', '회사 Google 로그인 설정을 확인하고 있습니다.', true);
+    setStatus('loading', 'Jira 조회 설정을 확인하고 있습니다.', true);
     try {
       state.publicConfig = await callJiraTimelineApi('getJiraTimelinePublicConfig', {}, 'GET');
       if (!state.publicConfig || state.publicConfig.enabled === false || state.publicConfig.configured === false) {
@@ -171,71 +153,14 @@
         return;
       }
 
-      if (isStoredTokenUsable(state.googleIdToken)) {
-        await loadIssues();
-        return;
-      }
-
-      clearGoogleSession();
-      await renderGoogleSignInButton();
-      showLoginPanel();
-      setStatus('warning', 'Jira 일정을 보려면 회사 Google 계정으로 로그인해 주세요.');
+      await loadIssues();
     } catch (error) {
       const message = normalizeErrorMessage(error);
       setStatus('error', message);
-      showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL', 'JIRA_TIMELINE_GOOGLE_CLIENT_ID'] });
+      showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL'] });
     } finally {
       setLoading(false);
     }
-  }
-
-  async function renderGoogleSignInButton() {
-    await waitForGoogleIdentity();
-    const config = state.publicConfig || {};
-    google.accounts.id.initialize({
-      client_id: config.googleClientId,
-      callback: handleGoogleCredential,
-      hd: config.allowedDomain || 'kic21.co.kr',
-      ux_mode: 'popup',
-      auto_select: false,
-      cancel_on_tap_outside: true
-    });
-    elements.googleSignInButton.innerHTML = '';
-    google.accounts.id.renderButton(elements.googleSignInButton, {
-      type: 'standard',
-      theme: document.documentElement.classList.contains('dark') ? 'filled_black' : 'outline',
-      size: 'large',
-      text: 'signin_with',
-      shape: 'rectangular',
-      logo_alignment: 'left',
-      width: 240
-    });
-  }
-
-  function handleGoogleCredential(response) {
-    const token = response && response.credential ? response.credential : '';
-    if (!token) {
-      setStatus('error', 'Google 로그인 정보를 받지 못했습니다. 다시 시도해 주세요.');
-      return;
-    }
-    state.googleIdToken = token;
-    sessionStorage.setItem('kic_jira_google_id_token', token);
-    loadIssues();
-  }
-
-  function waitForGoogleIdentity() {
-    return new Promise(function(resolve, reject) {
-      const startedAt = Date.now();
-      const timer = window.setInterval(function() {
-        if (window.google && google.accounts && google.accounts.id) {
-          window.clearInterval(timer);
-          resolve();
-        } else if (Date.now() - startedAt > 10000) {
-          window.clearInterval(timer);
-          reject(new Error('Google 로그인 모듈을 불러오지 못했습니다. 네트워크를 확인한 뒤 새로고침해 주세요.'));
-        }
-      }, 100);
-    });
   }
 
   async function callJiraTimelineApi(action, data, method) {
@@ -267,37 +192,6 @@
     }
     if (!result.success) throw new Error(result.error || 'Jira 일정 조회에 실패했습니다.');
     return result.data;
-  }
-
-  function isStoredTokenUsable(token) {
-    if (!token) return false;
-    try {
-      const payload = JSON.parse(decodeURIComponent(Array.prototype.map.call(
-        atob(token.split('.')[1].replace(/-/g, '+').replace(/_/g, '/')),
-        function(char) { return '%' + ('00' + char.charCodeAt(0).toString(16)).slice(-2); }
-      ).join('')));
-      return Number(payload.exp || 0) > Math.floor(Date.now() / 1000) + 30;
-    } catch (error) {
-      return false;
-    }
-  }
-
-  function clearGoogleSession() {
-    state.googleIdToken = '';
-    sessionStorage.removeItem('kic_jira_google_id_token');
-  }
-
-  function showLoginPanel() {
-    elements.loginPanel.classList.add('is-visible');
-    if (state.publicConfig && !elements.googleSignInButton.childElementCount) {
-      renderGoogleSignInButton().catch(function(error) {
-        setStatus('error', normalizeErrorMessage(error));
-      });
-    }
-  }
-
-  function hideLoginPanel() {
-    elements.loginPanel.classList.remove('is-visible');
   }
 
   function populateFilters() {

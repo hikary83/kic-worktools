@@ -16,7 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
-| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.1` | 회사 Google 계정 로그인 후 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인으로 통합 조회 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.2` | 로그인 없는 테스트 모드로 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.4.0` | 주간 엑셀 5종 기반 기업 지표 분석, 상세 드릴다운, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -34,6 +34,10 @@
 ## 📋 버전 변경 이력 (Release Changelog)
 
 ### `v2.6.1` (2026-09-03)
+* **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.2)**:
+  * 🧪 **공개 테스트 모드 전환**: 기능 검증 기간에는 기존 메뉴와 동일하게 별도 로그인 없이 일정 조회 가능
+  * 🛑 **서버 차단 설정 유지**: 필요 시 `JIRA_TIMELINE_WEB_ENABLED`를 끄면 공개 조회를 즉시 중단
+
 * **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.1)**:
   * 🔐 **회사 Google 계정 로그인 적용**: GitHub Pages 주소를 유지하면서 Google Identity Services 팝업으로 로그인하고, `@kic21.co.kr` Workspace 계정만 조회 허용
   * 🛡️ **서버 측 토큰 검증**: Google ID Token의 발급 대상·발급자·만료·이메일 인증·호스팅 도메인을 조회 전용 서버에서 검증

@@ -2,13 +2,11 @@
  * KIC Jira Timeline Read-only API
  *
  * 이 프로젝트는 기존 업무용 Apps Script와 분리해서 배포합니다.
- * 브라우저가 전달한 Google ID Token을 검증한 뒤에만 Jira 데이터를 반환합니다.
+ * 기능 검증 기간에는 로그인 없는 공개 테스트 모드로 Jira 데이터를 반환합니다.
+ * 운영 전에는 공통 서버 인증을 적용해야 합니다.
  */
 const JIRA_API_BASE_URL = 'https://kic-itsd.atlassian.net';
 const JIRA_API_PROJECTS = ['C21R', 'CW2R', 'CWIZ', 'ITM', 'WWWMR'];
-const JIRA_API_ALLOWED_DOMAIN = 'kic21.co.kr';
-const JIRA_API_GOOGLE_CLIENT_ID = '265516909240-60plojmr0didos11qlsfm62gjbjalht8.apps.googleusercontent.com';
-const JIRA_API_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo?id_token=';
 const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V1';
 const JIRA_API_CACHE_SECONDS = 180;
 const JIRA_API_PAGE_SIZE = 100;
@@ -40,11 +38,12 @@ function doPost(e) {
     if (payload.action !== 'getJiraTimelineIssues') {
       throw new Error('허용되지 않은 요청입니다.');
     }
-    const data = payload.data || {};
-    const identity = verifyGoogleIdToken_(data.googleIdToken);
+    if (!readBooleanProperty_(JIRA_API_PROPERTIES.webEnabled)) {
+      throw new Error('Jira 통합 일정 웹 조회가 아직 활성화되지 않았습니다.');
+    }
     const result = getJiraIssues_();
     result.meta = result.meta || {};
-    result.meta.authenticatedEmail = identity.email;
+    result.meta.publicTestMode = true;
     return jsonOutput_({ success: true, data: result });
   } catch (error) {
     return jsonOutput_({ success: false, error: cleanError_(error) });
@@ -56,8 +55,7 @@ function getPublicConfig_() {
   return {
     enabled: readBooleanProperty_(JIRA_API_PROPERTIES.webEnabled),
     configured: missing.length === 0,
-    googleClientId: JIRA_API_GOOGLE_CLIENT_ID,
-    allowedDomain: JIRA_API_ALLOWED_DOMAIN,
+    publicTestMode: true,
     missingProperties: missing
   };
 }
@@ -70,40 +68,6 @@ function requiredProperties_() {
   ].filter(function(name) {
     return !(props.getProperty(name) || '').trim();
   });
-}
-
-function verifyGoogleIdToken_(idToken) {
-  const token = (idToken || '').toString().trim();
-  if (!token) throw new Error('회사 Google 계정 로그인이 필요합니다. 다시 로그인해 주세요.');
-
-  const props = PropertiesService.getScriptProperties();
-  if (!readBooleanProperty_(JIRA_API_PROPERTIES.webEnabled)) {
-    throw new Error('Jira 통합 일정 웹 조회가 아직 활성화되지 않았습니다.');
-  }
-  const response = UrlFetchApp.fetch(JIRA_API_TOKEN_INFO_URL + encodeURIComponent(token), {
-    method: 'get',
-    muteHttpExceptions: true
-  });
-  let claims = {};
-  try {
-    claims = JSON.parse(response.getContentText('UTF-8') || '{}');
-  } catch (error) {
-    claims = {};
-  }
-
-  const email = (claims.email || '').toString().trim().toLowerCase();
-  const issuerValid = claims.iss === 'accounts.google.com' || claims.iss === 'https://accounts.google.com';
-  const audienceValid = claims.aud === JIRA_API_GOOGLE_CLIENT_ID;
-  const expiryValid = Number(claims.exp || 0) > Math.floor(Date.now() / 1000);
-  const emailVerified = claims.email_verified === true || claims.email_verified === 'true';
-  const domainValid = (claims.hd || '').toLowerCase() === JIRA_API_ALLOWED_DOMAIN &&
-    email.endsWith('@' + JIRA_API_ALLOWED_DOMAIN);
-
-  if (response.getResponseCode() !== 200 || !issuerValid || !audienceValid ||
-      !expiryValid || !emailVerified || !domainValid) {
-    throw new Error('회사 Google 계정 인증을 확인하지 못했습니다. @' + JIRA_API_ALLOWED_DOMAIN + ' 계정으로 다시 로그인해 주세요.');
-  }
-  return { email: email, subject: claims.sub || '' };
 }
 
 function getJiraIssues_() {
