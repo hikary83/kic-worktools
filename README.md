@@ -16,7 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
-| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.2` | 로그인 없는 테스트 모드로 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.3` | 로그인 없는 테스트 모드로 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.4.0` | 주간 엑셀 5종 기반 기업 지표 분석, 상세 드릴다운, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -34,6 +34,11 @@
 ## 📋 버전 변경 이력 (Release Changelog)
 
 ### `v2.6.1` (2026-09-03)
+* **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.3)**:
+  * 🎨 **타임라인 타이포그래피 통일**: 프로젝트 라벨·날짜 축·일정 띠·도움말에 공통 Pretendard 폰트 적용
+  * 📐 **일정 정보 밀도 개선**: 타임라인 글자 크기와 띠 내부 여백을 줄여 더 많은 일정을 편하게 비교
+  * 🧹 **상태 문구 정리**: 조회 완료 메시지에서 테스트 공개 모드 문구 제거
+
 * **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.2)**:
   * 🧪 **공개 테스트 모드 전환**: 기능 검증 기간에는 기존 메뉴와 동일하게 별도 로그인 없이 일정 조회 가능
   * 🛑 **서버 차단 설정 유지**: 필요 시 `JIRA_TIMELINE_WEB_ENABLED`를 끄면 공개 조회를 즉시 중단

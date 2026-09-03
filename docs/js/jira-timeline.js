@@ -126,7 +126,7 @@
       } else if (!meta.startDateFieldFound) {
         setStatus('warning', 'Jira Issue ' + state.issues.length + '건을 조회했습니다. Start date 필드는 찾지 못해 기한 중심으로 표시합니다.');
       } else {
-        setStatus('success', '5개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다. · 테스트 공개 모드');
+        setStatus('success', '5개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다.');
       }
     } catch (error) {
       console.error('Jira timeline load error:', error);
@@ -333,14 +333,30 @@
 
   function createTimelineGroup(projectKey) {
     const project = PROJECTS[projectKey] || { name: projectKey, description: projectKey, order: 999 };
+    const label = document.createElement('div');
+    label.className = 'jira-group-label';
+
+    const dot = document.createElement('span');
+    dot.className = 'jira-group-dot';
+
+    const copy = document.createElement('span');
+    copy.className = 'jira-group-copy';
+
+    const name = document.createElement('span');
+    name.className = 'jira-group-name';
+    name.textContent = project.name;
+
+    const key = document.createElement('span');
+    key.className = 'jira-group-key';
+    key.textContent = projectKey;
+
+    copy.append(name, key);
+    label.append(dot, copy);
     return {
       id: projectKey,
       order: project.order,
       className: projectClass(projectKey),
-      content: '<div class="jira-group-label">' +
-        '<span class="jira-group-dot"></span>' +
-        '<span><span class="jira-group-name">' + escapeHtml(project.name) + '</span>' +
-        '<span class="jira-group-key">' + escapeHtml(projectKey) + '</span></span></div>'
+      content: label
     };
   }
 
@@ -356,14 +372,25 @@
       : startDate
         ? formatDate(issue.startDate) + ' · 종료일 미정'
         : formatDate(issue.dueDate) + ' · 시작일 미정';
+    const content = document.createElement('div');
+    content.className = 'jira-item-content';
+
+    const key = document.createElement('span');
+    key.className = 'jira-item-key';
+    key.textContent = issue.key;
+
+    const summary = document.createElement('span');
+    summary.className = 'jira-item-summary';
+    summary.textContent = issue.summary;
+
+    content.append(key, summary);
     const item = {
       id: issue.key,
       group: issue.projectKey,
       start: displayDate,
       type: hasRange ? 'range' : 'point',
       className: 'jira-timeline-item ' + projectClass(issue.projectKey) + (hasRange ? '' : ' jira-timeline-point'),
-      content: '<div class="jira-item-content"><span class="jira-item-key">' + escapeHtml(issue.key) +
-        '</span><span class="jira-item-summary">' + escapeHtml(issue.summary) + '</span></div>',
+      content: content,
       title: '<strong>' + escapeHtml(issue.key + ' · ' + issue.summary) + '</strong><br>' +
         escapeHtml(dateLabel) + '<br>' + escapeHtml((issue.status || '-') + ' · ' + (issue.assignee || '미지정'))
     };

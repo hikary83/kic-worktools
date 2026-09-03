@@ -544,7 +544,13 @@ body.jira-timeline-page {
 .vis-timeline {
   border: 0 !important;
   color: var(--text-primary);
-  font-family: inherit;
+}
+
+#jiraTimeline,
+#jiraTimeline .vis-timeline,
+#jiraTimeline .vis-timeline *,
+.vis-tooltip {
+  font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, "Helvetica Neue", "Segoe UI", "Apple SD Gothic Neo", "Noto Sans KR", "Malgun Gothic", sans-serif !important;
 }
 
 .vis-panel,
@@ -568,50 +574,57 @@ body.jira-timeline-page {
 }
 
 .vis-labelset .vis-label .vis-inner {
-  padding: 12px 14px;
+  padding: 10px 12px;
 }
 
 .jira-group-label {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-width: 188px;
+  gap: 7px;
+  min-width: 154px;
 }
 
 .jira-group-dot {
-  width: 9px;
-  height: 9px;
+  width: 7px;
+  height: 7px;
+  flex: 0 0 7px;
   border-radius: 999px;
   background: var(--project-color, #64748b);
 }
 
-.jira-group-label > span:last-child {
+.jira-group-copy {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  align-items: flex-start;
+  gap: 1px;
+  min-width: 0;
 }
 
 .jira-group-key {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
+  font-family: inherit !important;
+  font-size: 9px;
+  font-weight: 650;
+  line-height: 1.15;
   color: var(--text-muted);
 }
 
 .jira-group-name {
   display: block;
-  font-size: 12px;
-  font-weight: 900;
-  line-height: 1.2;
+  font-size: 11px;
+  font-weight: 800;
+  line-height: 1.15;
 }
 
 .vis-time-axis .vis-text {
   color: var(--text-secondary) !important;
-  font-size: 11px;
+  font-size: 10px;
   font-weight: 700;
+  line-height: 1.2;
 }
 
 .vis-time-axis .vis-text.vis-major {
   color: var(--text-primary) !important;
+  font-size: 11px;
   font-weight: 900;
 }
 
@@ -635,7 +648,7 @@ body.jira-timeline-page {
 }
 
 .vis-item.jira-timeline-item .vis-item-content {
-  padding: 5px 9px;
+  padding: 4px 7px;
   overflow: hidden;
 }
 
@@ -660,22 +673,28 @@ body.jira-timeline-page {
 .jira-item-content {
   display: flex;
   align-items: center;
-  gap: 7px;
-  max-width: 330px;
+  gap: 5px;
+  max-width: 280px;
   white-space: nowrap;
+  line-height: 1.2;
 }
 
 .jira-item-key {
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 10px;
-  font-weight: 900;
+  font-family: inherit !important;
+  font-size: 9px;
+  font-weight: 800;
 }
 
 .jira-item-summary {
   overflow: hidden;
   text-overflow: ellipsis;
-  font-size: 11px;
-  font-weight: 800;
+  font-size: 10px;
+  font-weight: 750;
+}
+
+.vis-tooltip {
+  font-size: 11px !important;
+  line-height: 1.45;
 }
 
 .project-c21r { --project-color: var(--timeline-c21r); }
