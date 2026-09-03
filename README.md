@@ -40,7 +40,7 @@
   * 📋 **일정 누락 분리 표시**: 시작일과 기한이 모두 없는 이슈는 별도 목록으로 유지하여 업무 누락을 방지
   * 🔗 **Jira 원본 바로가기**: 타임라인 항목과 일정 미지정 Issue Key 클릭 시 Jira 원본을 새 창에서 열도록 구성
   * 🔐 **읽기 전용 GAS 연동 기반**: API Token은 Script Properties에서만 읽고, 웹 조회 활성화 값을 별도로 두어 설정 전 데이터 노출을 방지
-  * 🛡️ **로그인 보호 화면 연동**: 실제 Jira 데이터는 Apps Script의 로그인 보호 화면을 통해 전달하고 `kic21.co.kr` Workspace 사용자만 조회하도록 제한
+  * 🛡️ **로그인 보호 화면 연동**: 실제 Jira 데이터는 Apps Script의 로그인 보호 화면을 통해 전달하고, 스프레드시트 설정창에서 승인된 Google 사용자만 조회하도록 제한
   * 🧪 **안전한 화면 검증 모드**: 실제 Jira 데이터 없이 UI를 확인할 수 있는 로컬 샘플 모드를 제공
 
 ### `v2.5.1` (2026-09-03)
@@ -123,7 +123,7 @@ Jira 인증정보는 저장소에 작성하지 않고 Apps Script 프로젝트 �
 | `JIRA_START_DATE_FIELD_ID` | 선택값. 미설정 시 `Start date` 날짜 필드를 자동 탐색 |
 | `JIRA_TIMELINE_WEB_ENABLED` | 접근 범위 확인 후 `true`로 설정해야 웹 조회 허용 |
 
-스프레드시트의 `KIC 헬프데스크 → Jira 통합 일정 설정`에서 이메일과 API Token을 저장한 뒤 연결 테스트를 실행합니다. 실제 일정 화면은 GitHub Pages에서 Apps Script 로그인 보호 화면으로 이동해 열립니다.
+스프레드시트의 `KIC 헬프데스크 → Jira 통합 일정 설정`에서 이메일과 API Token을 저장한 뒤 연결 테스트를 실행합니다. 설정을 저장한 현재 Google 사용자는 일정 조회 승인 목록에 함께 등록됩니다. 실제 일정 화면은 GitHub Pages에서 Apps Script 로그인 보호 화면으로 이동해 열립니다.
 
 ### 1) Git 커밋 및 GitHub Pages 배포
 ```powershell

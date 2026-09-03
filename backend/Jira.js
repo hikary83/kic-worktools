@@ -7,7 +7,8 @@ const JIRA_TIMELINE_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V1';
 const JIRA_TIMELINE_CACHE_SECONDS = 180;
 const JIRA_TIMELINE_MAX_PAGES = 20;
 const JIRA_TIMELINE_PAGE_SIZE = 100;
-const JIRA_TIMELINE_ALLOWED_DOMAIN = 'kic21.co.kr';
+const JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY = 'JIRA_TIMELINE_ALLOWED_USER_KEYS';
+const JIRA_TIMELINE_MAX_ALLOWED_USER_KEYS = 20;
 
 const JIRA_TIMELINE_PROPERTIES = {
   baseUrl: 'JIRA_BASE_URL',
@@ -42,10 +43,38 @@ function getJiraTimelineHostPage_() {
 }
 
 function assertJiraTimelineWebUser_() {
-  const email = (Session.getActiveUser().getEmail() || '').trim().toLowerCase();
-  if (!email || !email.endsWith('@' + JIRA_TIMELINE_ALLOWED_DOMAIN)) {
-    throw new Error('KIC Google Workspace 계정으로 로그인한 사용자만 Jira 일정을 조회할 수 있습니다.');
+  const currentKey = Session.getTemporaryActiveUserKey();
+  const allowedKeys = getJiraTimelineAllowedUserKeys_();
+  if (!currentKey || allowedKeys.indexOf(currentKey) === -1) {
+    throw new Error('현재 Google 계정은 아직 Jira 일정 조회 승인이 되지 않았습니다. 스프레드시트의 Jira 통합 일정 설정을 열어 저장을 한 번 더 눌러 주세요.');
   }
+}
+
+function getJiraTimelineAllowedUserKeys_() {
+  const raw = PropertiesService.getScriptProperties().getProperty(JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY);
+  if (!raw) return [];
+  try {
+    const keys = JSON.parse(raw);
+    return Array.isArray(keys) ? keys.filter(Boolean) : [];
+  } catch (e) {
+    return [];
+  }
+}
+
+function registerJiraTimelineCurrentUser_() {
+  const currentKey = Session.getTemporaryActiveUserKey();
+  if (!currentKey) throw new Error('현재 Google 계정의 사용자 식별키를 확인하지 못했습니다. 스프레드시트를 새로고침한 뒤 다시 저장해 주세요.');
+
+  const props = PropertiesService.getScriptProperties();
+  const keys = getJiraTimelineAllowedUserKeys_().filter(function(key) {
+    return key !== currentKey;
+  });
+  keys.push(currentKey);
+  props.setProperty(
+    JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY,
+    JSON.stringify(keys.slice(-JIRA_TIMELINE_MAX_ALLOWED_USER_KEYS))
+  );
+  return currentKey;
 }
 
 function getJiraTimelineIssues_(options) {
@@ -195,6 +224,7 @@ function getJiraTimelineSetupState() {
     webEnabled: status.webEnabled,
     email: email,
     hasApiToken: Boolean((props.getProperty(JIRA_TIMELINE_PROPERTIES.apiToken) || '').trim()),
+    currentUserRegistered: getJiraTimelineAllowedUserKeys_().indexOf(Session.getTemporaryActiveUserKey()) !== -1,
     baseUrl: (props.getProperty(JIRA_TIMELINE_PROPERTIES.baseUrl) || JIRA_TIMELINE_BASE_URL).trim(),
     startDateFieldId: (props.getProperty(JIRA_TIMELINE_PROPERTIES.startDateFieldId) || '').trim()
   };
@@ -223,6 +253,7 @@ function saveJiraTimelineSettings(data) {
   props.setProperty(JIRA_TIMELINE_PROPERTIES.baseUrl, baseUrl);
   props.setProperty(JIRA_TIMELINE_PROPERTIES.webEnabled, webEnabled ? 'true' : 'false');
   if (apiToken) props.setProperty(JIRA_TIMELINE_PROPERTIES.apiToken, apiToken);
+  registerJiraTimelineCurrentUser_();
   CacheService.getScriptCache().remove(JIRA_TIMELINE_CACHE_KEY);
 
   return getJiraTimelineSetupState();

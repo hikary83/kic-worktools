@@ -131,8 +131,13 @@
       state.issues = [];
       populateFilters();
       renderFilteredData();
-      setStatus('error', normalizeErrorMessage(error));
-      showSetupGuide({ missingProperties: ['JIRA_ACCOUNT_EMAIL', 'JIRA_API_TOKEN', 'JIRA_TIMELINE_WEB_ENABLED=true'] });
+      const errorMessage = normalizeErrorMessage(error);
+      setStatus('error', errorMessage);
+      showSetupGuide({
+        missingProperties: /조회 승인|설정을 열어 저장/.test(errorMessage)
+          ? ['현재 Google 계정 승인 필요']
+          : ['JIRA_ACCOUNT_EMAIL', 'JIRA_API_TOKEN', 'JIRA_TIMELINE_WEB_ENABLED=true']
+      });
       elements.lastUpdated.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 조회 실패';
     } finally {
       setLoading(false);
