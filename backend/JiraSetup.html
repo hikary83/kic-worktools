@@ -10,7 +10,7 @@
     .intro { margin: 0 0 18px; color: #5c6b76; line-height: 1.6; }
     .field { display: block; margin-bottom: 14px; }
     .field span { display: block; margin-bottom: 7px; font-weight: 700; }
-    input[type="email"], input[type="password"], input[type="url"] {
+    input[type="email"], input[type="password"], input[type="url"], input[type="text"] {
       width: 100%; height: 42px; border: 1px solid #d5dfdb; border-radius: 10px;
       padding: 0 12px; background: #fff; color: #17212b; outline: none;
     }
@@ -45,13 +45,18 @@
     <input id="apiToken" type="password" autocomplete="new-password" placeholder="저장된 토큰이 있으면 비워두어도 됩니다">
     <div class="token-note" id="tokenNote">API Token은 화면에 다시 표시되지 않습니다.</div>
   </label>
+  <label class="field">
+    <span>Google OAuth 웹 클라이언트 ID</span>
+    <input id="googleClientId" type="text" autocomplete="off" placeholder="000000000000-xxxx.apps.googleusercontent.com">
+    <div class="token-note">승인된 JavaScript 원본에 <b>https://hikary83.github.io</b>가 등록된 웹 애플리케이션 클라이언트 ID를 입력합니다.</div>
+  </label>
 
   <div class="switch-box">
     <label class="switch-label">
       <input id="webEnabled" type="checkbox">
       <span>웹 대시보드에서 Jira 조회 활성화</span>
     </label>
-    <p class="warning">현재 웹앱이 전체 공개 배포라면 링크를 아는 사람이 업무명·담당자·일정을 조회할 수 있습니다. 연결 테스트가 끝난 뒤 공개 범위를 확인하고 켜는 것을 권장합니다.</p>
+    <p class="warning">조회 전용 API는 로그인 토큰의 발급 대상과 회사 도메인(@kic21.co.kr)을 서버에서 확인한 뒤에만 Jira 데이터를 반환합니다.</p>
   </div>
 
   <div class="status" id="status">설정 정보를 확인하고 있습니다.</div>
@@ -79,12 +84,13 @@
         .withSuccessHandler(state => {
           $('baseUrl').value = state.baseUrl || 'https://kic-itsd.atlassian.net';
           $('email').value = state.email || '';
+          $('googleClientId').value = state.googleClientId || '';
           $('webEnabled').checked = state.webEnabled === true;
           $('tokenNote').textContent = state.hasApiToken
             ? '저장된 토큰이 있습니다. 변경할 때만 새 토큰을 입력하세요.'
             : '아직 저장된 토큰이 없습니다.';
           setStatus(state.configured
-            ? 'Jira 계정 정보가 저장되어 있습니다.' + (state.currentUserRegistered ? ' 현재 Google 계정도 조회 승인되었습니다.' : '')
+            ? 'Jira 계정 정보가 저장되어 있습니다.' + (state.webConfigured ? ' 회사 Google 로그인 설정도 준비되었습니다.' : ' Google OAuth 웹 클라이언트 ID를 추가해 주세요.')
             : 'Jira 이메일과 API Token을 입력해 주세요.');
           setBusy(false);
         })
@@ -94,14 +100,17 @@
 
     function saveSettings(afterSave) {
       const webEnabled = $('webEnabled').checked;
-      if (webEnabled && !confirm('웹 대시보드 조회를 활성화하면 현재 웹앱 공개 범위에 따라 Jira 정보가 노출될 수 있습니다. 계속할까요?')) return;
+      if (webEnabled && !$('googleClientId').value.trim()) {
+        setStatus('웹 조회를 켜려면 Google OAuth 웹 클라이언트 ID가 필요합니다.', 'error');
+        return;
+      }
       setBusy(true);
       setStatus('설정을 저장하고 있습니다.');
       google.script.run
         .withSuccessHandler(state => {
           $('apiToken').value = '';
           $('tokenNote').textContent = '저장된 토큰이 있습니다. 변경할 때만 새 토큰을 입력하세요.';
-          setStatus('설정이 안전하게 저장되었고 현재 Google 계정이 조회 승인되었습니다.', 'success');
+          setStatus('설정이 안전하게 저장되었습니다. 회사 Google 계정 로그인 검증을 사용할 준비가 되었습니다.', 'success');
           setBusy(false);
           if (afterSave) afterSave(state);
         })
@@ -110,6 +119,7 @@
           baseUrl: $('baseUrl').value,
           email: $('email').value,
           apiToken: $('apiToken').value,
+          googleClientId: $('googleClientId').value,
           webEnabled: webEnabled
         });
     }

@@ -355,10 +355,6 @@ function onSelectionChange(e) {
 
 function doGet(e) {
   try {
-    if (e.parameter.page === 'jiraTimeline') {
-      return getJiraTimelineHostPage_();
-    }
-
     const action = e.parameter.action;
     let result = { success: false, error: 'Invalid action' };
     
@@ -370,10 +366,14 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.TEXT);
     }
 
-    if (action === 'getJiraTimelineIssues') {
-      const data = getJiraTimelineIssuesForWeb();
+    if (action === 'getJiraTimelinePublicConfig') {
+      const data = getJiraTimelinePublicConfig();
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
         .setMimeType(ContentService.MimeType.TEXT);
+    }
+
+    if (action === 'getJiraTimelineIssues') {
+      throw new Error('Jira 일정 데이터는 회사 Google 로그인 토큰을 포함한 POST 요청으로만 조회할 수 있습니다.');
     }
     
     if (action === 'getDevelopers') {
@@ -430,7 +430,7 @@ function doPost(e) {
       const stats = getDashboardData(data.startDate, data.endDate);
       result = { success: true, data: stats };
     } else if (action === 'getJiraTimelineIssues') {
-      const stats = getJiraTimelineIssuesForWeb();
+      const stats = getJiraTimelineIssuesForWeb(data.googleIdToken);
       result = { success: true, data: stats };
     } else if (action === 'addIssue') {
       const stats = addIssueFromDashboard(data);

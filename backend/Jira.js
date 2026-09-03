@@ -7,25 +7,38 @@ const JIRA_TIMELINE_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V1';
 const JIRA_TIMELINE_CACHE_SECONDS = 180;
 const JIRA_TIMELINE_MAX_PAGES = 20;
 const JIRA_TIMELINE_PAGE_SIZE = 100;
-const JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY = 'JIRA_TIMELINE_ALLOWED_USER_KEYS';
-const JIRA_TIMELINE_MAX_ALLOWED_USER_KEYS = 20;
+const JIRA_TIMELINE_ALLOWED_DOMAIN = 'kic21.co.kr';
+const JIRA_TIMELINE_GOOGLE_CLIENT_ID = '265516909240-60plojmr0didos11qlsfm62gjbjalht8.apps.googleusercontent.com';
+const JIRA_TIMELINE_TOKEN_INFO_URL = 'https://oauth2.googleapis.com/tokeninfo?id_token=';
 
 const JIRA_TIMELINE_PROPERTIES = {
   baseUrl: 'JIRA_BASE_URL',
   email: 'JIRA_ACCOUNT_EMAIL',
   apiToken: 'JIRA_API_TOKEN',
   startDateFieldId: 'JIRA_START_DATE_FIELD_ID',
-  webEnabled: 'JIRA_TIMELINE_WEB_ENABLED'
+  webEnabled: 'JIRA_TIMELINE_WEB_ENABLED',
+  googleClientId: 'JIRA_TIMELINE_GOOGLE_CLIENT_ID'
 };
 
-function getJiraTimelineIssuesForWeb() {
-  assertJiraTimelineWebUser_();
+function getJiraTimelinePublicConfig() {
+  const status = getJiraTimelineConfigStatus_();
+  const props = PropertiesService.getScriptProperties();
+  return {
+    enabled: status.webEnabled,
+    configured: status.webConfigured,
+    googleClientId: (props.getProperty(JIRA_TIMELINE_PROPERTIES.googleClientId) || JIRA_TIMELINE_GOOGLE_CLIENT_ID).trim(),
+    allowedDomain: JIRA_TIMELINE_ALLOWED_DOMAIN,
+    missingProperties: status.webMissingProperties
+  };
+}
+
+function getJiraTimelineIssuesForWeb(googleIdToken) {
   const status = getJiraTimelineConfigStatus_();
   if (!status.webEnabled) {
     return {
       enabled: false,
-      configured: status.configured,
-      missingProperties: status.missingProperties,
+      configured: status.webConfigured,
+      missingProperties: status.webMissingProperties,
       issues: [],
       meta: {
         projectKeys: JIRA_TIMELINE_PROJECTS.slice(),
@@ -34,47 +47,51 @@ function getJiraTimelineIssuesForWeb() {
     };
   }
 
-  return getJiraTimelineIssues_({ forceRefresh: false });
+  const identity = verifyJiraTimelineGoogleIdToken_(googleIdToken);
+  const result = getJiraTimelineIssues_({ forceRefresh: false });
+  result.meta = result.meta || {};
+  result.meta.authenticatedEmail = identity.email;
+  return result;
 }
 
-function getJiraTimelineHostPage_() {
-  return HtmlService.createHtmlOutputFromFile('JiraTimelineHost')
-    .setTitle('KIC 업무 도구 · IT전략실 통합 일정');
-}
-
-function assertJiraTimelineWebUser_() {
-  const currentKey = Session.getTemporaryActiveUserKey();
-  const allowedKeys = getJiraTimelineAllowedUserKeys_();
-  if (!currentKey || allowedKeys.indexOf(currentKey) === -1) {
-    throw new Error('현재 Google 계정은 아직 Jira 일정 조회 승인이 되지 않았습니다. 스프레드시트의 Jira 통합 일정 설정을 열어 저장을 한 번 더 눌러 주세요.');
+function verifyJiraTimelineGoogleIdToken_(idToken) {
+  const token = (idToken || '').toString().trim();
+  if (!token) {
+    throw new Error('회사 Google 계정 로그인이 필요합니다. 다시 로그인해 주세요.');
   }
-}
-
-function getJiraTimelineAllowedUserKeys_() {
-  const raw = PropertiesService.getScriptProperties().getProperty(JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY);
-  if (!raw) return [];
-  try {
-    const keys = JSON.parse(raw);
-    return Array.isArray(keys) ? keys.filter(Boolean) : [];
-  } catch (e) {
-    return [];
-  }
-}
-
-function registerJiraTimelineCurrentUser_() {
-  const currentKey = Session.getTemporaryActiveUserKey();
-  if (!currentKey) throw new Error('현재 Google 계정의 사용자 식별키를 확인하지 못했습니다. 스프레드시트를 새로고침한 뒤 다시 저장해 주세요.');
 
   const props = PropertiesService.getScriptProperties();
-  const keys = getJiraTimelineAllowedUserKeys_().filter(function(key) {
-    return key !== currentKey;
+  const clientId = (props.getProperty(JIRA_TIMELINE_PROPERTIES.googleClientId) || JIRA_TIMELINE_GOOGLE_CLIENT_ID).trim();
+  if (!clientId) {
+    throw new Error('JIRA_TIMELINE_GOOGLE_CLIENT_ID가 설정되지 않았습니다.');
+  }
+
+  const response = UrlFetchApp.fetch(JIRA_TIMELINE_TOKEN_INFO_URL + encodeURIComponent(token), {
+    method: 'get',
+    muteHttpExceptions: true
   });
-  keys.push(currentKey);
-  props.setProperty(
-    JIRA_TIMELINE_ALLOWED_USER_KEYS_PROPERTY,
-    JSON.stringify(keys.slice(-JIRA_TIMELINE_MAX_ALLOWED_USER_KEYS))
-  );
-  return currentKey;
+  const responseCode = response.getResponseCode();
+  let claims = {};
+  try {
+    claims = JSON.parse(response.getContentText('UTF-8') || '{}');
+  } catch (e) {
+    claims = {};
+  }
+
+  const issuerValid = claims.iss === 'accounts.google.com' || claims.iss === 'https://accounts.google.com';
+  const audienceValid = claims.aud === clientId;
+  const expiryValid = Number(claims.exp || 0) > Math.floor(Date.now() / 1000);
+  const emailVerified = claims.email_verified === true || claims.email_verified === 'true';
+  const hostedDomainValid = (claims.hd || '').toLowerCase() === JIRA_TIMELINE_ALLOWED_DOMAIN;
+  const email = (claims.email || '').toString().trim().toLowerCase();
+  const emailDomainValid = email.endsWith('@' + JIRA_TIMELINE_ALLOWED_DOMAIN);
+
+  if (responseCode !== 200 || !issuerValid || !audienceValid || !expiryValid ||
+      !emailVerified || !hostedDomainValid || !emailDomainValid) {
+    throw new Error('회사 Google 계정 인증을 확인하지 못했습니다. @' + JIRA_TIMELINE_ALLOWED_DOMAIN + ' 계정으로 다시 로그인해 주세요.');
+  }
+
+  return { email: email, subject: claims.sub || '' };
 }
 
 function getJiraTimelineIssues_(options) {
@@ -200,18 +217,24 @@ function getJiraTimelineConfigStatus_() {
   if (!(props.getProperty(JIRA_TIMELINE_PROPERTIES.apiToken) || '').trim()) {
     missingProperties.push(JIRA_TIMELINE_PROPERTIES.apiToken);
   }
+  const webMissingProperties = missingProperties.slice();
+  if (!(props.getProperty(JIRA_TIMELINE_PROPERTIES.googleClientId) || JIRA_TIMELINE_GOOGLE_CLIENT_ID).trim()) {
+    webMissingProperties.push(JIRA_TIMELINE_PROPERTIES.googleClientId);
+  }
 
   return {
     configured: missingProperties.length === 0,
+    webConfigured: webMissingProperties.length === 0,
     webEnabled: (props.getProperty(JIRA_TIMELINE_PROPERTIES.webEnabled) || '').trim().toLowerCase() === 'true',
-    missingProperties: missingProperties
+    missingProperties: missingProperties,
+    webMissingProperties: webMissingProperties
   };
 }
 
 function showJiraTimelineSetup() {
   const html = HtmlService.createHtmlOutputFromFile('JiraSetup')
     .setWidth(520)
-    .setHeight(620);
+    .setHeight(720);
   SpreadsheetApp.getUi().showModalDialog(html, 'Jira 통합 일정 설정');
 }
 
@@ -219,12 +242,14 @@ function getJiraTimelineSetupState() {
   const props = PropertiesService.getScriptProperties();
   const email = (props.getProperty(JIRA_TIMELINE_PROPERTIES.email) || '').trim();
   const status = getJiraTimelineConfigStatus_();
+  const googleClientId = (props.getProperty(JIRA_TIMELINE_PROPERTIES.googleClientId) || JIRA_TIMELINE_GOOGLE_CLIENT_ID).trim();
   return {
     configured: status.configured,
+    webConfigured: status.webConfigured,
     webEnabled: status.webEnabled,
     email: email,
     hasApiToken: Boolean((props.getProperty(JIRA_TIMELINE_PROPERTIES.apiToken) || '').trim()),
-    currentUserRegistered: getJiraTimelineAllowedUserKeys_().indexOf(Session.getTemporaryActiveUserKey()) !== -1,
+    googleClientId: googleClientId,
     baseUrl: (props.getProperty(JIRA_TIMELINE_PROPERTIES.baseUrl) || JIRA_TIMELINE_BASE_URL).trim(),
     startDateFieldId: (props.getProperty(JIRA_TIMELINE_PROPERTIES.startDateFieldId) || '').trim()
   };
@@ -238,6 +263,7 @@ function saveJiraTimelineSettings(data) {
   const existingToken = (props.getProperty(JIRA_TIMELINE_PROPERTIES.apiToken) || '').trim();
   const baseUrl = (data.baseUrl || JIRA_TIMELINE_BASE_URL).toString().trim().replace(/\/+$/, '');
   const webEnabled = data.webEnabled === true;
+  const googleClientId = (data.googleClientId || '').toString().trim();
 
   if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     throw new Error('Jira 로그인 이메일을 정확히 입력해 주세요.');
@@ -248,12 +274,15 @@ function saveJiraTimelineSettings(data) {
   if (!/^https:\/\/[a-z0-9.-]+\.atlassian\.net$/i.test(baseUrl)) {
     throw new Error('Jira 주소는 https://*.atlassian.net 형식이어야 합니다.');
   }
+  if (webEnabled && !/^\d+-[a-z0-9-]+\.apps\.googleusercontent\.com$/i.test(googleClientId)) {
+    throw new Error('Google OAuth 웹 클라이언트 ID를 정확히 입력해 주세요.');
+  }
 
   props.setProperty(JIRA_TIMELINE_PROPERTIES.email, email);
   props.setProperty(JIRA_TIMELINE_PROPERTIES.baseUrl, baseUrl);
   props.setProperty(JIRA_TIMELINE_PROPERTIES.webEnabled, webEnabled ? 'true' : 'false');
   if (apiToken) props.setProperty(JIRA_TIMELINE_PROPERTIES.apiToken, apiToken);
-  registerJiraTimelineCurrentUser_();
+  if (googleClientId) props.setProperty(JIRA_TIMELINE_PROPERTIES.googleClientId, googleClientId);
   CacheService.getScriptCache().remove(JIRA_TIMELINE_CACHE_KEY);
 
   return getJiraTimelineSetupState();
