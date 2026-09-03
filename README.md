@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.5.0` (2026-09-01 기준)
+> **현재 버전**: `v2.5.1` (2026-09-03 기준)
 
 ---
 
@@ -31,6 +31,13 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.5.1` (2026-09-03)
+* **공통 사이드바 구조 개선**:
+  * 🧭 **LNB 공통 모듈화**: 6개 도구 페이지에 중복되어 있던 로고·메뉴·테마·설정 영역을 `docs/js/kic-sidebar.js` 한 곳에서 관리하도록 분리
+  * 🎯 **페이지별 활성 메뉴 자동 표시**: 각 화면은 `data-active-page` 값만 지정해 현재 메뉴를 강조하고, 향후 신규 도구 추가 시 공통 메뉴 정의만 수정하도록 개선
+  * 🏷️ **버전 표시 중앙 관리**: 하단 설정 버튼의 전체 버전을 공통 사이드바 모듈에서 일괄 관리
+  * 💻 **로컬 실행 호환 유지**: HTML 조각을 네트워크로 불러오지 않고 브라우저에서 직접 렌더링하여 `file://` 실행 환경을 계속 지원
 
 ### `v2.5.0` (2026-09-01)
 * **CWIZ 주간 대시보드 (`docs/dashboard/` v2.4.0)**:
@@ -122,7 +129,7 @@ git push origin main
   * 스타일링: Tailwind CSS CDN (`<script src="https://cdn.tailwindcss.com"></script>`) + `docs/css/kic-theme.css`
   * 폰트: `Pretendard Variable` (CDN)
   * 아이콘: `FontAwesome 6.0` (CDN)
-  * 공통 모듈: `docs/js/kic-common.js` (테마 토글, 토스트, LNB, 모달)
+  * 공통 모듈: `docs/js/kic-common.js` (테마 토글, 토스트, LNB 상태, 모달), `docs/js/kic-sidebar.js` (공통 메뉴·설정·버전 렌더링)
 * **백엔드/API 연동**:
   * `docs/js/config.js`에 설정된 Google Apps Script(GAS) 웹앱 엔드포인트를 통해 스프레드시트 DB 및 Jira/Gemini AI와 통신합니다.
 * **배포 환경**: GitHub Pages (`main` 브랜치 `/docs` 디렉토리 기반 호스팅).

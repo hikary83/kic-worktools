@@ -350,32 +350,12 @@
   </style>
 
   <link href="css/kic-theme.css" rel="stylesheet" />
+  <script src="js/kic-sidebar.js"></script>
   <script src="js/kic-common.js"></script>
 </head>
 <body class="design-1 relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] min-h-screen transition-colors duration-200">
 
-  <aside class="kic-lnb">
-    <div class="kic-lnb-brand">
-      <div class="kic-lnb-logo">▣</div>
-      <div class="kic-lnb-brand-text"><div class="kic-lnb-title">KIC 업무 도구</div><div class="kic-lnb-sub">IT · CMS Helper</div></div>
-      <button class="kic-lnb-toggle" type="button" onclick="KicLnb.toggle()" title="메뉴 접기/펼치기">☰</button>
-    </div>
-    <nav class="kic-lnb-nav">
-      <a class="kic-lnb-link" data-title="IT 헬프데스크" href="index.html"><span class="kic-lnb-ico">📈</span><span class="kic-lnb-text">IT 헬프데스크</span></a>
-      <a class="kic-lnb-link" data-title="IT 헬프데스크 답변" href="reply.html"><span class="kic-lnb-ico">💬</span><span class="kic-lnb-text">IT 헬프데스크 답변</span></a>
-      <a class="kic-lnb-link kic-active" data-title="공지사항 생성" href="notice.html"><span class="kic-lnb-ico">📢</span><span class="kic-lnb-text">공지사항 생성</span></a>
-      <a class="kic-lnb-link" data-title="교정 지연 안내" href="delay.html"><span class="kic-lnb-ico">⏳</span><span class="kic-lnb-text">교정 지연 안내</span></a>
-      <a class="kic-lnb-link" data-title="필증 출력 확인" href="print.html"><span class="kic-lnb-ico">🏷️</span><span class="kic-lnb-text">필증 출력 확인</span></a>
-      <a class="kic-lnb-link" data-title="블로그 마케터" href="marketer.html"><span class="kic-lnb-ico">✍️</span><span class="kic-lnb-text">블로그 마케터</span></a>
-      <a class="kic-lnb-link" data-title="CWIZ 2.0 대시보드" target="_blank" rel="noopener noreferrer" href="dashboard/"><span class="kic-lnb-ico">📊</span><span class="kic-lnb-text">CWIZ 2.0 대시보드</span></a>
-    </nav>
-    <div class="kic-lnb-bottom">
-      <button class="kic-theme-switch" type="button" onclick="KicTheme.toggle()" title="테마 전환">
-        <span class="kic-lnb-ico">☀️</span><span class="kic-lnb-text">라이트</span>
-      </button>
-      <a class="kic-lnb-link" data-title="시스템 설정" target="_blank" rel="noopener noreferrer" href="https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit"><span class="kic-lnb-ico">⚙️</span><span class="kic-lnb-text">설정(v2.5.0)</span></a>
-    </div>
-  </aside>
+  <aside class="kic-lnb" data-kic-sidebar data-active-page="notice"></aside>
 
   <!-- 📦 메인 콘텐츠 영역 -->
   <main class="kic-tool-offset">
