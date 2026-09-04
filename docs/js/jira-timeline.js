@@ -649,18 +649,18 @@
 
   function addProjectSettingRow() {
     const usedKeys = state.projectSettingsDraft.map(function(project) { return project.key; });
-    const nextProject = state.availableProjects.find(function(project) {
+    const hasAvailableProject = state.availableProjects.some(function(project) {
       return usedKeys.indexOf(project.key) === -1;
     });
-    if (!nextProject) {
+    if (!hasAvailableProject) {
       notify('추가할 수 있는 Jira 프로젝트가 없습니다.', 'info');
       return;
     }
-    state.projectSettingsDraft.push({ key: nextProject.key, name: nextProject.name, enabled: true });
+    state.projectSettingsDraft.push({ key: '', name: '', enabled: true });
     renderProjectSettingsRows();
     const rows = elements.projectSettingsList.querySelectorAll('[data-project-index]');
     const lastRow = rows[rows.length - 1];
-    if (lastRow) lastRow.querySelector('[data-project-field="name"]').focus();
+    if (lastRow) lastRow.querySelector('[data-project-field="key"]').focus();
   }
 
   async function loadAvailableProjects() {
@@ -721,6 +721,7 @@
 
     const button = elements.saveProjectSettingsButton;
     const originalHtml = button.innerHTML;
+    let shouldRefresh = false;
     button.disabled = true;
     button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 저장 중';
     try {
@@ -735,12 +736,17 @@
       populateUnscheduledFilters();
       renderFilteredData();
       notify('프로젝트 설정을 저장했습니다.', 'success');
-      if (!state.demoMode) await loadIssues();
+      shouldRefresh = !state.demoMode;
     } catch (error) {
       notify(normalizeErrorMessage(error), 'error', 4200);
     } finally {
       button.disabled = false;
       button.innerHTML = originalHtml;
+    }
+    if (shouldRefresh) {
+      window.setTimeout(function() {
+        loadIssues();
+      }, 0);
     }
   }
 

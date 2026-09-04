@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.7.0` (2026-09-04 기준)
+> **현재 버전**: `v2.7.1` (2026-09-04 기준)
 
 ---
 
@@ -16,7 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
-| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.1.0` | 로그인 없는 테스트 모드로 설정된 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.1.1` | 로그인 없는 테스트 모드로 설정된 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.4.0` | 주간 엑셀 5종 기반 기업 지표 분석, 상세 드릴다운, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -32,6 +32,12 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.7.1` (2026-09-04)
+* **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.1.1)**:
+  * ➕ **프로젝트 추가 초기값 개선**: 새 행은 자동 선택하지 않고 `Jira 프로젝트 선택` 빈 상태로 시작
+  * ⚡ **설정 저장 속도 개선**: 프로젝트별 개별 확인을 캐시된 Jira 프로젝트 목록 일괄 검증으로 변경
+  * 🔄 **백그라운드 재조회**: 설정 저장 성공을 먼저 표시하고 Jira 업무 갱신은 모달을 닫은 뒤 진행
 
 ### `v2.7.0` (2026-09-04)
 * **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.1.0)**:

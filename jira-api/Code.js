@@ -14,7 +14,9 @@ const JIRA_API_DEFAULT_PROJECTS = [
   { key: 'WWWMR', name: '홈페이지', enabled: true }
 ];
 const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V3';
+const JIRA_PROJECTS_CACHE_KEY = 'JIRA_TIMELINE_PROJECT_CATALOG_V1';
 const JIRA_API_CACHE_SECONDS = 180;
+const JIRA_PROJECTS_CACHE_SECONDS = 600;
 const JIRA_API_PAGE_SIZE = 100;
 const JIRA_API_MAX_PAGES = 20;
 
@@ -172,6 +174,18 @@ function getAvailableProjects_() {
   const missing = requiredProperties_();
   if (missing.length) throw new Error('필수 Script Properties가 없습니다: ' + missing.join(', '));
 
+  const cache = CacheService.getScriptCache();
+  const cached = cache.get(JIRA_PROJECTS_CACHE_KEY);
+  if (cached) {
+    try {
+      const parsed = JSON.parse(cached);
+      parsed.cached = true;
+      return parsed;
+    } catch (error) {
+      // 손상된 캐시는 무시합니다.
+    }
+  }
+
   const config = getJiraConfig_();
   let startAt = 0;
   let pageCount = 0;
@@ -209,12 +223,19 @@ function getAvailableProjects_() {
     return left.name.localeCompare(right.name, 'ko') || left.key.localeCompare(right.key);
   });
 
-  return {
+  const result = {
     projects: projects,
     fetchedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX"),
     total: projects.length,
-    truncated: pageCount >= JIRA_API_MAX_PAGES
+    truncated: pageCount >= JIRA_API_MAX_PAGES,
+    cached: false
   };
+  try {
+    cache.put(JIRA_PROJECTS_CACHE_KEY, JSON.stringify(result), JIRA_PROJECTS_CACHE_SECONDS);
+  } catch (error) {
+    // 캐시 실패는 실제 응답에 영향을 주지 않습니다.
+  }
+  return result;
 }
 
 function saveProjectSettings_(data) {
@@ -222,10 +243,18 @@ function saveProjectSettings_(data) {
   const activeProjects = projects.filter(function(project) { return project.enabled; });
   if (!activeProjects.length) throw new Error('사용할 프로젝트를 한 개 이상 선택해 주세요.');
 
-  const config = getJiraConfig_();
-  activeProjects.forEach(function(project) {
-    jiraRequest_(config, '/rest/api/3/project/' + encodeURIComponent(project.key), { method: 'get' });
+  const availableProjectKeys = {};
+  getAvailableProjects_().projects.forEach(function(project) {
+    availableProjectKeys[project.key] = true;
   });
+  const inaccessibleProjects = activeProjects.filter(function(project) {
+    return !availableProjectKeys[project.key];
+  });
+  if (inaccessibleProjects.length) {
+    throw new Error('Jira에서 접근할 수 없는 프로젝트가 있습니다: ' + inaccessibleProjects.map(function(project) {
+      return project.key;
+    }).join(', '));
+  }
 
   const props = PropertiesService.getScriptProperties();
   const previousProjects = getProjectSettings_();
