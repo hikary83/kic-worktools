@@ -353,7 +353,7 @@
       </section>
 
       <section class="panel usage-company-panel" id="usageCompanyDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 이용 현황</strong><small>성공 로그인 또는 데이터 작업이 확인된 고객사</small></div><span id="usageCompanyNote" class="usage-company-note">로그인 일수 많은 순</span></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 이용 현황</strong><small>성공 로그인 또는 데이터 작업이 확인된 고객사</small></div><div class="table-tools"><span id="usageCompanyNote" class="usage-company-note">로그인 일수 많은 순</span><select class="select" id="usageCompanyLimit" aria-label="고객사 이용 현황 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table class="usage-company-table"><thead><tr><th>순위</th><th>고객사</th><th>로그인 일수</th><th>로그인 성공</th><th>접속 사용자</th><th>데이터 작업</th><th>최근 로그인</th></tr></thead><tbody id="usageCompanyTableBody"><tr class="empty-row"><td colspan="7">Excel 데이터를 적용하면 실제 이용이 확인된 고객사가 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
@@ -368,11 +368,11 @@
           <div class="activity-box"><div class="activity-box-title"><strong>작업 유형</strong><span id="activityTypeNote">이번 주 기준</span></div><div class="activity-type-bars"><div class="activity-type-row"><span>계측기 등록</span><div class="activity-type-track"><div class="activity-type-bar register" id="activityBarRegister"></div></div><b id="activityValueRegister">—</b></div><div class="activity-type-row"><span>정보 수정</span><div class="activity-type-track"><div class="activity-type-bar edit" id="activityBarEdit"></div></div><b id="activityValueEdit">—</b></div><div class="activity-type-row"><span>첨부 추가</span><div class="activity-type-track"><div class="activity-type-bar attachment" id="activityBarAttachment"></div></div><b id="activityValueAttachment">—</b></div><div class="activity-type-row"><span>사용자 등록</span><div class="activity-type-track"><div class="activity-type-bar user" id="activityBarUser"></div></div><b id="activityValueUser">—</b></div></div></div>
           <div class="activity-box"><div class="activity-box-title"><strong>활동 고객사 TOP 5</strong><span>작업 로그 많은 순</span></div><div class="activity-company-head"><span>순위</span><span>고객사</span><span style="text-align:right">사용자</span><span style="text-align:right">작업</span><span style="text-align:right">주요 작업</span><span style="text-align:right">최근 활동</span></div><div id="activityCompanyList"><div class="activity-empty">Excel 데이터를 적용하면 고객 활동이 표시됩니다.</div></div></div>
         </div>
-        <div class="activity-recent"><div class="activity-recent-head"><strong>최근 활동 내역</strong><span id="activityRecentNote">최근 8건</span></div><table class="activity-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>메뉴</th><th>작업</th><th>대상 및 변경내용</th></tr></thead><tbody id="activityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 최근 고객 활동이 표시됩니다.</td></tr></tbody></table></div>
+        <div class="activity-recent"><div class="activity-recent-head"><strong>최근 활동 내역</strong><div class="table-tools"><span id="activityRecentNote">전체 —건</span><select class="select" id="activityRecentLimit" aria-label="최근 활동 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div><table class="activity-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>메뉴</th><th>작업</th><th>대상 및 변경내용</th></tr></thead><tbody id="activityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 최근 고객 활동이 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
       <section class="panel table-panel" id="unusedCustomerDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="unusedCustomers">미이용 고객사</strong><small id="unusedCustomerNote">전체 로그에서 이용 기록이 없는 정상 고객사</small></div><span class="panel-badge">전체 로그 기준</span></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="unusedCustomers">미이용 고객사</strong><small id="unusedCustomerNote">전체 로그에서 이용 기록이 없는 정상 고객사</small></div><div class="table-tools"><span class="panel-badge">전체 로그 기준</span><select class="select" id="unusedCustomerLimit" aria-label="미이용 고객사 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table class="unused-table"><thead><tr><th>순번</th><th>고객사</th><th>사업자등록번호</th><th>등록일</th><th>등록 경과</th><th>영업 담당자</th></tr></thead><tbody id="unusedCustomerTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 미이용 고객사가 표시됩니다.</td></tr></tbody></table></div>
       </section>
         </div>
@@ -386,17 +386,17 @@
       </section>
 
       <section class="panel table-panel" id="applicationDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 · 승인 업체 현황</strong><small id="applicationTableNote">최근 신청일 순</small></div><div class="table-tools"><select class="select" id="applicationStatus" aria-label="이용신청 상태 필터"><option value="all">전체 상태</option><option value="승인">승인</option><option value="대기">대기 · 전체 기간</option><option value="반려">반려</option></select><select class="select" id="applicationLimit" aria-label="이용신청 표시 건수"><option value="10">최근 10건</option><option value="all">전체 보기</option></select></div></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>이용신청 · 승인 업체 현황</strong><small id="applicationTableNote">최근 신청일 순</small></div><div class="table-tools"><select class="select" id="applicationStatus" aria-label="이용신청 상태 필터"><option value="all">전체 상태</option><option value="승인">승인</option><option value="대기">대기 · 전체 기간</option><option value="반려">반려</option></select><select class="select" id="applicationLimit" aria-label="이용신청 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table class="applications-table"><thead><tr><th>순번</th><th>신청일자</th><th>상태</th><th>회사명</th><th>사업자등록번호</th><th>신청자</th><th>승인일자</th><th>회사코드</th></tr></thead><tbody id="applicationTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 신청·승인 업체 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
       <section class="panel table-panel" id="customerDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 운영현황 TOP 10</strong><small id="customerTableNote">총자산 기준</small></div><div class="table-tools"><select class="select" id="customerSort" aria-label="고객사 정렬 기준"><option value="assets">총자산 많은 순</option><option value="unmapped">미매핑 많은 순</option><option value="near">교정 임박 많은 순</option><option value="overdue">기한 초과 많은 순</option></select></div></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 운영현황</strong><small id="customerTableNote">총자산 기준</small></div><div class="table-tools"><select class="select" id="customerSort" aria-label="고객사 정렬 기준"><option value="assets">총자산 많은 순</option><option value="unmapped">미매핑 많은 순</option><option value="near">교정 임박 많은 순</option><option value="overdue">기한 초과 많은 순</option></select><select class="select" id="customerLimit" aria-label="고객사 운영현황 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table><thead><tr><th>순위</th><th>고객사</th><th>총자산</th><th>미매핑</th><th>매핑률</th><th>교정 준비</th><th>교정 임박</th><th>기한 초과</th></tr></thead><tbody id="customerTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 고객사 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
       <section class="panel table-panel">
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>담당자 운영현황</strong><small>고객사 「영업 담당자」 기준</small></div><div class="scope-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg>원본에 담당지사 컬럼이 없어 지사 집계는 제외했습니다.</div></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>담당자 운영현황</strong><small>고객사 「영업 담당자」 기준</small></div><div class="table-tools"><div class="scope-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 2.5 20h19z"/><path d="M12 9v5M12 17h.01"/></svg>원본에 담당지사 컬럼이 없어 지사 집계는 제외했습니다.</div><select class="select" id="staffLimit" aria-label="담당자 운영현황 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
         <div class="table-wrap"><table><thead><tr><th>순위</th><th>담당자</th><th>고객사 수</th><th>등록 계측기</th><th>미매핑</th><th>매핑률</th><th>기한 초과</th></tr></thead><tbody id="staffTableBody"><tr class="empty-row"><td colspan="7">Excel 데이터를 적용하면 담당자 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
         </div>
@@ -414,7 +414,7 @@
         <article class="panel access-panel" id="repeatFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="repeatFailure">반복 실패 ID TOP 5</strong></div><small>동일 ID 5회 이상 표시</small></div><div class="access-body"><div class="repeat-head"><span>순위</span><span>마스킹 ID</span><span style="text-align:right">고객사</span><span style="text-align:right">실패</span><span style="text-align:right">최근 실패</span></div><div id="repeatFailureList"><div class="activity-empty">반복 실패 내역이 없습니다.</div></div></div></article>
       </section>
 
-      <section class="security-box" id="securityFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessFailure">로그인 실패 내역</strong><small>아이디와 IP는 화면에서 마스킹</small></div><div class="table-tools"><span id="securityRecentNote" class="panel-badge period">전체 —건</span><select class="select" id="securityRecentLimit" aria-label="로그인 실패 표시 건수"><option value="8">최근 8건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div><div class="table-wrap"><table class="security-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>아이디</th><th>접속 IP</th><th>결과</th></tr></thead><tbody id="securityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 접속 실패 내역이 표시됩니다.</td></tr></tbody></table></div></section>
+      <section class="security-box" id="securityFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessFailure">로그인 실패 내역</strong><small>아이디와 IP는 화면에서 마스킹</small></div><div class="table-tools"><span id="securityRecentNote" class="panel-badge period">전체 —건</span><select class="select" id="securityRecentLimit" aria-label="로그인 실패 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div><div class="table-wrap"><table class="security-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>아이디</th><th>접속 IP</th><th>결과</th></tr></thead><tbody id="securityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 접속 실패 내역이 표시됩니다.</td></tr></tbody></table></div></section>
         </div>
       </div>
 
@@ -892,6 +892,10 @@
     }
 
     function setText(id, text) { $(id).textContent = text; }
+    function limitedRows(rows, selectId) {
+      const limit = $(selectId).value;
+      return limit === "all" ? rows : rows.slice(0,Number(limit));
+    }
     function percent(rate) { return rate === null ? "—" : `${pf.format(rate*100)}%`; }
     function ratePill(rate) {
       const cls = rate === null ? "none" : rate < .7 ? "low" : "";
@@ -1002,8 +1006,8 @@
       })).sort((a,b) => b.logs-a.logs || b.latest.localeCompare(a.latest)).slice(0,5);
       $("activityCompanyList").innerHTML = companyRows.length ? companyRows.map((group,index) => `<div class="activity-company-row"><span class="rank">${index+1}</span><span class="company" title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</span><span class="num">${nf.format(group.users.size)}명</span><span class="num">${nf.format(group.logs)}건</span><span class="activity-main">${escapeHtml(group.main)}</span><span class="latest">${escapeHtml(shortActivityTime(group.latest))}</span></div>`).join("") : `<div class="activity-empty">선택한 기간에 고객 활동이 없습니다.</div>`;
 
-      const recent = rows.slice(0,8);
-      setText("activityRecentNote",`${periodText()} · 최근 ${nf.format(recent.length)}건`);
+      const recent = limitedRows(rows,"activityRecentLimit");
+      setText("activityRecentNote",`${periodText()} · 전체 ${nf.format(rows.length)}건`);
       $("activityTableBody").innerHTML = recent.length ? recent.map((row) => `<tr><td>${escapeHtml(shortActivityTime(row.timestamp))}</td><td title="${escapeHtml(row.company)}">${escapeHtml(row.company)}</td><td>${escapeHtml(row.user || "—")}</td><td>${escapeHtml(row.menu || "—")}</td><td>${activityKindBadge(row.category)}</td><td title="${escapeHtml(activityDescription(row))}">${escapeHtml(activityDescription(row))}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">선택한 기간에 고객 활동이 없습니다.</td></tr>`;
     }
     function periodText() {
@@ -1070,8 +1074,9 @@
         if (row.timestamp > group.latestActivity) group.latestActivity = row.timestamp;
       });
       const companyRows = [...grouped.values()].map((group) => ({...group,loginDays:group.loginDates.size})).sort((a,b) => b.loginDays-a.loginDays || b.loginCount-a.loginCount || b.activityCount-a.activityCount || b.latestLogin.localeCompare(a.latestLogin));
+      const visibleCompanyRows = limitedRows(companyRows,"usageCompanyLimit");
       setText("usageCompanyNote",`${periodText()} · ${nf.format(companyRows.length)}개사 · 로그인 일수 많은 순`);
-      $("usageCompanyTableBody").innerHTML = companyRows.length ? companyRows.map((group,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</td><td><span class="usage-days ${group.loginDays >= 2 ? "returning" : ""}">${nf.format(group.loginDays)}일</span></td><td>${nf.format(group.loginCount)}건</td><td>${nf.format(group.users.size)}명</td><td class="${group.activityCount ? "usage-work" : ""}">${nf.format(group.activityCount)}건</td><td>${escapeHtml(shortActivityTime(group.latestLogin))}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="7">선택한 기간에 성공 로그인 또는 데이터 작업이 확인된 고객사가 없습니다.</td></tr>`;
+      $("usageCompanyTableBody").innerHTML = visibleCompanyRows.length ? visibleCompanyRows.map((group,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</td><td><span class="usage-days ${group.loginDays >= 2 ? "returning" : ""}">${nf.format(group.loginDays)}일</span></td><td>${nf.format(group.loginCount)}건</td><td>${nf.format(group.users.size)}명</td><td class="${group.activityCount ? "usage-work" : ""}">${nf.format(group.activityCount)}건</td><td>${escapeHtml(shortActivityTime(group.latestLogin))}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="7">선택한 기간에 성공 로그인 또는 데이터 작업이 확인된 고객사가 없습니다.</td></tr>`;
     }
     function renderSecuritySection() {
       const rows = rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd);
@@ -1086,16 +1091,16 @@
       });
       const repeats = [...grouped.values()].filter((group) => group.count >= 5).sort((a,b) => b.count-a.count || b.latest.localeCompare(a.latest)).slice(0,5);
       $("repeatFailureList").innerHTML = repeats.length ? repeats.map((group,index) => `<div class="repeat-row"><span class="rank">${index+1}</span><span class="identity" title="마스킹 처리">${escapeHtml(maskIdentity(group.identity))}</span><span class="num" title="${escapeHtml(group.company)}">${escapeHtml(group.company)}</span><span class="count">${nf.format(group.count)}회</span><span class="latest">${escapeHtml(shortActivityTime(group.latest))}</span></div>`).join("") : `<div class="activity-empty">동일 ID 5회 이상 반복 실패가 없습니다.</div>`;
-      const recentLimit = $("securityRecentLimit").value;
-      const recent = recentLimit === "all" ? summary.failureRows : summary.failureRows.slice(0,Number(recentLimit));
+      const recent = limitedRows(summary.failureRows,"securityRecentLimit");
       setText("securityRecentNote",`${periodText()} · 전체 ${nf.format(summary.failures)}건`);
       $("securityTableBody").innerHTML = recent.length ? recent.map((row) => `<tr><td>${escapeHtml(shortActivityTime(row.timestamp))}</td><td title="${escapeHtml(row.company || "고객사 미확인")}">${escapeHtml(row.company || "고객사 미확인")}</td><td>${escapeHtml(row.user || "—")}</td><td>${escapeHtml(maskIdentity(row.userId))}</td><td>${escapeHtml(maskIp(row.ip))}</td><td><span class="result-fail">실패</span></td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">선택한 기간에 로그인 실패가 없습니다.</td></tr>`;
     }
     function renderUnusedCustomers() {
       const rows=unusedCustomerRows();
+      const visibleRows=limitedRows(rows,"unusedCustomerLimit");
       setText("usageUnusedCompanies",nf.format(rows.length));
-      setText("unusedCustomerNote",`정상 고객사 · ${nf.format(rows.length)}개사 · 등록일 오래된 순 · 고객사명 일치 기준`);
-      $("unusedCustomerTableBody").innerHTML = rows.length ? rows.map((row,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(row.company)}">${escapeHtml(row.company)}</td><td>${escapeHtml(formatBiz(row.biz))}</td><td>${escapeHtml(row.date || "—")}</td><td>${row.elapsedDays === null ? "—" : `<span class="unused-days">${nf.format(row.elapsedDays)}일</span>`}</td><td>${escapeHtml(row.staff || "담당자 미지정")}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">전체 로그에서 미이용으로 확인된 정상 고객사가 없습니다.</td></tr>`;
+      setText("unusedCustomerNote","정상 고객사 · 등록일 오래된 순 · 고객사명 일치 기준");
+      $("unusedCustomerTableBody").innerHTML = visibleRows.length ? visibleRows.map((row,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(row.company)}">${escapeHtml(row.company)}</td><td>${escapeHtml(formatBiz(row.biz))}</td><td>${escapeHtml(row.date || "—")}</td><td>${row.elapsedDays === null ? "—" : `<span class="unused-days">${nf.format(row.elapsedDays)}일</span>`}</td><td>${escapeHtml(row.staff || "담당자 미지정")}</td></tr>`).join("") : `<tr class="empty-row"><td colspan="6">전체 로그에서 미이용으로 확인된 정상 고객사가 없습니다.</td></tr>`;
     }
     function renderPeriodKpis() {
       const applications = rowsInRange(dashboardData.applicationRows,dashboardPeriodStart,dashboardPeriodEnd);
@@ -1126,12 +1131,13 @@
       if (!dashboardData) return;
       const sort = $("customerSort").value;
       const labels = {assets:"총자산",unmapped:"미매핑",near:"교정 임박",overdue:"기한 초과"};
-      const rows = [...dashboardData.instrumentRows].sort((a,b) => b[sort]-a[sort] || b.assets-a.assets).slice(0,10);
-      setText("customerTableNote",`${labels[sort]} 기준`);
+      const sortedRows = [...dashboardData.instrumentRows].sort((a,b) => b[sort]-a[sort] || b.assets-a.assets);
+      const rows = limitedRows(sortedRows,"customerLimit");
+      setText("customerTableNote",`${labels[sort]} 기준 · 전체 ${nf.format(sortedRows.length)}개사`);
       $("customerTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td>${nf.format(r.prep)}</td><td><span class="risk ${r.near ? "orange":""}">${nf.format(r.near)}</span></td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
     }
     function renderStaffTable() {
-      const rows = dashboardData.staff.slice(0,10);
+      const rows = limitedRows(dashboardData.staff,"staffLimit");
       $("staffTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td><button type="button" class="staff-detail-btn" data-staff-index="${i}" aria-haspopup="dialog" aria-label="${escapeHtml(r.name)} 담당 업체 상세 보기">${escapeHtml(r.name)}</button></td><td>${nf.format(r.customers)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
     }
     function openStaffModal(staff, trigger=null) {
@@ -1837,6 +1843,9 @@
 
     $("applicationStatus").addEventListener("change",renderApplicationTable);
     $("applicationLimit").addEventListener("change",renderApplicationTable);
+    $("usageCompanyLimit").addEventListener("change",renderAccessSection);
+    $("activityRecentLimit").addEventListener("change",renderActivitySection);
+    $("unusedCustomerLimit").addEventListener("change",renderUnusedCustomers);
     $("securityRecentLimit").addEventListener("change",renderSecuritySection);
     $("periodQueryBtn").addEventListener("click",() => applyPeriodRange($("periodStart").value,$("periodEnd").value,null));
     document.querySelectorAll("[data-preset]").forEach((button) => button.addEventListener("click",() => applyPreset(button.dataset.preset)));
@@ -1854,6 +1863,8 @@
     $("staffModal").addEventListener("click",(event) => { if (event.target === $("staffModal")) closeStaffModal(); });
     document.addEventListener("keydown",(event) => { if (event.key === "Escape" && !$("staffModal").hidden) closeStaffModal(); });
     $("customerSort").addEventListener("change",renderCustomerTable);
+    $("customerLimit").addEventListener("change",renderCustomerTable);
+    $("staffLimit").addEventListener("change",renderStaffTable);
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
