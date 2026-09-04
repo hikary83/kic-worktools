@@ -296,7 +296,7 @@ body.jira-timeline-page {
 
 .jira-toolbar {
   display: grid;
-  grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(150px, 0.8fr)) auto auto;
+  grid-template-columns: minmax(220px, 1.6fr) repeat(3, minmax(150px, 0.8fr)) auto;
   gap: 10px;
   padding: 16px;
   border-bottom: 1px solid var(--border-main);
@@ -373,37 +373,10 @@ body.jira-timeline-page {
   font-weight: 900;
 }
 
-.jira-count-badge.muted {
-  color: var(--text-secondary);
-  background: var(--surface-hover);
-}
-
-.jira-excluded-guide {
-  display: inline-flex;
-  align-items: center;
-  gap: 10px;
-  color: var(--text-muted);
-  font-size: 11px;
-  font-weight: 700;
-}
-
-.jira-excluded-guide code {
-  padding: 2px 6px;
-  border-radius: 6px;
-  color: var(--text-secondary);
-  background: var(--surface-card-subtle);
-  font: inherit;
-  font-weight: 900;
-}
-
 .jira-excluded-toggle.is-active {
   color: var(--color-primary);
   border-color: rgba(16, 163, 127, 0.38);
   background: var(--color-primary-light);
-}
-
-.jira-excluded-panel[hidden] {
-  display: none;
 }
 
 .jira-range-controls {
@@ -827,7 +800,6 @@ html.dark .vis-item.jira-timeline-item {
   .jira-property-list { justify-content: flex-start; }
   .jira-login-panel { grid-template-columns: auto 1fr; }
   .jira-google-button { grid-column: 1 / -1; }
-  .jira-excluded-guide span { display: none; }
 }
 
 @media (max-width: 520px) {

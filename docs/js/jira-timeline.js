@@ -24,7 +24,6 @@
     demoMode: new URLSearchParams(window.location.search).get('demo') === '1',
     publicConfig: null,
     unscheduledSort: { key: '', direction: 'asc' },
-    excludedSort: { key: '', direction: 'asc' },
     showExcluded: readExcludedVisibility()
   };
 
@@ -65,10 +64,6 @@
     elements.unscheduledTableCount = document.getElementById('unscheduledTableCount');
     elements.unscheduledTableBody = document.getElementById('unscheduledTableBody');
     elements.unscheduledSortButtons = Array.from(document.querySelectorAll('[data-unscheduled-sort]'));
-    elements.excludedPanel = document.getElementById('excludedPanel');
-    elements.excludedTableCount = document.getElementById('excludedTableCount');
-    elements.excludedTableBody = document.getElementById('excludedTableBody');
-    elements.excludedSortButtons = Array.from(document.querySelectorAll('[data-excluded-sort]'));
     elements.previousRangeButton = document.getElementById('previousRangeButton');
     elements.nextRangeButton = document.getElementById('nextRangeButton');
     elements.todayButton = document.getElementById('todayButton');
@@ -87,11 +82,6 @@
     elements.unscheduledSortButtons.forEach(function(button) {
       button.addEventListener('click', function() {
         setUnscheduledSort(button.dataset.unscheduledSort);
-      });
-    });
-    elements.excludedSortButtons.forEach(function(button) {
-      button.addEventListener('click', function() {
-        setExcludedSort(button.dataset.excludedSort);
       });
     });
     elements.previousRangeButton.addEventListener('click', function() { moveRange(-1); });
@@ -257,18 +247,17 @@
     const scheduled = activeIssues.filter(hasAnySchedule);
     const unscheduled = activeIssues.filter(function(issue) { return !hasAnySchedule(issue); });
     const overdue = activeIssues.filter(isOverdue);
+    const displayedUnscheduled = state.showExcluded ? unscheduled.concat(excluded) : unscheduled;
 
     elements.totalCount.textContent = activeIssues.length.toLocaleString('ko-KR');
     elements.scheduledCount.textContent = scheduled.length.toLocaleString('ko-KR');
     elements.unscheduledCount.textContent = unscheduled.length.toLocaleString('ko-KR');
     elements.overdueCount.textContent = overdue.length.toLocaleString('ko-KR');
     elements.timelineCount.textContent = scheduled.length.toLocaleString('ko-KR') + '건';
-    elements.unscheduledTableCount.textContent = unscheduled.length.toLocaleString('ko-KR') + '건';
-    elements.excludedTableCount.textContent = excluded.length.toLocaleString('ko-KR') + '건';
+    elements.unscheduledTableCount.textContent = displayedUnscheduled.length.toLocaleString('ko-KR') + '건';
 
     renderTimeline(scheduled);
-    renderUnscheduledTable(unscheduled);
-    renderExcludedTable(excluded);
+    renderUnscheduledTable(displayedUnscheduled);
     renderExcludedVisibility(excluded.length);
   }
 
@@ -434,26 +423,18 @@
       return;
     }
 
-    elements.unscheduledTableBody.innerHTML = renderIssueRows(sortIssueRows(issues, state.unscheduledSort), false);
+    elements.unscheduledTableBody.innerHTML = renderIssueRows(sortIssueRows(issues, state.unscheduledSort));
   }
 
-  function renderExcludedTable(issues) {
-    updateSortHeaders(elements.excludedSortButtons, state.excludedSort);
-    if (!issues.length) {
-      elements.excludedTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:28px">일정에서 제외된 업무가 없습니다.</td></tr>';
-      return;
-    }
-
-    elements.excludedTableBody.innerHTML = renderIssueRows(sortIssueRows(issues, state.excludedSort), true);
-  }
-
-  function renderIssueRows(issues, excluded) {
+  function renderIssueRows(issues) {
     return issues.map(function(issue) {
       const projectKey = issue.projectKey || '-';
+      const projectName = PROJECTS[projectKey] ? PROJECTS[projectKey].name : projectKey;
       const issueUrl = escapeAttribute(issue.url || '#');
+      const excluded = isTimelineExcluded(issue);
       return '<tr>' +
         '<td><a class="jira-issue-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(issue.key) + '</a></td>' +
-        '<td><span class="jira-pill jira-project-pill ' + projectClass(projectKey) + '">' + escapeHtml(projectKey) + '</span></td>' +
+        '<td><span class="jira-pill jira-project-pill ' + projectClass(projectKey) + '" title="' + escapeAttribute(projectKey) + '">' + escapeHtml(projectName) + '</span></td>' +
         '<td><a class="jira-title-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer" title="Jira에서 새 탭으로 열기">' +
           '<span>' + escapeHtml(issue.summary || '-') + '</span><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></td>' +
         '<td><span class="jira-pill">' + escapeHtml(issue.status || '-') + '</span></td>' +
@@ -470,11 +451,6 @@
     renderFilteredData();
   }
 
-  function setExcludedSort(key) {
-    updateSortState(state.excludedSort, key);
-    renderFilteredData();
-  }
-
   function toggleExcludedVisibility() {
     state.showExcluded = !state.showExcluded;
     try {
@@ -482,7 +458,7 @@
     } catch (error) {
       // 저장이 제한된 브라우저에서도 현재 화면의 토글은 그대로 동작합니다.
     }
-    renderExcludedVisibility(getFilteredIssues().filter(isTimelineExcluded).length);
+    renderFilteredData();
   }
 
   function renderExcludedVisibility(count) {
@@ -493,12 +469,11 @@
     elements.toggleExcludedButton.classList.toggle('is-active', isVisible);
     elements.toggleExcludedButton.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
     elements.toggleExcludedButton.setAttribute('aria-label', isVisible
-      ? '일정 제외 업무 목록 숨기기'
+      ? '일정 제외 업무 ' + count.toLocaleString('ko-KR') + '건 숨기기'
       : '일정 제외 업무 ' + count.toLocaleString('ko-KR') + '건 보기');
     elements.excludedToggleLabel.textContent = isVisible
-      ? '일정 제외 숨기기'
+      ? '일정 제외 ' + count.toLocaleString('ko-KR') + '건 숨기기'
       : '일정 제외 ' + count.toLocaleString('ko-KR') + '건 보기';
-    elements.excludedPanel.hidden = !isVisible;
     if (icon) icon.className = isVisible ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
   }
 
@@ -532,12 +507,16 @@
 
   function getIssueSortValue(issue, key) {
     if (key === 'scheduleType') return isTimelineExcluded(issue) ? '일정 제외' : '미지정';
+    if (key === 'projectKey') {
+      const project = PROJECTS[issue.projectKey];
+      return project ? project.name : String(issue.projectKey || '').trim();
+    }
     return String(issue[key] || '').trim();
   }
 
   function updateSortHeaders(buttons, sortState) {
     buttons.forEach(function(button) {
-      const sortKey = button.dataset.unscheduledSort || button.dataset.excludedSort;
+      const sortKey = button.dataset.unscheduledSort;
       const isActive = sortKey === sortState.key;
       const header = button.closest('th');
       const icon = button.querySelector('i');
