@@ -7,16 +7,16 @@
 (function initKicSidebarModule() {
   'use strict';
 
-  const APP_VERSION = 'v2.7.1';
+  const APP_VERSION = 'v2.7.2';
   const SETTINGS_URL = 'https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit';
   const MENU_ITEMS = [
     { id: 'helpdesk', title: 'IT 헬프데스크', icon: '📈', href: 'index.html' },
     { id: 'reply', title: 'IT 헬프데스크 답변', icon: '💬', href: 'reply.html' },
+    { id: 'jira-timeline', title: 'IT전략실 통합 일정', icon: '🗓️', href: 'jira-timeline.html' },
     { id: 'notice', title: '공지사항 생성', icon: '📢', href: 'notice.html' },
     { id: 'delay', title: '교정 지연 안내', icon: '⏳', href: 'delay.html' },
     { id: 'print', title: '필증 출력 확인', icon: '🏷️', href: 'print.html' },
     { id: 'marketer', title: '블로그 마케터', icon: '✍️', href: 'marketer.html' },
-    { id: 'jira-timeline', title: 'IT전략실 통합 일정', icon: '🗓️', href: 'jira-timeline.html' },
     {
       id: 'dashboard',
       title: 'CWIZ 2.0 대시보드',
