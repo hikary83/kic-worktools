@@ -13,6 +13,8 @@
     ITM: { name: 'IT 업무', description: 'IT Task Management', order: 4 },
     WWWMR: { name: '홈페이지', description: '[HomePage] Maintenance', order: 5 }
   };
+  const EXCLUDED_LABEL = '일정제외';
+  const EXCLUDED_VISIBILITY_KEY = 'kic-jira-timeline-show-excluded';
 
   const state = {
     issues: [],
@@ -20,7 +22,10 @@
     anchorDate: new Date(),
     zoom: 'month',
     demoMode: new URLSearchParams(window.location.search).get('demo') === '1',
-    publicConfig: null
+    publicConfig: null,
+    unscheduledSort: { key: '', direction: 'asc' },
+    excludedSort: { key: '', direction: 'asc' },
+    showExcluded: readExcludedVisibility()
   };
 
   const elements = {};
@@ -47,6 +52,8 @@
     elements.assigneeFilter = document.getElementById('assigneeFilter');
     elements.statusFilter = document.getElementById('statusFilter');
     elements.resetFiltersButton = document.getElementById('resetFiltersButton');
+    elements.toggleExcludedButton = document.getElementById('toggleExcludedButton');
+    elements.excludedToggleLabel = document.getElementById('excludedToggleLabel');
     elements.timelineContainer = document.getElementById('jiraTimeline');
     elements.timelineEmpty = document.getElementById('timelineEmpty');
     elements.timelineCount = document.getElementById('timelineCount');
@@ -57,6 +64,11 @@
     elements.unscheduledPanel = document.getElementById('unscheduledPanel');
     elements.unscheduledTableCount = document.getElementById('unscheduledTableCount');
     elements.unscheduledTableBody = document.getElementById('unscheduledTableBody');
+    elements.unscheduledSortButtons = Array.from(document.querySelectorAll('[data-unscheduled-sort]'));
+    elements.excludedPanel = document.getElementById('excludedPanel');
+    elements.excludedTableCount = document.getElementById('excludedTableCount');
+    elements.excludedTableBody = document.getElementById('excludedTableBody');
+    elements.excludedSortButtons = Array.from(document.querySelectorAll('[data-excluded-sort]'));
     elements.previousRangeButton = document.getElementById('previousRangeButton');
     elements.nextRangeButton = document.getElementById('nextRangeButton');
     elements.todayButton = document.getElementById('todayButton');
@@ -71,11 +83,22 @@
     elements.assigneeFilter.addEventListener('change', renderFilteredData);
     elements.statusFilter.addEventListener('change', renderFilteredData);
     elements.resetFiltersButton.addEventListener('click', resetFilters);
+    elements.toggleExcludedButton.addEventListener('click', toggleExcludedVisibility);
+    elements.unscheduledSortButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        setUnscheduledSort(button.dataset.unscheduledSort);
+      });
+    });
+    elements.excludedSortButtons.forEach(function(button) {
+      button.addEventListener('click', function() {
+        setExcludedSort(button.dataset.excludedSort);
+      });
+    });
     elements.previousRangeButton.addEventListener('click', function() { moveRange(-1); });
     elements.nextRangeButton.addEventListener('click', function() { moveRange(1); });
     elements.todayButton.addEventListener('click', function() {
       state.anchorDate = new Date();
-      applyTimelineWindow(true);
+      applyTimelineWindow(true, true);
     });
     elements.zoomButtons.forEach(function(button) {
       button.addEventListener('click', function() {
@@ -85,7 +108,7 @@
           item.classList.toggle('is-active', isActive);
           item.setAttribute('aria-pressed', isActive ? 'true' : 'false');
         });
-        applyTimelineWindow(true);
+        applyTimelineWindow(true, isTodayAnchor());
       });
     });
   }
@@ -229,19 +252,24 @@
 
   function renderFilteredData() {
     const issues = getFilteredIssues();
-    const scheduled = issues.filter(hasAnySchedule);
-    const unscheduled = issues.filter(function(issue) { return !hasAnySchedule(issue); });
-    const overdue = issues.filter(isOverdue);
+    const excluded = issues.filter(isTimelineExcluded);
+    const activeIssues = issues.filter(function(issue) { return !isTimelineExcluded(issue); });
+    const scheduled = activeIssues.filter(hasAnySchedule);
+    const unscheduled = activeIssues.filter(function(issue) { return !hasAnySchedule(issue); });
+    const overdue = activeIssues.filter(isOverdue);
 
-    elements.totalCount.textContent = issues.length.toLocaleString('ko-KR');
+    elements.totalCount.textContent = activeIssues.length.toLocaleString('ko-KR');
     elements.scheduledCount.textContent = scheduled.length.toLocaleString('ko-KR');
     elements.unscheduledCount.textContent = unscheduled.length.toLocaleString('ko-KR');
     elements.overdueCount.textContent = overdue.length.toLocaleString('ko-KR');
     elements.timelineCount.textContent = scheduled.length.toLocaleString('ko-KR') + '건';
     elements.unscheduledTableCount.textContent = unscheduled.length.toLocaleString('ko-KR') + '건';
+    elements.excludedTableCount.textContent = excluded.length.toLocaleString('ko-KR') + '건';
 
     renderTimeline(scheduled);
     renderUnscheduledTable(unscheduled);
+    renderExcludedTable(excluded);
+    renderExcludedVisibility(excluded.length);
   }
 
   function getFilteredIssues() {
@@ -299,6 +327,7 @@
       groups: new vis.DataSet(groups),
       items: new vis.DataSet(items)
     };
+    const initialRange = getVisibleRange(isTodayAnchor());
     const options = {
       editable: false,
       selectable: true,
@@ -307,11 +336,11 @@
       showCurrentTime: true,
       orientation: { axis: 'top', item: 'top' },
       horizontalScroll: true,
-      verticalScroll: true,
       zoomKey: 'ctrlKey',
       zoomMin: 1000 * 60 * 60 * 24 * 7,
       zoomMax: 1000 * 60 * 60 * 24 * 366 * 2,
-      maxHeight: 560,
+      start: initialRange.start,
+      end: initialRange.end,
       margin: { item: 8, axis: 12 },
       groupOrder: function(a, b) { return a.order - b.order; }
     };
@@ -328,7 +357,7 @@
       state.anchorDate = new Date((event.start.getTime() + event.end.getTime()) / 2);
       updateRangeLabel();
     });
-    applyTimelineWindow(false);
+    updateRangeLabel();
   }
 
   function createTimelineGroup(projectKey) {
@@ -399,22 +428,131 @@
   }
 
   function renderUnscheduledTable(issues) {
+    updateSortHeaders(elements.unscheduledSortButtons, state.unscheduledSort);
     if (!issues.length) {
-      elements.unscheduledTableBody.innerHTML = '<tr><td colspan="6" style="text-align:center;color:var(--text-muted);padding:28px">일정 미지정 업무가 없습니다.</td></tr>';
+      elements.unscheduledTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:28px">일정 미지정 업무가 없습니다.</td></tr>';
       return;
     }
 
-    elements.unscheduledTableBody.innerHTML = issues.map(function(issue) {
+    elements.unscheduledTableBody.innerHTML = renderIssueRows(sortIssueRows(issues, state.unscheduledSort), false);
+  }
+
+  function renderExcludedTable(issues) {
+    updateSortHeaders(elements.excludedSortButtons, state.excludedSort);
+    if (!issues.length) {
+      elements.excludedTableBody.innerHTML = '<tr><td colspan="7" style="text-align:center;color:var(--text-muted);padding:28px">일정에서 제외된 업무가 없습니다.</td></tr>';
+      return;
+    }
+
+    elements.excludedTableBody.innerHTML = renderIssueRows(sortIssueRows(issues, state.excludedSort), true);
+  }
+
+  function renderIssueRows(issues, excluded) {
+    return issues.map(function(issue) {
       const projectKey = issue.projectKey || '-';
+      const issueUrl = escapeAttribute(issue.url || '#');
       return '<tr>' +
-        '<td><a class="jira-issue-link" href="' + escapeAttribute(issue.url || '#') + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(issue.key) + '</a></td>' +
+        '<td><a class="jira-issue-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(issue.key) + '</a></td>' +
         '<td><span class="jira-pill jira-project-pill ' + projectClass(projectKey) + '">' + escapeHtml(projectKey) + '</span></td>' +
-        '<td>' + escapeHtml(issue.summary || '-') + '</td>' +
+        '<td><a class="jira-title-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer" title="Jira에서 새 탭으로 열기">' +
+          '<span>' + escapeHtml(issue.summary || '-') + '</span><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></td>' +
         '<td><span class="jira-pill">' + escapeHtml(issue.status || '-') + '</span></td>' +
         '<td>' + escapeHtml(issue.assignee || '미지정') + '</td>' +
         '<td>' + escapeHtml(formatDateTime(issue.updated)) + '</td>' +
+        '<td><span class="jira-pill jira-schedule-pill ' + (excluded ? 'excluded' : 'unscheduled') + '">' +
+          (excluded ? '일정 제외' : '미지정') + '</span></td>' +
         '</tr>';
     }).join('');
+  }
+
+  function setUnscheduledSort(key) {
+    updateSortState(state.unscheduledSort, key);
+    renderFilteredData();
+  }
+
+  function setExcludedSort(key) {
+    updateSortState(state.excludedSort, key);
+    renderFilteredData();
+  }
+
+  function toggleExcludedVisibility() {
+    state.showExcluded = !state.showExcluded;
+    try {
+      window.localStorage.setItem(EXCLUDED_VISIBILITY_KEY, state.showExcluded ? 'true' : 'false');
+    } catch (error) {
+      // 저장이 제한된 브라우저에서도 현재 화면의 토글은 그대로 동작합니다.
+    }
+    renderExcludedVisibility(getFilteredIssues().filter(isTimelineExcluded).length);
+  }
+
+  function renderExcludedVisibility(count) {
+    const hasExcludedIssues = count > 0;
+    const isVisible = hasExcludedIssues && state.showExcluded;
+    const icon = elements.toggleExcludedButton.querySelector('i');
+    elements.toggleExcludedButton.disabled = !hasExcludedIssues;
+    elements.toggleExcludedButton.classList.toggle('is-active', isVisible);
+    elements.toggleExcludedButton.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
+    elements.toggleExcludedButton.setAttribute('aria-label', isVisible
+      ? '일정 제외 업무 목록 숨기기'
+      : '일정 제외 업무 ' + count.toLocaleString('ko-KR') + '건 보기');
+    elements.excludedToggleLabel.textContent = isVisible
+      ? '일정 제외 숨기기'
+      : '일정 제외 ' + count.toLocaleString('ko-KR') + '건 보기';
+    elements.excludedPanel.hidden = !isVisible;
+    if (icon) icon.className = isVisible ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  }
+
+  function updateSortState(sortState, key) {
+    if (sortState.key === key) {
+      sortState.direction = sortState.direction === 'asc' ? 'desc' : 'asc';
+    } else {
+      sortState.key = key;
+      sortState.direction = key === 'updated' ? 'desc' : 'asc';
+    }
+  }
+
+  function sortIssueRows(issues, sortState) {
+    const key = sortState.key;
+    if (!key) return issues.slice();
+    const direction = sortState.direction === 'desc' ? -1 : 1;
+    return issues.slice().sort(function(left, right) {
+      if (key === 'updated') {
+        const leftTime = Date.parse(left.updated || '') || 0;
+        const rightTime = Date.parse(right.updated || '') || 0;
+        return (leftTime - rightTime) * direction;
+      }
+      const leftValue = getIssueSortValue(left, key);
+      const rightValue = getIssueSortValue(right, key);
+      return leftValue.localeCompare(rightValue, 'ko', {
+        numeric: true,
+        sensitivity: 'base'
+      }) * direction;
+    });
+  }
+
+  function getIssueSortValue(issue, key) {
+    if (key === 'scheduleType') return isTimelineExcluded(issue) ? '일정 제외' : '미지정';
+    return String(issue[key] || '').trim();
+  }
+
+  function updateSortHeaders(buttons, sortState) {
+    buttons.forEach(function(button) {
+      const sortKey = button.dataset.unscheduledSort || button.dataset.excludedSort;
+      const isActive = sortKey === sortState.key;
+      const header = button.closest('th');
+      const icon = button.querySelector('i');
+      button.classList.toggle('is-active', isActive);
+      if (header) {
+        header.setAttribute('aria-sort', isActive
+          ? (sortState.direction === 'asc' ? 'ascending' : 'descending')
+          : 'none');
+      }
+      if (icon) {
+        icon.className = 'fa-solid ' + (isActive
+          ? (sortState.direction === 'asc' ? 'fa-sort-up' : 'fa-sort-down')
+          : 'fa-sort');
+      }
+    });
   }
 
   function resetFilters() {
@@ -433,17 +571,28 @@
     applyTimelineWindow(true);
   }
 
-  function applyTimelineWindow(animate) {
-    const range = getVisibleRange();
+  function applyTimelineWindow(animate, alignTodayToLeft) {
+    const range = getVisibleRange(Boolean(alignTodayToLeft));
     updateRangeLabel();
     if (state.timeline) {
       state.timeline.setWindow(range.start, range.end, { animation: animate ? { duration: 260 } : false });
     }
   }
 
-  function getVisibleRange() {
+  function getVisibleRange(alignTodayToLeft) {
     const year = state.anchorDate.getFullYear();
     const month = state.anchorDate.getMonth();
+    if (alignTodayToLeft) {
+      const start = new Date(state.anchorDate);
+      start.setHours(0, 0, 0, 0);
+      const leadingDays = state.zoom === 'quarter' ? 10 : 3;
+      const visibleDays = state.zoom === 'quarter' ? 92 : 31;
+      start.setDate(start.getDate() - leadingDays);
+      return {
+        start: start,
+        end: addDays(start, visibleDays)
+      };
+    }
     if (state.zoom === 'quarter') {
       const quarterStartMonth = Math.floor(month / 3) * 3;
       return {
@@ -455,6 +604,13 @@
       start: new Date(year, month, 1),
       end: new Date(year, month + 1, 1)
     };
+  }
+
+  function isTodayAnchor() {
+    const today = new Date();
+    return state.anchorDate.getFullYear() === today.getFullYear() &&
+      state.anchorDate.getMonth() === today.getMonth() &&
+      state.anchorDate.getDate() === today.getDate();
   }
 
   function updateRangeLabel() {
@@ -502,6 +658,20 @@
 
   function hasAnySchedule(issue) {
     return Boolean(parseDate(issue.startDate) || parseDate(issue.dueDate));
+  }
+
+  function isTimelineExcluded(issue) {
+    return Array.isArray(issue.labels) && issue.labels.some(function(label) {
+      return String(label || '').trim() === EXCLUDED_LABEL;
+    });
+  }
+
+  function readExcludedVisibility() {
+    try {
+      return window.localStorage.getItem(EXCLUDED_VISIBILITY_KEY) === 'true';
+    } catch (error) {
+      return false;
+    }
   }
 
   function isOverdue(issue) {
@@ -600,7 +770,8 @@
       ['CWIZ-391', 'CWIZ 1.0 유지보수 정기 반영', 'CWIZ', '검토 중', '고세종', date(3), date(13)],
       ['ITM-564', 'IT전략실 통합 일정 구축', 'ITM', '진행 중', '안태민', date(2), date(25)],
       ['ITM-570', '운영현황 지표 개선', 'ITM', '진행 중', '이광희', date(-3), date(1)],
-      ['ITM-588', '신규 장비 도입 검토', 'ITM', '접수대기', '미지정', '', ''],
+      ['ITM-588', '기간을 지정하지 않는 상시 운영 업무', 'ITM', '접수대기', '미지정', '', '', [EXCLUDED_LABEL]],
+      ['ITM-590', '신규 장비 도입 검토', 'ITM', '접수대기', '미지정', '', '', []],
       ['WWWMR-84', '홈페이지 자료실 개선', 'WWWMR', '개발 중', '권순길', date(15), date(29)],
       ['WWWMR-89', '메인 배너 교체', 'WWWMR', '검토 중', '최늬혜', date(21), '']
     ];
@@ -620,6 +791,7 @@
           assignee: item[4],
           startDate: item[5],
           dueDate: item[6],
+          labels: Array.isArray(item[7]) ? item[7] : [],
           issueType: '작업',
           priority: 'Medium',
           reporter: '샘플 사용자',

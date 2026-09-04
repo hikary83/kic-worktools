@@ -7,7 +7,7 @@
  */
 const JIRA_API_BASE_URL = 'https://kic-itsd.atlassian.net';
 const JIRA_API_PROJECTS = ['C21R', 'CW2R', 'CWIZ', 'ITM', 'WWWMR'];
-const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V1';
+const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V2';
 const JIRA_API_CACHE_SECONDS = 180;
 const JIRA_API_PAGE_SIZE = 100;
 const JIRA_API_MAX_PAGES = 20;
@@ -89,7 +89,7 @@ function getJiraIssues_() {
   const config = getJiraConfig_();
   const startDateFieldId = resolveStartDateFieldId_(config);
   const fields = ['summary', 'project', 'status', 'assignee', 'duedate', 'issuetype',
-    'priority', 'reporter', 'updated', 'parent'];
+    'priority', 'reporter', 'updated', 'parent', 'labels'];
   if (startDateFieldId) fields.push(startDateFieldId);
 
   const jql = 'project in (' + JIRA_API_PROJECTS.join(', ') + ') ' +
@@ -220,6 +220,7 @@ function normalizeIssue_(issue, baseUrl, startDateFieldId) {
     issueType: issueType.name || '',
     priority: priority.name || '',
     reporter: reporter.displayName || '',
+    labels: Array.isArray(fields.labels) ? fields.labels.slice() : [],
     updated: fields.updated || '',
     parentKey: parent.key || '',
     parentSummary: parent.fields && parent.fields.summary ? parent.fields.summary : '',
