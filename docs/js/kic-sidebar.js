@@ -7,7 +7,7 @@
 (function initKicSidebarModule() {
   'use strict';
 
-  const APP_VERSION = 'v2.7.3';
+  const APP_VERSION = 'v2.7.4';
   const SETTINGS_URL = 'https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit';
   const MENU_ITEMS = [
     { id: 'helpdesk', title: 'IT 헬프데스크', icon: '📈', href: 'index.html' },

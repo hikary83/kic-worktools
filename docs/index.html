@@ -33,7 +33,7 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/kic-sidebar.js?v=2.7.3"></script>
+  <script src="js/kic-sidebar.js?v=2.7.4"></script>
   <script src="js/kic-common.js"></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
@@ -399,7 +399,7 @@
         <div>
           <div class="flex items-center justify-between gap-3 mb-1">
             <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">처리 내용 기록</label>
-            <button type="button" id="edit-ai-reply-btn" onclick="generateEditAiReply()" class="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-600 hover:text-white transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm">
+            <button type="button" id="edit-ai-reply-btn" onclick="generateEditAiReply('fast')" class="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-600 hover:text-white transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm">
               <i class="fas fa-wand-magic-sparkles"></i><span>AI 답변</span>
             </button>
           </div>
@@ -413,7 +413,7 @@
               <div id="edit-ai-reply-status" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.</div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#262626] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
+              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply('precise')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#262626] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
               <button type="button" onclick="copyEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold shadow-sm"><i class="fas fa-copy mr-1"></i>복사</button>
             </div>
           </div>
@@ -2358,7 +2358,7 @@
     }
     function closeEditModal() { document.getElementById('editModal').classList.add('opacity-0'); document.getElementById('editModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('editModal').classList.add('hidden'), 300); }
 
-    // [v16.9] 현황 업데이트 모달 AI 답변
+    // [v16.11] 현황 업데이트 모달 AI 답변
     // 별도 'IT 헬프데스크 답변' 화면과 동일하게 서버의 generateHelpdeskReply()를 호출합니다.
     // 따라서 답변 프롬프트/로직 수정은 Code.gs의 generateHelpdeskReply() 한 곳만 수정하면 두 화면에 동시에 반영됩니다.
     function resetEditAiReply() {
@@ -2409,7 +2409,13 @@
         return lines.join('\n');
     }
 
-    function generateEditAiReply() {
+    function formatAiElapsed(startedAt) {
+        return `${Math.max(0.1, (performance.now() - startedAt) / 1000).toFixed(1)}초`;
+    }
+
+    function generateEditAiReply(mode) {
+        const replyMode = mode === 'precise' ? 'precise' : 'fast';
+        const startedAt = performance.now();
         const draftAnswer = document.getElementById('edit-action').value.trim();
         if (!draftAnswer) {
             showToast('먼저 처리 내용 기록에 실제 답변의 핵심 내용을 입력해 주세요.', 'error');
@@ -2428,16 +2434,16 @@
         const status = document.getElementById('edit-ai-reply-status');
         panel.classList.remove('hidden');
         result.value = '';
-        status.textContent = '답변을 생성하고 있습니다...';
+        status.textContent = replyMode === 'precise' ? '답변을 더 정교하게 다시 생성하고 있습니다...' : '답변을 빠르게 생성하고 있습니다...';
         status.className = 'text-[11px] text-violet-600 mt-0.5 font-bold';
         setEditAiReplyLoading(true);
 
-        runServerFunction('generateHelpdeskReply', { requestText, draftAnswer, images: [] })
+        runServerFunction('generateHelpdeskReply', { requestText, draftAnswer, images: [], mode: replyMode })
           .then(res => {
               setEditAiReplyLoading(false);
               const text = String((res && res.text) || res || '').replace(/\*\*/g, '').trim();
               result.value = text;
-              status.textContent = text ? '답변이 생성되었습니다. 필요하면 직접 수정한 뒤 복사하세요.' : '생성된 답변이 비어 있습니다.';
+              status.textContent = text ? `답변이 생성되었습니다. (${formatAiElapsed(startedAt)}) 필요하면 직접 수정한 뒤 복사하세요.` : `생성된 답변이 비어 있습니다. (${formatAiElapsed(startedAt)})`;
               status.className = text ? 'text-[11px] text-emerald-600 mt-0.5 font-bold' : 'text-[11px] text-red-600 mt-0.5 font-bold';
           })
           .catch(err => {
@@ -2560,9 +2566,9 @@
                 const img = new Image();
                 img.onerror = () => resolve({ data: original, mimeType: file.type || 'image/png' });
                 img.onload = () => {
-                    const MAX_EDGE = 1600;
+                    const MAX_EDGE = 1400;
                     const maxEdge = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height);
-                    const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 700 * 1024;
+                    const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 450 * 1024;
                     if (!shouldOptimize) {
                         resolve({ data: original, mimeType: file.type || 'image/png' });
                         return;
@@ -2573,7 +2579,7 @@
                     canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
                     const ctx = canvas.getContext('2d');
                     ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-                    resolve({ data: canvas.toDataURL('image/jpeg', 0.86), mimeType: 'image/jpeg' });
+                    resolve({ data: canvas.toDataURL('image/jpeg', 0.82), mimeType: 'image/jpeg' });
                 };
                 img.src = original;
             };
@@ -2665,7 +2671,7 @@
         setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-300', 'bg-emerald-50'), 1700);
     }
 
-    function applyAddCaptureAnalysis(data) {
+    function applyAddCaptureAnalysis(data, startedAt) {
         data = data || {};
         const filled = [];
 
@@ -2687,7 +2693,8 @@
         if (!document.getElementById('add-title').value) missingRequired.push('제목');
         if (!document.getElementById('add-details').value) missingRequired.push('상세내용');
         const suffix = missingRequired.length ? ` · ${missingRequired.join(', ')} 확인 필요` : ' · 내용 확인 후 바로 등록할 수 있습니다.';
-        setAddCaptureStatus(`자동 입력 완료${suffix}`, missingRequired.length ? '' : 'ok');
+        const elapsed = startedAt ? ` · ${formatAiElapsed(startedAt)}` : '';
+        setAddCaptureStatus(`자동 입력 완료${suffix}${elapsed}`, missingRequired.length ? '' : 'ok');
     }
 
     async function analyzeAddCapture(isAuto) {
@@ -2708,6 +2715,7 @@
         }
 
         addCaptureAnalyzeInFlight = true;
+        const startedAt = performance.now();
         const btn = document.getElementById('add-capture-analyze-btn');
         if (btn) {
             btn.disabled = true;
@@ -2719,7 +2727,7 @@
 
         try {
             const result = await runServerFunction('analyzeHelpdeskCapture', { images: addCaptureImages });
-            applyAddCaptureAnalysis((result && result.data) || result || {});
+            applyAddCaptureAnalysis((result && result.data) || result || {}, startedAt);
         } catch (e) {
             setAddCaptureStatus('분석 실패: ' + (e && e.message ? e.message : String(e)), 'err');
         } finally {

@@ -31,7 +31,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="css/kic-theme.css" rel="stylesheet" />
   <script src="js/config.js"></script>
-  <script src="js/kic-sidebar.js?v=2.7.3"></script>
+  <script src="js/kic-sidebar.js?v=2.7.4"></script>
   <script src="js/kic-common.js"></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] min-h-screen transition-colors duration-200">
@@ -205,9 +205,9 @@
           const img = new Image();
           img.onerror = () => resolve({ data: original, mimeType: file.type || 'image/png' });
           img.onload = () => {
-            const MAX_EDGE = 1600;
+            const MAX_EDGE = 1400;
             const maxEdge = Math.max(img.naturalWidth || img.width, img.naturalHeight || img.height);
-            const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 700 * 1024;
+            const shouldOptimize = maxEdge > MAX_EDGE || (file.size || 0) > 450 * 1024;
             if (!shouldOptimize) { 
               resolve({ data: original, mimeType: file.type || 'image/png' }); 
               return; 
@@ -219,7 +219,7 @@
             canvas.height = Math.max(1, Math.round((img.naturalHeight || img.height) * scale));
             const ctx = canvas.getContext('2d');
             ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
-            resolve({ data: canvas.toDataURL('image/jpeg', 0.86), mimeType: 'image/jpeg' });
+            resolve({ data: canvas.toDataURL('image/jpeg', 0.82), mimeType: 'image/jpeg' });
           };
           img.src = original;
         };
@@ -304,6 +304,7 @@
     }
 
     async function generateReply() {
+      const startedAt = performance.now();
       const requestText = $('requestText').value.trim();
       const draftAnswer = $('draftAnswer').value.trim();
       
@@ -322,7 +323,7 @@
       startProgressSimulation();
 
       try {
-        const res = await callGASApi("generateReply", { requestText, draftAnswer, images });
+        const res = await callGASApi("generateReply", { requestText, draftAnswer, images, mode: 'fast' });
         clearProgressTimer();
         setProgress(100, 'done');
         setTimeout(() => hideProgress(), 900);
@@ -333,7 +334,8 @@
         $('resultText').classList.remove('hidden');
         $('resultText').value = text;
         setStatus('inputStatus', '', '');
-        setStatus('resultStatus', '답변이 성공적으로 생성되었습니다.', 'ok');
+        const elapsed = Math.max(0.1, (performance.now() - startedAt) / 1000).toFixed(1);
+        setStatus('resultStatus', `답변이 성공적으로 생성되었습니다. (${elapsed}초)`, 'ok');
       } catch (err) {
         clearProgressTimer();
         setProgress(100, 'err');

@@ -23,12 +23,16 @@ const DEV_LIST_PROPERTY = "DEV_LIST_DATA";
 // [v15 성능 개선] 이슈 ID 일자별 마지막 순번 캐시 키
 const ISSUE_SEQ_PROPERTY_PREFIX = "HELPDESK_ISSUE_SEQ_";
 
-// [v16.8] 헬프데스크 답변은 수정 전 품질/구성을 복원하고 Flash 모델을 우선 사용합니다.
-const GEMINI_REPLY_MODELS = [
-  "gemini-2.5-flash",
+// [v16.11] 헬프데스크 답변은 일반 생성과 정교한 재생성의 모델 경로를 분리합니다.
+const GEMINI_REPLY_FAST_MODELS = [
+  "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
-  "gemini-2.5-flash-lite",
-  "gemini-3.5-flash-lite"
+  "gemini-2.5-flash-lite"
+];
+const GEMINI_REPLY_PRECISE_MODELS = [
+  "gemini-3.7-flash",
+  "gemini-3.5-flash",
+  "gemini-2.5-flash"
 ];
 
 // [v16.10.2] 게시판 캡처 자동 이관은 최신 저지연 Lite 모델을 우선 사용합니다.
@@ -559,6 +563,7 @@ function generateHelpdeskReply(payload) {
   const requestText = (payload.requestText || '').toString().trim();
   const draftAnswer = (payload.draftAnswer || '').toString().trim();
   const images = Array.isArray(payload.images) ? payload.images : [];
+  const replyMode = payload.mode === 'precise' ? 'precise' : 'fast';
 
   if (!requestText && images.length === 0) {
     throw new Error('요청 사항 또는 참고 이미지를 입력해 주세요.');
@@ -665,10 +670,10 @@ ${draftAnswer}
     if (data) parts.push({ inlineData: { mimeType: mimeType, data: data } });
   });
 
-  // 수정 전 로직처럼 continuation을 지원하는 품질 우선 호출을 사용해 문장 중간 잘림을 방지합니다.
-  let result = callGeminiFromServer([{ role: 'user', parts: parts }]);
-  result = enforceHelpdeskReplyFormat(result);
-  return { success: true, text: result };
+  // 일반 생성은 저지연 Lite, 정교한 재생성은 최신 Flash를 우선 사용합니다.
+  const generated = callGeminiFastFromServer([{ role: 'user', parts: parts }], replyMode);
+  const result = enforceHelpdeskReplyFormat(generated.text);
+  return { success: true, text: result, mode: replyMode, model: generated.model };
 }
 
 // [v16.10] 게시판 캡처 이미지를 분석해 새 이슈 등록 폼에 자동 입력할 데이터를 반환합니다.
@@ -738,7 +743,7 @@ function callGeminiJsonFastFromServer(contents) {
     const model = models[i];
     const url = 'https://generativelanguage.googleapis.com/' + GEMINI_API_VERSION + '/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
     const generationConfig = {
-      maxOutputTokens: 1800,
+      maxOutputTokens: 900,
       responseMimeType: 'application/json'
     };
 
@@ -873,20 +878,27 @@ function enforceHelpdeskReplyFormat(text) {
 }
 
 
-function callGeminiFastFromServer(contents) {
+function callGeminiFastFromServer(contents, mode) {
   const apiKey = PropertiesService.getScriptProperties().getProperty(GEMINI_API_KEY_PROPERTY);
   if (!apiKey) throw new Error('Gemini API 키가 설정되어 있지 않습니다. 스프레드시트 메뉴에서 "🚀 KIC 헬프데스크 > 🔐 Gemini API 키 설정"을 먼저 실행하세요.');
 
-  const payload = {
-    generationConfig: { temperature: 0.18, topP: 0.8, maxOutputTokens: 1800 },
-    contents: contents
-  };
+  const replyMode = mode === 'precise' ? 'precise' : 'fast';
+  const models = replyMode === 'precise' ? GEMINI_REPLY_PRECISE_MODELS : GEMINI_REPLY_FAST_MODELS;
   const errors = [];
 
-  // 짧은 답변은 lite/flash 모델을 우선 사용하고 1.5~3.5초 sleep 재시도를 생략합니다.
-  for (let i = 0; i < GEMINI_REPLY_MODELS.length; i++) {
-    const model = GEMINI_REPLY_MODELS[i];
+  // 짧은 답변은 지정된 Flash 계열을 우선 사용하고 대기 재시도를 생략합니다.
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
     const url = 'https://generativelanguage.googleapis.com/' + GEMINI_API_VERSION + '/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
+    const generationConfig = { maxOutputTokens: replyMode === 'precise' ? 1800 : 1400 };
+    if (model.indexOf('gemini-3') === 0) {
+      generationConfig.thinkingConfig = { thinkingLevel: model.indexOf('gemini-3.7') === 0 ? 'low' : 'minimal' };
+    } else {
+      generationConfig.temperature = 0.18;
+      generationConfig.topP = 0.8;
+      generationConfig.thinkingConfig = { thinkingBudget: 0 };
+    }
+    const payload = { generationConfig: generationConfig, contents: contents };
 
     try {
       const response = UrlFetchApp.fetch(url, {
@@ -905,7 +917,7 @@ function callGeminiFastFromServer(contents) {
         const text = candidate && candidate.content && candidate.content.parts
           ? candidate.content.parts.map(function(p) { return p.text || ''; }).join('').trim()
           : '';
-        if (text) return text;
+        if (text) return { text: text, model: model };
         errors.push(model + ': generated text was empty.');
         continue;
       }
