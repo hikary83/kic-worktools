@@ -15,9 +15,9 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet" />
   <link href="css/kic-theme.css" rel="stylesheet" />
   <link href="https://cdn.jsdelivr.net/npm/vis-timeline@8.5.1/styles/vis-timeline-graph2d.min.css" rel="stylesheet" />
-  <link href="css/jira-timeline.css?v=1.0.6" rel="stylesheet" />
+  <link href="css/jira-timeline.css?v=1.1.0" rel="stylesheet" />
   <script src="js/config.js"></script>
-  <script src="js/kic-sidebar.js?v=2.6.4"></script>
+  <script src="js/kic-sidebar.js?v=2.7.0"></script>
   <script src="js/kic-common.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/vis-timeline@8.5.1/standalone/umd/vis-timeline-graph2d.min.js"></script>
 </head>
@@ -28,9 +28,11 @@
     <header class="bg-white dark:bg-[#2F2F2F] border-b border-slate-200 dark:border-[#424242] px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40 transition-colors">
       <div>
         <h1 class="text-xl font-extrabold text-slate-900 dark:text-[#ECECEC] tracking-tight flex items-center gap-2">🗓️ IT전략실 통합 일정</h1>
-        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1">5개 Jira 프로젝트의 진행 업무를 일정 중심으로 한눈에 확인합니다.</p>
+        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1" id="projectScopeSummary">Jira 프로젝트의 진행 업무를 일정 중심으로 한눈에 확인합니다.</p>
       </div>
       <div class="jira-header-actions">
+        <button class="jira-button" id="usageGuideButton" type="button"><i class="fa-regular fa-circle-question"></i> 사용 안내</button>
+        <button class="jira-button" id="projectSettingsButton" type="button"><i class="fa-solid fa-gear"></i> 프로젝트 설정</button>
         <span class="jira-readonly-badge"><i class="fa-solid fa-shield-halved"></i> Jira 조회 전용</span>
         <span class="jira-updated-badge" id="lastUpdated"><i class="fa-regular fa-clock"></i> 아직 조회하지 않음</span>
         <button class="jira-button primary" id="refreshButton" type="button">
@@ -124,11 +126,7 @@
           </div>
         </div>
         <div class="jira-legend" aria-label="프로젝트 색상 안내">
-          <span><i class="c21r"></i>CMS</span>
-          <span><i class="cw2r"></i>CWIZ 2.0</span>
-          <span><i class="cwiz"></i>CWIZ 1.0</span>
-          <span><i class="itm"></i>IT 업무</span>
-          <span><i class="wwwmr"></i>홈페이지</span>
+          <span class="jira-project-legend" id="projectLegend"></span>
           <span><i style="background:var(--text-muted)"></i>점 표시는 시작일 또는 기한만 등록된 업무</span>
         </div>
         <div id="jiraTimeline" aria-label="Jira 통합 일정 타임라인"></div>
@@ -142,25 +140,44 @@
 
       <section class="jira-panel" id="unscheduledPanel" aria-labelledby="unscheduledTitle">
         <div class="jira-timeline-heading">
-          <h2 class="jira-section-title" id="unscheduledTitle">
-            일정 미지정 업무 <span class="jira-count-badge" id="unscheduledTableCount">0건</span>
-          </h2>
-          <button class="jira-button jira-excluded-toggle" id="toggleExcludedButton" type="button" aria-pressed="false" disabled>
-            <i class="fa-regular fa-eye" aria-hidden="true"></i>
-            <span id="excludedToggleLabel">일정 제외 0건 보기</span>
-          </button>
+          <div class="jira-section-title-group">
+            <h2 class="jira-section-title" id="unscheduledTitle">
+              일정 미지정 업무 <span class="jira-count-badge" id="unscheduledTableCount">0건</span>
+            </h2>
+            <span class="jira-count-badge muted" id="excludedCountBadge">일정 제외 0건</span>
+          </div>
         </div>
         <div class="jira-table-wrap">
           <table class="jira-table">
             <thead>
               <tr>
                 <th><button class="jira-sort-button" type="button" data-unscheduled-sort="key">Issue <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
-                <th><button class="jira-sort-button" type="button" data-unscheduled-sort="projectKey">프로젝트 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
+                <th>
+                  <div class="jira-column-heading">
+                    <button class="jira-sort-button" type="button" data-unscheduled-sort="projectKey">프로젝트 <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+                    <label class="jira-column-filter" title="프로젝트 필터"><i class="fa-solid fa-filter" aria-hidden="true"></i><select id="unscheduledProjectFilter" aria-label="미지정 업무 프로젝트 필터"><option value="">전체 프로젝트</option></select></label>
+                  </div>
+                </th>
                 <th><button class="jira-sort-button" type="button" data-unscheduled-sort="summary">업무명 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
-                <th><button class="jira-sort-button" type="button" data-unscheduled-sort="status">상태 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
-                <th><button class="jira-sort-button" type="button" data-unscheduled-sort="assignee">담당자 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
+                <th>
+                  <div class="jira-column-heading">
+                    <button class="jira-sort-button" type="button" data-unscheduled-sort="status">상태 <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+                    <label class="jira-column-filter" title="상태 필터"><i class="fa-solid fa-filter" aria-hidden="true"></i><select id="unscheduledStatusFilter" aria-label="미지정 업무 상태 필터"><option value="">전체 상태</option></select></label>
+                  </div>
+                </th>
+                <th>
+                  <div class="jira-column-heading">
+                    <button class="jira-sort-button" type="button" data-unscheduled-sort="assignee">담당자 <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+                    <label class="jira-column-filter" title="담당자 필터"><i class="fa-solid fa-filter" aria-hidden="true"></i><select id="unscheduledAssigneeFilter" aria-label="미지정 업무 담당자 필터"><option value="">전체 담당자</option></select></label>
+                  </div>
+                </th>
                 <th><button class="jira-sort-button" type="button" data-unscheduled-sort="updated">최근 수정 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
-                <th><button class="jira-sort-button" type="button" data-unscheduled-sort="scheduleType">일정 구분 <i class="fa-solid fa-sort" aria-hidden="true"></i></button></th>
+                <th>
+                  <div class="jira-column-heading">
+                    <button class="jira-sort-button" type="button" data-unscheduled-sort="scheduleType">일정 구분 <i class="fa-solid fa-sort" aria-hidden="true"></i></button>
+                    <label class="jira-column-filter is-active" title="일정 구분 필터"><i class="fa-solid fa-filter" aria-hidden="true"></i><select id="unscheduledScheduleFilter" aria-label="미지정 업무 일정 구분 필터"><option value="unscheduled">미지정만</option><option value="all">전체</option><option value="excluded">일정 제외만</option></select></label>
+                  </div>
+                </th>
               </tr>
             </thead>
             <tbody id="unscheduledTableBody"></tbody>
@@ -171,6 +188,40 @@
     </div>
   </main>
 
-  <script src="js/jira-timeline.js?v=1.0.6"></script>
+  <div class="kic-modal-backdrop hidden" id="usageGuideModal" role="dialog" aria-modal="true" aria-labelledby="usageGuideTitle">
+    <div class="kic-modal-card jira-modal-card">
+      <div class="jira-modal-header">
+        <div><h2 id="usageGuideTitle">IT전략실 통합 일정 사용 안내</h2><p>일정 확인과 Jira 업무 정리 방법</p></div>
+        <button class="jira-button icon-only" type="button" data-close-jira-modal aria-label="사용 안내 닫기"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="jira-modal-body jira-guide-grid">
+        <section><i class="fa-solid fa-chart-gantt"></i><div><h3>타임라인</h3><p>시작일과 기한이 있는 업무를 프로젝트별로 표시합니다. 막대나 점을 클릭하면 Jira 원본이 새 탭에서 열립니다.</p></div></section>
+        <section><i class="fa-solid fa-filter"></i><div><h3>필터와 정렬</h3><p>상단 필터는 화면 전체에 적용됩니다. 미지정 목록의 컬럼 필터는 해당 표에만 적용되고, 컬럼명은 오름·내림차순 정렬에 사용합니다.</p></div></section>
+        <section><i class="fa-solid fa-calendar-xmark"></i><div><h3>일정 미지정</h3><p>시작일과 기한이 모두 없는 업무입니다. Issue Key 또는 업무명을 클릭해 Jira에서 일정을 입력할 수 있습니다.</p></div></section>
+        <section><i class="fa-solid fa-eye-slash"></i><div><h3>일정 제외</h3><p>기간을 등록하지 않는 업무에는 Jira 레이블 <code>일정제외</code>를 추가합니다. 일정 구분 필터에서 제외 업무를 다시 확인할 수 있습니다.</p></div></section>
+      </div>
+      <div class="jira-modal-footer"><button class="jira-button primary" type="button" data-close-jira-modal>확인</button></div>
+    </div>
+  </div>
+
+  <div class="kic-modal-backdrop hidden" id="projectSettingsModal" role="dialog" aria-modal="true" aria-labelledby="projectSettingsTitle">
+    <div class="kic-modal-card jira-modal-card jira-project-settings-modal">
+      <div class="jira-modal-header">
+        <div><h2 id="projectSettingsTitle">Jira 프로젝트 설정</h2><p>조회할 프로젝트와 화면 표시 순서를 관리합니다.</p></div>
+        <button class="jira-button icon-only" type="button" data-close-jira-modal aria-label="프로젝트 설정 닫기"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <div class="jira-modal-body">
+        <div class="jira-project-settings-head"><span>사용</span><span>Jira 프로젝트</span><span>화면 표시명</span><span>순서</span></div>
+        <div class="jira-project-settings-list" id="projectSettingsList"></div>
+        <button class="jira-button jira-add-project-button" id="addProjectButton" type="button"><i class="fa-solid fa-plus"></i> 프로젝트 추가</button>
+      </div>
+      <div class="jira-modal-footer">
+        <button class="jira-button" type="button" data-close-jira-modal>취소</button>
+        <button class="jira-button primary" id="saveProjectSettingsButton" type="button"><i class="fa-solid fa-floppy-disk"></i> 저장</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/jira-timeline.js?v=1.1.0"></script>
 </body>
 </html>

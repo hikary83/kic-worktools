@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v2.6.4` (2026-09-04 기준)
+> **현재 버전**: `v2.7.0` (2026-09-04 기준)
 
 ---
 
@@ -16,7 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
-| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.0.6` | 로그인 없는 테스트 모드로 5개 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.1.0` | 로그인 없는 테스트 모드로 설정된 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
 | **📊 CWIZ 주간 대시보드** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.4.0` | 주간 엑셀 5종 기반 기업 지표 분석, 상세 드릴다운, GitHub 원클릭 Save/배포 및 캐시 시스템 |
 
 ---
@@ -32,6 +32,15 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v2.7.0` (2026-09-04)
+* **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.1.0)**:
+  * 🔽 **미지정 업무 컬럼 필터**: 프로젝트·상태·담당자·일정 구분 헤더에서 표 전용 드롭다운 필터 제공
+  * 🗂️ **일정 구분 조회 통합**: 기존 제외 보기 버튼을 없애고 `미지정만`·`전체`·`일정 제외만` 필터로 통합
+  * ⚙️ **프로젝트 설정 모달**: 프로젝트 추가·사용 여부·표시명·순서를 화면에서 관리하고 저장 후 자동 재조회
+  * 🔗 **Jira 프로젝트 목록 연동**: 접근 가능한 Jira 프로젝트를 설정 모달의 드롭다운으로 불러와 코드 오입력 방지
+  * 🧩 **프로젝트 설정 단일화**: Apps Script의 `JIRA_TIMELINE_PROJECTS` 설정을 조회 대상과 화면 구성의 공통 기준으로 사용
+  * ❔ **사용 안내 모달**: 타임라인·필터·미지정 업무·`일정제외` 레이블 사용법을 화면에서 확인
 
 ### `v2.6.4` (2026-09-04)
 * **IT전략실 Jira 통합 일정 (`jira-timeline.html` v1.0.6)**:
@@ -159,8 +168,9 @@ Jira 일정은 기존 업무 API와 분리된 [`jira-api/`](jira-api/) Apps Scri
 | `JIRA_API_TOKEN` | Jira API Token |
 | `JIRA_START_DATE_FIELD_ID` | 선택값. 미설정 시 `Start date` 날짜 필드를 자동 탐색 |
 | `JIRA_TIMELINE_WEB_ENABLED` | `true`일 때만 웹 조회 허용 |
+| `JIRA_TIMELINE_PROJECTS` | 화면의 프로젝트 설정에서 관리하는 조회 대상·표시명·사용 여부 JSON |
 
-OAuth 웹 클라이언트의 승인된 JavaScript 원본은 `https://hikary83.github.io`입니다. 화면은 GitHub Pages 주소에서 열리며, Google 로그인 후 전달된 ID Token을 조회 전용 API가 검증합니다. `docs/js/config.js`의 `JIRA_TIMELINE_API_URL`에는 이 전용 웹앱의 `/exec` URL만 사용합니다.
+현재 기능 검증 기간에는 Google 로그인 없이 공개 테스트 방식으로 조회합니다. `docs/js/config.js`의 `JIRA_TIMELINE_API_URL`에는 일정 전용 웹앱의 `/exec` URL만 사용하며, Jira Issue 자체는 화면에서 수정하지 않습니다.
 
 ### 1) Git 커밋 및 GitHub Pages 배포
 ```powershell

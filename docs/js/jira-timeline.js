@@ -6,25 +6,29 @@
 (function initJiraTimelinePage() {
   'use strict';
 
-  const PROJECTS = {
-    C21R: { name: 'CMS', description: '[CMS] 2026 Update release', order: 1 },
-    CW2R: { name: 'CWIZ 2.0', description: '[CWIZ 2.0] Update release', order: 2 },
-    CWIZ: { name: 'CWIZ 1.0', description: '[CWIZ 1.0] Maintenance', order: 3 },
-    ITM: { name: 'IT 업무', description: 'IT Task Management', order: 4 },
-    WWWMR: { name: '홈페이지', description: '[HomePage] Maintenance', order: 5 }
-  };
+  const DEFAULT_PROJECTS = [
+    { key: 'C21R', name: 'CMS', enabled: true },
+    { key: 'CW2R', name: 'CWIZ 2.0', enabled: true },
+    { key: 'CWIZ', name: 'CWIZ 1.0', enabled: true },
+    { key: 'ITM', name: 'IT 업무', enabled: true },
+    { key: 'WWWMR', name: '홈페이지', enabled: true }
+  ];
+  const PROJECT_COLORS = ['#10a37f', '#3b82f6', '#8b5cf6', '#f59e0b', '#ec4899', '#06b6d4', '#f97316', '#84cc16'];
   const EXCLUDED_LABEL = '일정제외';
-  const EXCLUDED_VISIBILITY_KEY = 'kic-jira-timeline-show-excluded';
 
   const state = {
     issues: [],
+    projects: cloneProjects(DEFAULT_PROJECTS),
+    projectSettingsDraft: [],
+    availableProjects: [],
+    projectCatalogLoaded: false,
     timeline: null,
     anchorDate: new Date(),
     zoom: 'month',
     demoMode: new URLSearchParams(window.location.search).get('demo') === '1',
     publicConfig: null,
     unscheduledSort: { key: '', direction: 'asc' },
-    showExcluded: readExcludedVisibility()
+    unscheduledFilters: { projectKey: '', status: '', assignee: '', scheduleType: 'unscheduled' }
   };
 
   const elements = {};
@@ -51,8 +55,15 @@
     elements.assigneeFilter = document.getElementById('assigneeFilter');
     elements.statusFilter = document.getElementById('statusFilter');
     elements.resetFiltersButton = document.getElementById('resetFiltersButton');
-    elements.toggleExcludedButton = document.getElementById('toggleExcludedButton');
-    elements.excludedToggleLabel = document.getElementById('excludedToggleLabel');
+    elements.projectScopeSummary = document.getElementById('projectScopeSummary');
+    elements.projectLegend = document.getElementById('projectLegend');
+    elements.usageGuideButton = document.getElementById('usageGuideButton');
+    elements.projectSettingsButton = document.getElementById('projectSettingsButton');
+    elements.usageGuideModal = document.getElementById('usageGuideModal');
+    elements.projectSettingsModal = document.getElementById('projectSettingsModal');
+    elements.projectSettingsList = document.getElementById('projectSettingsList');
+    elements.addProjectButton = document.getElementById('addProjectButton');
+    elements.saveProjectSettingsButton = document.getElementById('saveProjectSettingsButton');
     elements.timelineContainer = document.getElementById('jiraTimeline');
     elements.timelineEmpty = document.getElementById('timelineEmpty');
     elements.timelineCount = document.getElementById('timelineCount');
@@ -62,8 +73,19 @@
     elements.overdueCount = document.getElementById('overdueCount');
     elements.unscheduledPanel = document.getElementById('unscheduledPanel');
     elements.unscheduledTableCount = document.getElementById('unscheduledTableCount');
+    elements.excludedCountBadge = document.getElementById('excludedCountBadge');
     elements.unscheduledTableBody = document.getElementById('unscheduledTableBody');
     elements.unscheduledSortButtons = Array.from(document.querySelectorAll('[data-unscheduled-sort]'));
+    elements.unscheduledProjectFilter = document.getElementById('unscheduledProjectFilter');
+    elements.unscheduledStatusFilter = document.getElementById('unscheduledStatusFilter');
+    elements.unscheduledAssigneeFilter = document.getElementById('unscheduledAssigneeFilter');
+    elements.unscheduledScheduleFilter = document.getElementById('unscheduledScheduleFilter');
+    elements.unscheduledColumnFilters = [
+      elements.unscheduledProjectFilter,
+      elements.unscheduledStatusFilter,
+      elements.unscheduledAssigneeFilter,
+      elements.unscheduledScheduleFilter
+    ];
     elements.previousRangeButton = document.getElementById('previousRangeButton');
     elements.nextRangeButton = document.getElementById('nextRangeButton');
     elements.todayButton = document.getElementById('todayButton');
@@ -78,7 +100,23 @@
     elements.assigneeFilter.addEventListener('change', renderFilteredData);
     elements.statusFilter.addEventListener('change', renderFilteredData);
     elements.resetFiltersButton.addEventListener('click', resetFilters);
-    elements.toggleExcludedButton.addEventListener('click', toggleExcludedVisibility);
+    elements.unscheduledColumnFilters.forEach(function(select) {
+      select.addEventListener('change', function() {
+        syncUnscheduledFilterState();
+        renderFilteredData();
+        select.blur();
+      });
+    });
+    elements.usageGuideButton.addEventListener('click', function() { openModal(elements.usageGuideModal); });
+    elements.projectSettingsButton.addEventListener('click', openProjectSettings);
+    document.querySelectorAll('[data-close-jira-modal]').forEach(function(button) {
+      button.addEventListener('click', function() { closeModal(button.closest('.kic-modal-backdrop')); });
+    });
+    elements.addProjectButton.addEventListener('click', addProjectSettingRow);
+    elements.saveProjectSettingsButton.addEventListener('click', saveProjectSettings);
+    elements.projectSettingsList.addEventListener('input', updateProjectSettingsDraft);
+    elements.projectSettingsList.addEventListener('change', updateProjectSettingsDraft);
+    elements.projectSettingsList.addEventListener('click', handleProjectSettingsAction);
     elements.unscheduledSortButtons.forEach(function(button) {
       button.addEventListener('click', function() {
         setUnscheduledSort(button.dataset.unscheduledSort);
@@ -116,6 +154,7 @@
       if (!payload || payload.enabled === false) {
         state.issues = [];
         populateFilters();
+        populateUnscheduledFilters();
         renderFilteredData();
         showSetupGuide(payload || {});
         setStatus('warning', (payload && payload.meta && payload.meta.message) || 'Jira 연동 설정이 필요합니다.');
@@ -123,8 +162,10 @@
         return;
       }
 
+      applyProjectConfig((payload.meta && payload.meta.projects) || payload.projects || state.projects);
       state.issues = Array.isArray(payload.issues) ? payload.issues : [];
       populateFilters();
+      populateUnscheduledFilters();
       renderFilteredData();
 
       const meta = payload.meta || {};
@@ -139,12 +180,13 @@
       } else if (!meta.startDateFieldFound) {
         setStatus('warning', 'Jira Issue ' + state.issues.length + '건을 조회했습니다. Start date 필드는 찾지 못해 기한 중심으로 표시합니다.');
       } else {
-        setStatus('success', '5개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다.');
+        setStatus('success', getActiveProjects().length + '개 프로젝트의 진행 중 Jira Issue ' + state.issues.length + '건을 불러왔습니다.');
       }
     } catch (error) {
       console.error('Jira timeline load error:', error);
       state.issues = [];
       populateFilters();
+      populateUnscheduledFilters();
       renderFilteredData();
       const errorMessage = normalizeErrorMessage(error);
       setStatus('error', errorMessage);
@@ -160,6 +202,7 @@
     setStatus('loading', 'Jira 조회 설정을 확인하고 있습니다.', true);
     try {
       state.publicConfig = await callJiraTimelineApi('getJiraTimelinePublicConfig', {}, 'GET');
+      applyProjectConfig(state.publicConfig && state.publicConfig.projects);
       if (!state.publicConfig || state.publicConfig.enabled === false || state.publicConfig.configured === false) {
         showSetupGuide(state.publicConfig || {});
         setStatus('warning', 'Jira 조회 전용 연동 설정이 아직 완료되지 않았습니다.');
@@ -213,8 +256,8 @@
     const selectedStatus = elements.statusFilter.value;
 
     elements.projectFilter.innerHTML = '<option value="">전체 프로젝트</option>' +
-      Object.keys(PROJECTS).map(function(key) {
-        return '<option value="' + key + '">' + key + ' · ' + escapeHtml(PROJECTS[key].name) + '</option>';
+      getActiveProjects().map(function(project) {
+        return '<option value="' + escapeAttribute(project.key) + '">' + escapeHtml(project.key + ' · ' + project.name) + '</option>';
       }).join('');
 
     const assignees = uniqueSorted(state.issues.map(function(issue) { return issue.assignee || '미지정'; }));
@@ -240,6 +283,72 @@
     }
   }
 
+  function populateUnscheduledFilters() {
+    const candidates = state.issues.filter(function(issue) {
+      return !hasAnySchedule(issue) || isTimelineExcluded(issue);
+    });
+    setSelectOptions(
+      elements.unscheduledProjectFilter,
+      [{ value: '', label: '전체 프로젝트' }].concat(getActiveProjects().map(function(project) {
+        return { value: project.key, label: project.name };
+      })),
+      state.unscheduledFilters.projectKey
+    );
+    setSelectOptions(
+      elements.unscheduledStatusFilter,
+      [{ value: '', label: '전체 상태' }].concat(uniqueSorted(candidates.map(function(issue) { return issue.status; })).map(function(status) {
+        return { value: status, label: status };
+      })),
+      state.unscheduledFilters.status
+    );
+    setSelectOptions(
+      elements.unscheduledAssigneeFilter,
+      [{ value: '', label: '전체 담당자' }].concat(uniqueSorted(candidates.map(function(issue) { return issue.assignee || '미지정'; })).map(function(assignee) {
+        return { value: assignee, label: assignee };
+      })),
+      state.unscheduledFilters.assignee
+    );
+    syncUnscheduledFilterState();
+  }
+
+  function setSelectOptions(select, options, selectedValue) {
+    select.innerHTML = options.map(function(option) {
+      return '<option value="' + escapeAttribute(option.value) + '">' + escapeHtml(option.label) + '</option>';
+    }).join('');
+    if (Array.from(select.options).some(function(option) { return option.value === selectedValue; })) {
+      select.value = selectedValue;
+    }
+  }
+
+  function syncUnscheduledFilterState() {
+    state.unscheduledFilters.projectKey = elements.unscheduledProjectFilter.value;
+    state.unscheduledFilters.status = elements.unscheduledStatusFilter.value;
+    state.unscheduledFilters.assignee = elements.unscheduledAssigneeFilter.value;
+    state.unscheduledFilters.scheduleType = elements.unscheduledScheduleFilter.value || 'unscheduled';
+  }
+
+  function filterUnscheduledIssues(issues) {
+    const filters = state.unscheduledFilters;
+    return issues.filter(function(issue) {
+      const excluded = isTimelineExcluded(issue);
+      if (filters.projectKey && issue.projectKey !== filters.projectKey) return false;
+      if (filters.status && issue.status !== filters.status) return false;
+      if (filters.assignee && (issue.assignee || '미지정') !== filters.assignee) return false;
+      if (filters.scheduleType === 'unscheduled' && excluded) return false;
+      if (filters.scheduleType === 'excluded' && !excluded) return false;
+      return true;
+    });
+  }
+
+  function updateColumnFilterStyles() {
+    elements.unscheduledColumnFilters.forEach(function(select) {
+      const isScheduleFilter = select === elements.unscheduledScheduleFilter;
+      const isActive = isScheduleFilter ? select.value !== 'all' : Boolean(select.value);
+      const wrapper = select.closest('.jira-column-filter');
+      if (wrapper) wrapper.classList.toggle('is-active', isActive);
+    });
+  }
+
   function renderFilteredData() {
     const issues = getFilteredIssues();
     const excluded = issues.filter(isTimelineExcluded);
@@ -247,7 +356,7 @@
     const scheduled = activeIssues.filter(hasAnySchedule);
     const unscheduled = activeIssues.filter(function(issue) { return !hasAnySchedule(issue); });
     const overdue = activeIssues.filter(isOverdue);
-    const displayedUnscheduled = state.showExcluded ? unscheduled.concat(excluded) : unscheduled;
+    const displayedUnscheduled = filterUnscheduledIssues(unscheduled.concat(excluded));
 
     elements.totalCount.textContent = activeIssues.length.toLocaleString('ko-KR');
     elements.scheduledCount.textContent = scheduled.length.toLocaleString('ko-KR');
@@ -255,10 +364,11 @@
     elements.overdueCount.textContent = overdue.length.toLocaleString('ko-KR');
     elements.timelineCount.textContent = scheduled.length.toLocaleString('ko-KR') + '건';
     elements.unscheduledTableCount.textContent = displayedUnscheduled.length.toLocaleString('ko-KR') + '건';
+    elements.excludedCountBadge.textContent = '일정 제외 ' + excluded.length.toLocaleString('ko-KR') + '건';
 
     renderTimeline(scheduled);
     renderUnscheduledTable(displayedUnscheduled);
-    renderExcludedVisibility(excluded.length);
+    updateColumnFilterStyles();
   }
 
   function getFilteredIssues() {
@@ -268,6 +378,8 @@
     const status = elements.statusFilter.value;
 
     return state.issues.filter(function(issue) {
+      const configuredProject = getProjectDefinition(issue.projectKey);
+      if (!configuredProject || !configuredProject.enabled) return false;
       if (project && issue.projectKey !== project) return false;
       if (assignee && (issue.assignee || '미지정') !== assignee) return false;
       if (status && issue.status !== status) return false;
@@ -292,7 +404,7 @@
 
     const projectKeys = uniqueSorted(issues.map(function(issue) { return issue.projectKey; }))
       .sort(function(a, b) {
-        return (PROJECTS[a] ? PROJECTS[a].order : 999) - (PROJECTS[b] ? PROJECTS[b].order : 999);
+        return projectOrder(a) - projectOrder(b);
       });
     const groups = projectKeys.map(createTimelineGroup);
     const items = issues
@@ -350,9 +462,11 @@
   }
 
   function createTimelineGroup(projectKey) {
-    const project = PROJECTS[projectKey] || { name: projectKey, description: projectKey, order: 999 };
+    const project = getProjectDefinition(projectKey) || { key: projectKey, name: projectKey, enabled: true };
+    const color = projectColor(projectKey);
     const label = document.createElement('div');
     label.className = 'jira-group-label';
+    label.style.setProperty('--project-color', color);
 
     const dot = document.createElement('span');
     dot.className = 'jira-group-dot';
@@ -372,7 +486,7 @@
     label.append(dot, copy);
     return {
       id: projectKey,
-      order: project.order,
+      order: projectOrder(projectKey),
       className: projectClass(projectKey),
       content: label
     };
@@ -408,6 +522,7 @@
       start: displayDate,
       type: hasRange ? 'range' : 'point',
       className: 'jira-timeline-item ' + projectClass(issue.projectKey) + (hasRange ? '' : ' jira-timeline-point'),
+      style: '--project-color:' + projectColor(issue.projectKey),
       content: content,
       title: '<strong>' + escapeHtml(issue.key + ' · ' + issue.summary) + '</strong><br>' +
         escapeHtml(dateLabel) + '<br>' + escapeHtml((issue.status || '-') + ' · ' + (issue.assignee || '미지정'))
@@ -429,12 +544,13 @@
   function renderIssueRows(issues) {
     return issues.map(function(issue) {
       const projectKey = issue.projectKey || '-';
-      const projectName = PROJECTS[projectKey] ? PROJECTS[projectKey].name : projectKey;
+      const project = getProjectDefinition(projectKey);
+      const projectName = project ? project.name : projectKey;
       const issueUrl = escapeAttribute(issue.url || '#');
       const excluded = isTimelineExcluded(issue);
       return '<tr>' +
         '<td><a class="jira-issue-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer">' + escapeHtml(issue.key) + '</a></td>' +
-        '<td><span class="jira-pill jira-project-pill ' + projectClass(projectKey) + '" title="' + escapeAttribute(projectKey) + '">' + escapeHtml(projectName) + '</span></td>' +
+        '<td><span class="jira-pill jira-project-pill ' + projectClass(projectKey) + '" style="--project-color:' + escapeAttribute(projectColor(projectKey)) + '" title="' + escapeAttribute(projectKey) + '">' + escapeHtml(projectName) + '</span></td>' +
         '<td><a class="jira-title-link" href="' + issueUrl + '" target="_blank" rel="noopener noreferrer" title="Jira에서 새 탭으로 열기">' +
           '<span>' + escapeHtml(issue.summary || '-') + '</span><i class="fa-solid fa-arrow-up-right-from-square" aria-hidden="true"></i></a></td>' +
         '<td><span class="jira-pill">' + escapeHtml(issue.status || '-') + '</span></td>' +
@@ -451,30 +567,206 @@
     renderFilteredData();
   }
 
-  function toggleExcludedVisibility() {
-    state.showExcluded = !state.showExcluded;
-    try {
-      window.localStorage.setItem(EXCLUDED_VISIBILITY_KEY, state.showExcluded ? 'true' : 'false');
-    } catch (error) {
-      // 저장이 제한된 브라우저에서도 현재 화면의 토글은 그대로 동작합니다.
-    }
-    renderFilteredData();
+  function openModal(modal) {
+    if (!modal) return;
+    modal.classList.remove('hidden');
   }
 
-  function renderExcludedVisibility(count) {
-    const hasExcludedIssues = count > 0;
-    const isVisible = hasExcludedIssues && state.showExcluded;
-    const icon = elements.toggleExcludedButton.querySelector('i');
-    elements.toggleExcludedButton.disabled = !hasExcludedIssues;
-    elements.toggleExcludedButton.classList.toggle('is-active', isVisible);
-    elements.toggleExcludedButton.setAttribute('aria-pressed', isVisible ? 'true' : 'false');
-    elements.toggleExcludedButton.setAttribute('aria-label', isVisible
-      ? '일정 제외 업무 ' + count.toLocaleString('ko-KR') + '건 숨기기'
-      : '일정 제외 업무 ' + count.toLocaleString('ko-KR') + '건 보기');
-    elements.excludedToggleLabel.textContent = isVisible
-      ? '일정 제외 ' + count.toLocaleString('ko-KR') + '건 숨기기'
-      : '일정 제외 ' + count.toLocaleString('ko-KR') + '건 보기';
-    if (icon) icon.className = isVisible ? 'fa-regular fa-eye-slash' : 'fa-regular fa-eye';
+  function closeModal(modal) {
+    if (!modal) return;
+    modal.classList.add('hidden');
+  }
+
+  async function openProjectSettings() {
+    state.projectSettingsDraft = cloneProjects(state.projects);
+    openModal(elements.projectSettingsModal);
+    elements.addProjectButton.disabled = true;
+    elements.projectSettingsList.innerHTML = '<div class="jira-project-catalog-status"><i class="fa-solid fa-circle-notch fa-spin"></i><span>Jira 프로젝트를 불러오는 중입니다.</span></div>';
+    try {
+      await loadAvailableProjects();
+      renderProjectSettingsRows();
+      elements.addProjectButton.disabled = false;
+    } catch (error) {
+      elements.projectSettingsList.innerHTML = '<div class="jira-project-catalog-status error"><i class="fa-solid fa-triangle-exclamation"></i><span>' + escapeHtml(normalizeErrorMessage(error)) + '</span></div>';
+      notify(normalizeErrorMessage(error), 'error', 4200);
+    }
+  }
+
+  function renderProjectSettingsRows() {
+    elements.projectSettingsList.innerHTML = state.projectSettingsDraft.map(function(project, index) {
+      const projectOptions = buildAvailableProjectOptions(project.key);
+      return '<div class="jira-project-settings-row" data-project-index="' + index + '">' +
+        '<label class="jira-project-enabled" title="조회 사용 여부"><input type="checkbox" data-project-field="enabled" ' + (project.enabled ? 'checked' : '') + ' aria-label="' + escapeAttribute((project.name || project.key || '새 프로젝트') + ' 사용 여부') + '"></label>' +
+        '<select data-project-field="key" aria-label="Jira 프로젝트 선택">' + projectOptions + '</select>' +
+        '<input type="text" data-project-field="name" value="' + escapeAttribute(project.name) + '" maxlength="40" placeholder="화면 표시명" aria-label="화면 표시명">' +
+        '<div class="jira-project-order-actions">' +
+          '<button class="jira-button" type="button" data-project-action="up" title="위로" aria-label="위로 이동" ' + (index === 0 ? 'disabled' : '') + '><i class="fa-solid fa-arrow-up"></i></button>' +
+          '<button class="jira-button" type="button" data-project-action="down" title="아래로" aria-label="아래로 이동" ' + (index === state.projectSettingsDraft.length - 1 ? 'disabled' : '') + '><i class="fa-solid fa-arrow-down"></i></button>' +
+          '<button class="jira-button remove" type="button" data-project-action="remove" title="목록에서 삭제" aria-label="프로젝트 삭제"><i class="fa-solid fa-trash"></i></button>' +
+        '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function updateProjectSettingsDraft(event) {
+    const row = event.target.closest('[data-project-index]');
+    const field = event.target.dataset.projectField;
+    if (!row || !field) return;
+    const index = Number(row.dataset.projectIndex);
+    const project = state.projectSettingsDraft[index];
+    if (!project) return;
+    project[field] = field === 'enabled' ? event.target.checked : event.target.value;
+    if (field === 'key') {
+      const selectedProject = getAvailableProjectDefinition(project.key);
+      if (selectedProject) {
+        project.name = selectedProject.name;
+        const nameInput = row.querySelector('[data-project-field="name"]');
+        if (nameInput) nameInput.value = selectedProject.name;
+      }
+    }
+  }
+
+  function handleProjectSettingsAction(event) {
+    const button = event.target.closest('[data-project-action]');
+    if (!button) return;
+    const row = button.closest('[data-project-index]');
+    const index = Number(row && row.dataset.projectIndex);
+    const action = button.dataset.projectAction;
+    if (!Number.isInteger(index)) return;
+    if (action === 'up' && index > 0) {
+      const previous = state.projectSettingsDraft[index - 1];
+      state.projectSettingsDraft[index - 1] = state.projectSettingsDraft[index];
+      state.projectSettingsDraft[index] = previous;
+    } else if (action === 'down' && index < state.projectSettingsDraft.length - 1) {
+      const next = state.projectSettingsDraft[index + 1];
+      state.projectSettingsDraft[index + 1] = state.projectSettingsDraft[index];
+      state.projectSettingsDraft[index] = next;
+    } else if (action === 'remove') {
+      state.projectSettingsDraft.splice(index, 1);
+    }
+    renderProjectSettingsRows();
+  }
+
+  function addProjectSettingRow() {
+    const usedKeys = state.projectSettingsDraft.map(function(project) { return project.key; });
+    const nextProject = state.availableProjects.find(function(project) {
+      return usedKeys.indexOf(project.key) === -1;
+    });
+    if (!nextProject) {
+      notify('추가할 수 있는 Jira 프로젝트가 없습니다.', 'info');
+      return;
+    }
+    state.projectSettingsDraft.push({ key: nextProject.key, name: nextProject.name, enabled: true });
+    renderProjectSettingsRows();
+    const rows = elements.projectSettingsList.querySelectorAll('[data-project-index]');
+    const lastRow = rows[rows.length - 1];
+    if (lastRow) lastRow.querySelector('[data-project-field="name"]').focus();
+  }
+
+  async function loadAvailableProjects() {
+    if (state.projectCatalogLoaded && state.availableProjects.length) return;
+    let projects;
+    if (state.demoMode) {
+      projects = cloneProjects(DEFAULT_PROJECTS).concat([
+        { key: 'KICOPS', name: 'KIC 운영 업무' },
+        { key: 'SEC', name: '정보보안 업무' }
+      ]);
+    } else {
+      const result = await callJiraTimelineApi('getJiraTimelineProjects', {}, 'POST');
+      projects = result && result.projects;
+    }
+    state.availableProjects = mergeAvailableProjects(projects);
+    if (!state.availableProjects.length) throw new Error('Jira에서 선택 가능한 프로젝트를 찾지 못했습니다.');
+    state.projectCatalogLoaded = true;
+  }
+
+  function mergeAvailableProjects(projects) {
+    const merged = [];
+    const seen = {};
+    (Array.isArray(projects) ? projects : []).concat(state.projects).forEach(function(project) {
+      const key = String(project && project.key || '').trim().toUpperCase();
+      const name = String(project && (project.name || project.key) || '').trim();
+      if (!key || !name || seen[key]) return;
+      seen[key] = true;
+      merged.push({ key: key, name: name });
+    });
+    return merged.sort(function(left, right) {
+      return left.name.localeCompare(right.name, 'ko') || left.key.localeCompare(right.key);
+    });
+  }
+
+  function buildAvailableProjectOptions(selectedKey) {
+    const options = state.availableProjects.slice();
+    if (selectedKey && !options.some(function(project) { return project.key === selectedKey; })) {
+      options.unshift({ key: selectedKey, name: selectedKey });
+    }
+    return '<option value="">Jira 프로젝트 선택</option>' + options.map(function(project) {
+      return '<option value="' + escapeAttribute(project.key) + '" ' + (project.key === selectedKey ? 'selected' : '') + '>' +
+        escapeHtml(project.key + ' · ' + project.name) + '</option>';
+    }).join('');
+  }
+
+  function getAvailableProjectDefinition(projectKey) {
+    return state.availableProjects.find(function(project) { return project.key === projectKey; }) || null;
+  }
+
+  async function saveProjectSettings() {
+    let projects;
+    try {
+      projects = validateProjectSettings(state.projectSettingsDraft);
+    } catch (error) {
+      notify(error.message, 'error');
+      return;
+    }
+
+    const button = elements.saveProjectSettingsButton;
+    const originalHtml = button.innerHTML;
+    button.disabled = true;
+    button.innerHTML = '<i class="fa-solid fa-circle-notch fa-spin"></i> 저장 중';
+    try {
+      if (state.demoMode) {
+        applyProjectConfig(projects);
+      } else {
+        const result = await callJiraTimelineApi('saveJiraTimelineProjects', { projects: projects }, 'POST');
+        applyProjectConfig(result && result.projects);
+      }
+      closeModal(elements.projectSettingsModal);
+      populateFilters();
+      populateUnscheduledFilters();
+      renderFilteredData();
+      notify('프로젝트 설정을 저장했습니다.', 'success');
+      if (!state.demoMode) await loadIssues();
+    } catch (error) {
+      notify(normalizeErrorMessage(error), 'error', 4200);
+    } finally {
+      button.disabled = false;
+      button.innerHTML = originalHtml;
+    }
+  }
+
+  function validateProjectSettings(projects) {
+    if (!Array.isArray(projects) || !projects.length) throw new Error('프로젝트를 한 개 이상 등록해 주세요.');
+    if (projects.length > 20) throw new Error('프로젝트는 최대 20개까지 등록할 수 있습니다.');
+    const seen = {};
+    const normalized = projects.map(function(project) {
+      const key = String(project.key || '').trim().toUpperCase();
+      const name = String(project.name || '').trim();
+      if (!/^[A-Z][A-Z0-9]{1,19}$/.test(key)) throw new Error('프로젝트 코드를 확인해 주세요: ' + (key || '(빈 값)'));
+      if (!name) throw new Error(key + ' 프로젝트의 화면 표시명을 입력해 주세요.');
+      if (seen[key]) throw new Error('중복된 프로젝트 코드가 있습니다: ' + key);
+      seen[key] = true;
+      return { key: key, name: name.slice(0, 40), enabled: project.enabled !== false };
+    });
+    if (!normalized.some(function(project) { return project.enabled; })) throw new Error('사용할 프로젝트를 한 개 이상 선택해 주세요.');
+    return normalized;
+  }
+
+  function notify(message, type, duration) {
+    if (typeof window.showToast === 'function') {
+      window.showToast(message, type || 'info', duration || 2500);
+      return;
+    }
+    setStatus(type === 'error' ? 'error' : 'success', message);
   }
 
   function updateSortState(sortState, key) {
@@ -508,7 +800,7 @@
   function getIssueSortValue(issue, key) {
     if (key === 'scheduleType') return isTimelineExcluded(issue) ? '일정 제외' : '미지정';
     if (key === 'projectKey') {
-      const project = PROJECTS[issue.projectKey];
+      const project = getProjectDefinition(issue.projectKey);
       return project ? project.name : String(issue.projectKey || '').trim();
     }
     return String(issue[key] || '').trim();
@@ -645,12 +937,57 @@
     });
   }
 
-  function readExcludedVisibility() {
-    try {
-      return window.localStorage.getItem(EXCLUDED_VISIBILITY_KEY) === 'true';
-    } catch (error) {
-      return false;
-    }
+  function applyProjectConfig(projects) {
+    const source = Array.isArray(projects) && projects.length ? projects : DEFAULT_PROJECTS;
+    state.projects = source.map(function(project) {
+      return {
+        key: String(project.key || '').trim().toUpperCase(),
+        name: String(project.name || project.key || '').trim(),
+        enabled: project.enabled !== false
+      };
+    }).filter(function(project) { return project.key && project.name; });
+    if (!state.projects.length) state.projects = cloneProjects(DEFAULT_PROJECTS);
+    renderProjectScope();
+  }
+
+  function renderProjectScope() {
+    const projects = getActiveProjects();
+    elements.projectScopeSummary.textContent = projects.length + '개 Jira 프로젝트의 진행 업무를 일정 중심으로 한눈에 확인합니다.';
+    elements.projectLegend.innerHTML = projects.map(function(project) {
+      return '<span><i style="background:' + escapeAttribute(projectColor(project.key)) + '"></i>' + escapeHtml(project.name) + '</span>';
+    }).join('');
+  }
+
+  function getActiveProjects() {
+    return state.projects.filter(function(project) { return project.enabled; });
+  }
+
+  function getProjectDefinition(projectKey) {
+    return state.projects.find(function(project) { return project.key === projectKey; }) || null;
+  }
+
+  function projectOrder(projectKey) {
+    const index = state.projects.findIndex(function(project) { return project.key === projectKey; });
+    return index === -1 ? 999 : index + 1;
+  }
+
+  function projectColor(projectKey) {
+    const knownColors = {
+      C21R: '#10a37f',
+      CW2R: '#3b82f6',
+      CWIZ: '#8b5cf6',
+      ITM: '#f59e0b',
+      WWWMR: '#ec4899'
+    };
+    if (knownColors[projectKey]) return knownColors[projectKey];
+    const index = Math.max(0, projectOrder(projectKey) - 1);
+    return PROJECT_COLORS[index % PROJECT_COLORS.length];
+  }
+
+  function cloneProjects(projects) {
+    return projects.map(function(project) {
+      return { key: project.key, name: project.name, enabled: project.enabled !== false };
+    });
   }
 
   function isOverdue(issue) {
@@ -751,8 +1088,10 @@
       ['ITM-570', '운영현황 지표 개선', 'ITM', '진행 중', '이광희', date(-3), date(1)],
       ['ITM-588', '기간을 지정하지 않는 상시 운영 업무', 'ITM', '접수대기', '미지정', '', '', [EXCLUDED_LABEL]],
       ['ITM-590', '신규 장비 도입 검토', 'ITM', '접수대기', '미지정', '', '', []],
+      ['C21R-205', '배포 일정 협의 대기', 'C21R', '검토 중', '박진희', '', '', []],
       ['WWWMR-84', '홈페이지 자료실 개선', 'WWWMR', '개발 중', '권순길', date(15), date(29)],
-      ['WWWMR-89', '메인 배너 교체', 'WWWMR', '검토 중', '최늬혜', date(21), '']
+      ['WWWMR-89', '메인 배너 교체', 'WWWMR', '검토 중', '최늬혜', date(21), ''],
+      ['WWWMR-95', '상시 콘텐츠 점검', 'WWWMR', '진행 중', '권순길', '', '', [EXCLUDED_LABEL]]
     ];
     return {
       enabled: true,
@@ -763,7 +1102,7 @@
           key: item[0],
           summary: item[1],
           projectKey: item[2],
-          projectName: PROJECTS[item[2]].description,
+          projectName: (getProjectDefinition(item[2]) || { name: item[2] }).name,
           status: item[3],
           statusCategory: 'In Progress',
           statusCategoryKey: 'indeterminate',
@@ -784,7 +1123,8 @@
         fetchedAt: updated,
         cached: false,
         startDateFieldFound: true,
-        projectKeys: Object.keys(PROJECTS),
+        projectKeys: getActiveProjects().map(function(project) { return project.key; }),
+        projects: cloneProjects(state.projects),
         total: raw.length,
         demo: true
       }

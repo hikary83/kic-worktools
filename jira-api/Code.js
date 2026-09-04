@@ -1,13 +1,19 @@
 /*
- * KIC Jira Timeline Read-only API
+ * KIC Jira Timeline API
  *
  * 이 프로젝트는 기존 업무용 Apps Script와 분리해서 배포합니다.
  * 기능 검증 기간에는 로그인 없는 공개 테스트 모드로 Jira 데이터를 반환합니다.
- * 운영 전에는 공통 서버 인증을 적용해야 합니다.
+ * Jira Issue는 조회만 하며, 프로젝트 조회 범위 설정만 별도로 저장합니다.
  */
 const JIRA_API_BASE_URL = 'https://kic-itsd.atlassian.net';
-const JIRA_API_PROJECTS = ['C21R', 'CW2R', 'CWIZ', 'ITM', 'WWWMR'];
-const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V2';
+const JIRA_API_DEFAULT_PROJECTS = [
+  { key: 'C21R', name: 'CMS', enabled: true },
+  { key: 'CW2R', name: 'CWIZ 2.0', enabled: true },
+  { key: 'CWIZ', name: 'CWIZ 1.0', enabled: true },
+  { key: 'ITM', name: 'IT 업무', enabled: true },
+  { key: 'WWWMR', name: '홈페이지', enabled: true }
+];
+const JIRA_API_CACHE_KEY = 'JIRA_TIMELINE_ISSUES_V3';
 const JIRA_API_CACHE_SECONDS = 180;
 const JIRA_API_PAGE_SIZE = 100;
 const JIRA_API_MAX_PAGES = 20;
@@ -17,7 +23,8 @@ const JIRA_API_PROPERTIES = {
   email: 'JIRA_ACCOUNT_EMAIL',
   apiToken: 'JIRA_API_TOKEN',
   startDateFieldId: 'JIRA_START_DATE_FIELD_ID',
-  webEnabled: 'JIRA_TIMELINE_WEB_ENABLED'
+  webEnabled: 'JIRA_TIMELINE_WEB_ENABLED',
+  projects: 'JIRA_TIMELINE_PROJECTS'
 };
 
 function doGet(e) {
@@ -35,16 +42,22 @@ function doGet(e) {
 function doPost(e) {
   try {
     const payload = JSON.parse(e && e.postData && e.postData.contents ? e.postData.contents : '{}');
-    if (payload.action !== 'getJiraTimelineIssues') {
-      throw new Error('허용되지 않은 요청입니다.');
-    }
     if (!readBooleanProperty_(JIRA_API_PROPERTIES.webEnabled)) {
       throw new Error('Jira 통합 일정 웹 조회가 아직 활성화되지 않았습니다.');
     }
-    const result = getJiraIssues_();
-    result.meta = result.meta || {};
-    result.meta.publicTestMode = true;
-    return jsonOutput_({ success: true, data: result });
+    if (payload.action === 'getJiraTimelineIssues') {
+      const result = getJiraIssues_();
+      result.meta = result.meta || {};
+      result.meta.publicTestMode = true;
+      return jsonOutput_({ success: true, data: result });
+    }
+    if (payload.action === 'getJiraTimelineProjects') {
+      return jsonOutput_({ success: true, data: getAvailableProjects_() });
+    }
+    if (payload.action === 'saveJiraTimelineProjects') {
+      return jsonOutput_({ success: true, data: saveProjectSettings_(payload.data || {}) });
+    }
+    throw new Error('허용되지 않은 요청입니다.');
   } catch (error) {
     return jsonOutput_({ success: false, error: cleanError_(error) });
   }
@@ -56,6 +69,7 @@ function getPublicConfig_() {
     enabled: readBooleanProperty_(JIRA_API_PROPERTIES.webEnabled),
     configured: missing.length === 0,
     publicTestMode: true,
+    projects: getProjectSettings_(),
     missingProperties: missing
   };
 }
@@ -74,8 +88,13 @@ function getJiraIssues_() {
   const missing = requiredProperties_();
   if (missing.length) throw new Error('필수 Script Properties가 없습니다: ' + missing.join(', '));
 
+  const projects = getProjectSettings_();
+  const activeProjects = projects.filter(function(project) { return project.enabled; });
+  if (!activeProjects.length) throw new Error('사용 중인 Jira 프로젝트가 없습니다.');
+  const projectKeys = activeProjects.map(function(project) { return project.key; });
+  const cacheKey = projectCacheKey_(projects);
   const cache = CacheService.getScriptCache();
-  const cached = cache.get(JIRA_API_CACHE_KEY);
+  const cached = cache.get(cacheKey);
   if (cached) {
     try {
       const parsed = JSON.parse(cached);
@@ -92,7 +111,7 @@ function getJiraIssues_() {
     'priority', 'reporter', 'updated', 'parent', 'labels'];
   if (startDateFieldId) fields.push(startDateFieldId);
 
-  const jql = 'project in (' + JIRA_API_PROJECTS.join(', ') + ') ' +
+  const jql = 'project in (' + projectKeys.join(', ') + ') ' +
     'AND statusCategory != Done ORDER BY due ASC, updated DESC';
   let nextPageToken = '';
   let isLast = false;
@@ -118,7 +137,8 @@ function getJiraIssues_() {
     meta: {
       cached: false,
       fetchedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX"),
-      projectKeys: JIRA_API_PROJECTS.slice(),
+      projectKeys: projectKeys,
+      projects: projects,
       startDateFieldId: startDateFieldId || '',
       startDateFieldFound: Boolean(startDateFieldId),
       pageCount: pageCount,
@@ -130,12 +150,131 @@ function getJiraIssues_() {
   const serialized = JSON.stringify(result);
   try {
     if (Utilities.newBlob(serialized).getBytes().length < 95000) {
-      cache.put(JIRA_API_CACHE_KEY, serialized, JIRA_API_CACHE_SECONDS);
+      cache.put(cacheKey, serialized, JIRA_API_CACHE_SECONDS);
     }
   } catch (error) {
     // 캐시 실패는 실제 응답에 영향을 주지 않습니다.
   }
   return result;
+}
+
+function getProjectSettings_() {
+  const stored = (PropertiesService.getScriptProperties().getProperty(JIRA_API_PROPERTIES.projects) || '').trim();
+  if (!stored) return cloneDefaultProjects_();
+  try {
+    return normalizeProjectSettings_(JSON.parse(stored));
+  } catch (error) {
+    return cloneDefaultProjects_();
+  }
+}
+
+function getAvailableProjects_() {
+  const missing = requiredProperties_();
+  if (missing.length) throw new Error('필수 Script Properties가 없습니다: ' + missing.join(', '));
+
+  const config = getJiraConfig_();
+  let startAt = 0;
+  let pageCount = 0;
+  let projects = [];
+
+  while (pageCount < JIRA_API_MAX_PAGES) {
+    const page = jiraRequest_(
+      config,
+      '/rest/api/3/project/search?status=live&orderBy=name&startAt=' + startAt + '&maxResults=' + JIRA_API_PAGE_SIZE,
+      { method: 'get' }
+    );
+    const values = Array.isArray(page.values) ? page.values : [];
+    projects = projects.concat(values.map(function(project) {
+      return {
+        key: String(project.key || '').trim().toUpperCase(),
+        name: String(project.name || project.key || '').trim()
+      };
+    }).filter(function(project) {
+      return project.key && project.name;
+    }));
+
+    pageCount += 1;
+    const pageStart = Number(page.startAt);
+    const total = Number(page.total);
+    startAt = (Number.isFinite(pageStart) ? pageStart : startAt) + values.length;
+    if (!values.length || page.isLast === true || (Number.isFinite(total) && startAt >= total)) break;
+  }
+
+  const seen = {};
+  projects = projects.filter(function(project) {
+    if (seen[project.key]) return false;
+    seen[project.key] = true;
+    return true;
+  }).sort(function(left, right) {
+    return left.name.localeCompare(right.name, 'ko') || left.key.localeCompare(right.key);
+  });
+
+  return {
+    projects: projects,
+    fetchedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX"),
+    total: projects.length,
+    truncated: pageCount >= JIRA_API_MAX_PAGES
+  };
+}
+
+function saveProjectSettings_(data) {
+  const projects = normalizeProjectSettings_(data.projects);
+  const activeProjects = projects.filter(function(project) { return project.enabled; });
+  if (!activeProjects.length) throw new Error('사용할 프로젝트를 한 개 이상 선택해 주세요.');
+
+  const config = getJiraConfig_();
+  activeProjects.forEach(function(project) {
+    jiraRequest_(config, '/rest/api/3/project/' + encodeURIComponent(project.key), { method: 'get' });
+  });
+
+  const props = PropertiesService.getScriptProperties();
+  const previousProjects = getProjectSettings_();
+  props.setProperty(JIRA_API_PROPERTIES.projects, JSON.stringify(projects));
+  const cache = CacheService.getScriptCache();
+  cache.remove(projectCacheKey_(previousProjects));
+  cache.remove(projectCacheKey_(projects));
+
+  return {
+    projects: projects,
+    updatedAt: Utilities.formatDate(new Date(), 'Asia/Seoul', "yyyy-MM-dd'T'HH:mm:ssXXX")
+  };
+}
+
+function normalizeProjectSettings_(projects) {
+  if (!Array.isArray(projects) || !projects.length) {
+    throw new Error('프로젝트 설정이 비어 있습니다.');
+  }
+  if (projects.length > 20) throw new Error('프로젝트는 최대 20개까지 등록할 수 있습니다.');
+
+  const seen = {};
+  return projects.map(function(project) {
+    const key = String(project && project.key || '').trim().toUpperCase();
+    const name = String(project && project.name || '').trim();
+    if (!/^[A-Z][A-Z0-9]{1,19}$/.test(key)) {
+      throw new Error('프로젝트 코드를 확인해 주세요: ' + (key || '(빈 값)'));
+    }
+    if (!name || name.length > 40) {
+      throw new Error(key + ' 프로젝트 표시명은 1~40자로 입력해 주세요.');
+    }
+    if (seen[key]) throw new Error('중복된 프로젝트 코드가 있습니다: ' + key);
+    seen[key] = true;
+    return { key: key, name: name, enabled: project.enabled !== false };
+  });
+}
+
+function cloneDefaultProjects_() {
+  return JIRA_API_DEFAULT_PROJECTS.map(function(project) {
+    return { key: project.key, name: project.name, enabled: project.enabled };
+  });
+}
+
+function projectCacheKey_(projects) {
+  const bytes = Utilities.computeDigest(
+    Utilities.DigestAlgorithm.SHA_256,
+    JSON.stringify(projects),
+    Utilities.Charset.UTF_8
+  );
+  return JIRA_API_CACHE_KEY + '_' + Utilities.base64EncodeWebSafe(bytes).slice(0, 24);
 }
 
 function getJiraConfig_() {
