@@ -181,6 +181,7 @@
     .applications-table thead th:nth-child(6),.applications-table tbody td:nth-child(6){text-align:left}
     .applications-table thead th:nth-child(7),.applications-table tbody td:nth-child(7){text-align:center}
     .applications-table thead th:nth-child(8),.applications-table tbody td:nth-child(8){text-align:center;font-family:Consolas,"Malgun Gothic",monospace;font-size:11px}
+    .customer-table thead th:nth-child(3),.customer-table tbody td:nth-child(3){text-align:center;color:#5d6b64;font-weight:650}
     .activity-panel{margin-bottom:18px;overflow:hidden}
     .activity-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;padding:0 18px 13px}
     .activity-stat{border:1px solid #e2ebe6;background:linear-gradient(145deg,#fff,#f7fcf9);border-radius:12px;padding:11px 13px;display:flex;align-items:center;justify-content:space-between;min-height:62px}
@@ -406,7 +407,7 @@
       <section class="period-summary-grid">
         <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="all"><div class="mini-kpi-top"><span data-stat="applications">기간 신규 신청</span><span class="scope-badge period">기간 적용</span></div><b id="periodApplications">—</b><small>건</small></article>
         <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="승인"><div class="mini-kpi-top"><span data-stat="approved">기간 신청분 승인</span><span class="scope-badge period">기간 적용</span></div><b id="periodApproved">—</b><small>건</small></article>
-        <article class="mini-kpi"><div class="mini-kpi-top"><span data-stat="newCustomers">신규 등록 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="periodNewCustomers">—</b><small>개사</small></article>
+        <article class="mini-kpi" data-jump-tab="customers" data-jump-target="customerDetail" data-jump-sort="date" data-jump-customer-scope="period"><div class="mini-kpi-top"><span data-stat="newCustomers">신규 등록 고객사</span><span class="scope-badge period">기간 적용</span></div><b id="periodNewCustomers">—</b><small>개사</small></article>
         <article class="mini-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="대기"><div class="mini-kpi-top"><span data-stat="applicationBacklog">현재 대기</span><span class="scope-badge snapshot">기준일 현재</span></div><b id="periodCurrentWaiting">—</b><small>건</small></article>
       </section>
 
@@ -416,8 +417,8 @@
       </section>
 
       <section class="panel table-panel" id="customerDetail" data-detail-target>
-        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 운영현황</strong><small id="customerTableNote">총자산 기준</small></div><div class="table-tools"><select class="select" id="customerSort" aria-label="고객사 정렬 기준"><option value="assets">총자산 많은 순</option><option value="unmapped">미매핑 많은 순</option><option value="near">교정 임박 많은 순</option><option value="overdue">기한 초과 많은 순</option></select><select class="select" id="customerLimit" aria-label="고객사 운영현황 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
-        <div class="table-wrap"><table><thead><tr><th>순위</th><th>고객사</th><th>총자산</th><th>미매핑</th><th>매핑률</th><th>교정 준비</th><th>교정 임박</th><th>기한 초과</th></tr></thead><tbody id="customerTableBody"><tr class="empty-row"><td colspan="8">Excel 데이터를 적용하면 고객사 현황이 표시됩니다.</td></tr></tbody></table></div>
+        <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>고객사 운영현황</strong><small id="customerTableNote">총자산 기준</small></div><div class="table-tools"><select class="select" id="customerScope" aria-label="고객사 등록일 필터"><option value="all">전체 고객사</option><option value="period">조회기간 신규 등록</option></select><select class="select" id="customerSort" aria-label="고객사 정렬 기준"><option value="assets">총자산 많은 순</option><option value="date">최근 등록순</option><option value="unmapped">미매핑 많은 순</option><option value="near">교정 임박 많은 순</option><option value="overdue">기한 초과 많은 순</option></select><select class="select" id="customerLimit" aria-label="고객사 운영현황 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div>
+        <div class="table-wrap"><table class="customer-table"><thead><tr><th>순위</th><th>고객사</th><th>등록일</th><th>총자산</th><th>미매핑</th><th>매핑률</th><th>교정 준비</th><th>교정 임박</th><th>기한 초과</th></tr></thead><tbody id="customerTableBody"><tr class="empty-row"><td colspan="9">Excel 데이터를 적용하면 고객사 현황이 표시됩니다.</td></tr></tbody></table></div>
       </section>
 
       <section class="panel table-panel">
@@ -450,12 +451,12 @@
             </header>
 
             <section class="weekly-kpis" aria-label="주간 핵심 지표">
-              <article class="weekly-kpi"><span>기간 이용신청</span><b id="weeklyApplications">—</b><small>건</small></article>
-              <article class="weekly-kpi"><span>신규 고객사</span><b id="weeklyNewCustomers">—</b><small>개사</small></article>
-              <article class="weekly-kpi"><span>활동 고객사</span><b id="weeklyActiveCompanies">—</b><small>개사</small></article>
-              <article class="weekly-kpi"><span>데이터 작업</span><b id="weeklyActivities">—</b><small>건</small></article>
-              <article class="weekly-kpi"><span>등록 계측기</span><b id="weeklyAssets">—</b><small>대</small></article>
-              <article class="weekly-kpi danger"><span>기한 초과</span><b id="weeklyOverdue">—</b><small>대</small></article>
+              <article class="weekly-kpi" data-jump-tab="customers" data-jump-target="applicationDetail" data-jump-status="all"><span>기간 이용신청</span><b id="weeklyApplications">—</b><small>건</small></article>
+              <article class="weekly-kpi" data-jump-tab="customers" data-jump-target="customerDetail" data-jump-sort="date" data-jump-customer-scope="period"><span>신규 고객사</span><b id="weeklyNewCustomers">—</b><small>개사</small></article>
+              <article class="weekly-kpi" data-jump-tab="usage" data-jump-target="usageCompanyDetail"><span>활동 고객사</span><b id="weeklyActiveCompanies">—</b><small>개사</small></article>
+              <article class="weekly-kpi" data-jump-tab="usage" data-jump-target="activityDetail"><span>데이터 작업</span><b id="weeklyActivities">—</b><small>건</small></article>
+              <article class="weekly-kpi" data-jump-tab="customers" data-jump-target="customerDetail" data-jump-sort="assets"><span>등록 계측기</span><b id="weeklyAssets">—</b><small>대</small></article>
+              <article class="weekly-kpi danger" data-jump-tab="customers" data-jump-target="customerDetail" data-jump-sort="overdue"><span>기한 초과</span><b id="weeklyOverdue">—</b><small>대</small></article>
             </section>
 
             <section class="panel weekly-insight-panel" aria-label="주간 운영 인사이트">
@@ -1408,19 +1409,29 @@
     function renderPeriodViews() {
       if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
       setText("periodApplied",periodText());
-      renderPeriodKpis(); renderApplicationChart(); renderApplicationTable(); renderActivitySection(); renderAccessSection(); renderSecuritySection(); renderUnusedCustomers();
+      renderPeriodKpis(); renderApplicationChart(); renderApplicationTable(); renderCustomerTable(); renderActivitySection(); renderAccessSection(); renderSecuritySection(); renderUnusedCustomers();
       renderWeeklyReport();
       setText("criteriaPeriod",`${dashboardPeriodStart} ~ ${dashboardPeriodEnd}`);
       setText("criteriaBasis",dashboardBasisDate || "—");
     }
+    function customerOperationRows() {
+      const instrumentsByBiz=new Map(dashboardData.instrumentRows.filter((row) => row.biz).map((row) => [row.biz,row]));
+      const instrumentsByCompany=new Map(dashboardData.instrumentRows.map((row) => [companyKey(row.company),row]));
+      return dashboardData.customerRows.filter((customer) => customer.status === "정상").map((customer) => {
+        const instrument=instrumentsByBiz.get(customer.biz) || instrumentsByCompany.get(companyKey(customer.company));
+        return {...customer,assets:instrument?.assets ?? 0,unmapped:instrument?.unmapped ?? 0,rate:instrument?.rate ?? null,prep:instrument?.prep ?? 0,near:instrument?.near ?? 0,overdue:instrument?.overdue ?? 0};
+      });
+    }
     function renderCustomerTable() {
       if (!dashboardData) return;
+      const scope=$("customerScope").value;
       const sort = $("customerSort").value;
-      const labels = {assets:"총자산",unmapped:"미매핑",near:"교정 임박",overdue:"기한 초과"};
-      const sortedRows = [...dashboardData.instrumentRows].sort((a,b) => b[sort]-a[sort] || b.assets-a.assets);
+      const labels = {assets:"총자산",date:"최근 등록",unmapped:"미매핑",near:"교정 임박",overdue:"기한 초과"};
+      const scopedRows=customerOperationRows().filter((row) => scope !== "period" || (row.date && row.date >= dashboardPeriodStart && row.date <= dashboardPeriodEnd));
+      const sortedRows=[...scopedRows].sort((a,b) => sort === "date" ? (b.date || "").localeCompare(a.date || "") || b.assets-a.assets : b[sort]-a[sort] || b.assets-a.assets || (b.date || "").localeCompare(a.date || ""));
       const rows = limitedRows(sortedRows,"customerLimit");
-      setText("customerTableNote",`${labels[sort]} 기준 · 전체 ${nf.format(sortedRows.length)}개사`);
-      $("customerTableBody").innerHTML = rows.map((r,i) => `<tr><td>${i+1}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td>${nf.format(r.prep)}</td><td><span class="risk ${r.near ? "orange":""}">${nf.format(r.near)}</span></td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("");
+      setText("customerTableNote",`${scope === "period" ? `${periodText()} 신규 등록` : "전체 고객사"} · ${labels[sort]} 기준 · ${nf.format(sortedRows.length)}개사`);
+      $("customerTableBody").innerHTML = rows.length ? rows.map((r,i) => `<tr><td>${i+1}</td><td title="${escapeHtml(r.company)}">${escapeHtml(r.company)}</td><td>${escapeHtml(r.date || "—")}</td><td>${nf.format(r.assets)}</td><td>${nf.format(r.unmapped)}</td><td>${ratePill(r.rate)}</td><td>${nf.format(r.prep)}</td><td><span class="risk ${r.near ? "orange":""}">${nf.format(r.near)}</span></td><td><span class="risk ${r.overdue ? "red":""}">${nf.format(r.overdue)}</span></td></tr>`).join("") : `<tr class="empty-row"><td colspan="9">선택한 조건에 해당하는 고객사가 없습니다.</td></tr>`;
     }
     function renderStaffTable() {
       const rows = limitedRows(dashboardData.staff,"staffLimit");
@@ -1558,7 +1569,11 @@
     function jumpToDetail(card) {
       activateTab(card.dataset.jumpTab);
       if (card.dataset.jumpStatus) { $("applicationStatus").value=card.dataset.jumpStatus; renderApplicationTable(); }
-      if (card.dataset.jumpSort) { $("customerSort").value=card.dataset.jumpSort; renderCustomerTable(); }
+      if (card.dataset.jumpTarget === "customerDetail") {
+        $("customerScope").value=card.dataset.jumpCustomerScope || "all";
+        if (card.dataset.jumpSort) $("customerSort").value=card.dataset.jumpSort;
+        renderCustomerTable();
+      }
       const target=$(card.dataset.jumpTarget);
       if (!target) return;
       requestAnimationFrame(() => {
@@ -1571,7 +1586,7 @@
     }
     function setupDetailJumps() {
       document.querySelectorAll("[data-jump-tab]").forEach((card) => {
-        const label=card.querySelector(".kpi-label,.mini-kpi-top > span:first-child")?.textContent?.replace(/i$/,"" ).trim() || "지표";
+        const label=card.querySelector(".kpi-label,.mini-kpi-top > span:first-child,.weekly-kpi > span:first-child")?.textContent?.replace(/i$/,"" ).trim() || "지표";
         card.setAttribute("role","button"); card.setAttribute("tabindex","0"); card.setAttribute("aria-label",`${label} 상세 보기`); card.title=`${label} 상세 보기`;
         card.addEventListener("click",() => jumpToDetail(card));
         card.addEventListener("keydown",(event) => { if (event.key === "Enter" || event.key === " ") { event.preventDefault(); jumpToDetail(card); } });
@@ -2180,6 +2195,7 @@
     $("staffModal").addEventListener("click",(event) => { if (event.target === $("staffModal")) closeStaffModal(); });
     document.addEventListener("keydown",(event) => { if (event.key === "Escape" && !$("staffModal").hidden) closeStaffModal(); });
     $("customerSort").addEventListener("change",renderCustomerTable);
+    $("customerScope").addEventListener("change",renderCustomerTable);
     $("customerLimit").addEventListener("change",renderCustomerTable);
     $("staffLimit").addEventListener("change",renderStaffTable);
     $("branchReportTabs").addEventListener("click",(event) => {
