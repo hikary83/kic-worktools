@@ -99,7 +99,7 @@
     .quick-periods{display:flex;align-items:center;gap:4px;border-left:1px solid var(--line);padding-left:8px}.quick-btn{border:1px solid transparent;background:#f2f6f4;color:#68766e;border-radius:8px;padding:7px 8px;font-size:10px;font-weight:800}.quick-btn:hover,.quick-btn.active{border-color:#a9d7bd;background:var(--green-100);color:var(--green-800)}.quick-btn:disabled{opacity:.45;cursor:not-allowed}
     .period-applied{display:flex;align-items:center;gap:6px;color:var(--green-800);background:var(--green-50);border:1px solid #c9e8d6;border-radius:9px;padding:8px 10px;font-size:10.5px;font-weight:800;white-space:nowrap}
 
-    .tabs-shell{margin-bottom:18px}.tab-nav{display:flex;align-items:center;gap:6px;background:#eaf1ed;border:1px solid #dce7e1;border-radius:14px;padding:5px;margin-bottom:14px;position:sticky;top:82px;z-index:20;box-shadow:0 4px 14px rgba(18,60,41,.06)}.tab-btn{flex:1;border:0;background:transparent;border-radius:10px;padding:11px 14px;color:#66746c;font-size:12px;font-weight:850;display:flex;justify-content:center;align-items:center;gap:7px}.tab-btn svg{width:15px;height:15px}.tab-btn.active{background:#fff;color:var(--green-800);box-shadow:0 3px 10px rgba(18,60,41,.09)}.tab-panel[hidden]{display:none}.tab-panel{animation:tabIn .18s ease}@keyframes tabIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:none}}
+    .tabs-shell{margin-bottom:18px}.tab-nav{display:flex;align-items:center;gap:6px;background:#eaf1ed;border:1px solid #dce7e1;border-radius:14px;padding:5px;margin-bottom:14px;position:sticky;top:82px;z-index:20;box-shadow:0 4px 14px rgba(18,60,41,.06)}.tab-btn{flex:1;border:0;background:transparent;border-radius:10px;padding:11px 14px;color:#66746c;font-size:12px;font-weight:850;display:flex;justify-content:center;align-items:center;gap:7px}.tab-btn svg{width:15px;height:15px}.tab-btn.active{background:#fff;color:var(--green-800);box-shadow:0 3px 10px rgba(18,60,41,.09)}.weekly-tab-group{flex:1;min-width:0;position:relative;display:flex}.weekly-tab-group .tab-btn{width:100%}.weekly-tab-group.tools-visible .tab-btn{padding-right:82px}.weekly-tab-actions{position:absolute;right:7px;top:50%;transform:translateY(-50%);display:flex;align-items:center;gap:4px;padding-left:7px;border-left:1px solid #dce7e1}.weekly-tab-actions[hidden]{display:none}.weekly-tab-action{width:28px;height:28px;border:1px solid #cfe2d8;border-radius:8px;background:#f7fcf9;color:var(--green-800);display:grid;place-items:center;padding:0}.weekly-tab-action:hover{background:var(--green-100);border-color:#acd7bf}.weekly-tab-action:focus-visible{outline:3px solid rgba(22,184,108,.2);outline-offset:1px}.weekly-tab-action svg{width:13px;height:13px}.weekly-tab-action .action-label{display:none}.weekly-tab-action.copied{background:var(--green-100);color:var(--green-700)}.tab-panel[hidden]{display:none}.tab-panel{animation:tabIn .18s ease}@keyframes tabIn{from{opacity:.45;transform:translateY(3px)}to{opacity:1;transform:none}}
     .scope-badge{display:inline-flex;align-items:center;border-radius:99px;padding:3px 6px;font-size:8.5px;font-weight:850;letter-spacing:-.01em}.scope-badge.period{background:#e8f2ff;color:#2f64b5}.scope-badge.snapshot{background:var(--green-100);color:var(--green-800)}.scope-badge.source{background:#f0ebff;color:#6e4ead}
     .kpi-titleblock{display:flex;flex-direction:column;align-items:flex-start;gap:5px}.kpi-label{display:flex;align-items:center;gap:4px}
     .stat-info{width:16px;height:16px;border:1px solid #c9d7d0;border-radius:50%;background:#fff;color:#6d7c74;font:800 10px/1 Arial;display:inline-grid;place-items:center;padding:0;position:relative;vertical-align:middle;z-index:5}.stat-info:hover,.stat-info:focus{border-color:var(--green-500);color:var(--green-700);outline:0}.floating-tooltip{position:fixed;z-index:90;width:230px;padding:8px 10px;border-radius:8px;background:#19342a;color:#fff;font:500 10px/1.45 Pretendard,"Malgun Gothic",sans-serif;box-shadow:0 8px 22px rgba(0,0,0,.2);opacity:0;visibility:hidden;pointer-events:none;transition:opacity .12s ease,visibility .12s ease;white-space:normal;text-align:left;letter-spacing:-.01em}.floating-tooltip.show{opacity:1;visibility:visible}.floating-tooltip::after{content:"";position:absolute;left:var(--arrow-left,50%);transform:translateX(-50%);border:5px solid transparent}.floating-tooltip.above::after{top:100%;border-top-color:#19342a}.floating-tooltip.below::after{bottom:100%;border-bottom-color:#19342a}
@@ -211,6 +211,21 @@
 
     @media(max-width:760px){.staff-summary{grid-template-columns:1fr 1fr}.staff-modal-body{padding-left:14px;padding-right:14px}.staff-company-table{min-width:680px}}
 
+    .weekly-report{display:flex;flex-direction:column;gap:18px}
+    .weekly-hero{padding:21px 22px;background:linear-gradient(125deg,#fff 0%,#f0fbf5 100%);display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .weekly-hero-copy{display:flex;align-items:center;gap:13px}.weekly-hero-icon{width:42px;height:42px;border-radius:12px;background:linear-gradient(145deg,var(--green-700),var(--green-500));color:#fff;display:grid;place-items:center;box-shadow:0 7px 16px rgba(8,160,95,.2)}.weekly-hero-icon svg{width:21px;height:21px}.weekly-hero h2{margin:0 0 5px;font-size:20px;letter-spacing:-.035em}.weekly-hero p{margin:0;color:var(--muted);font-size:11px}.weekly-hero-actions{display:flex;align-items:center;gap:8px}.weekly-action{border:1px solid #cfe2d8;background:#fff;color:var(--green-800);border-radius:9px;padding:8px 11px;font-size:10.5px;font-weight:800;display:flex;align-items:center;gap:6px}.weekly-action:hover{background:var(--green-50)}.weekly-action.primary{border-color:var(--green-700);background:var(--green-700);color:#fff}.weekly-action svg{width:14px;height:14px}
+    .weekly-period{display:flex;align-items:center;gap:7px;color:var(--green-800);background:var(--green-50);border:1px solid #cde8d8;border-radius:9px;padding:7px 10px;font-size:10.5px;font-weight:800;white-space:nowrap}.weekly-period svg{width:14px;height:14px}
+    .weekly-kpis{display:grid;grid-template-columns:repeat(6,1fr);gap:11px}.weekly-kpi{background:#fff;border:1px solid var(--line);border-radius:14px;padding:14px 15px;box-shadow:0 4px 14px rgba(18,60,41,.045)}.weekly-kpi span{display:block;color:#68766e;font-size:10.5px;font-weight:750}.weekly-kpi b{display:inline-block;margin-top:9px;font-size:24px;letter-spacing:-.04em}.weekly-kpi small{margin-left:3px;color:#7e8b84;font-size:9.5px}.weekly-kpi.danger b{color:var(--red)}
+    .weekly-summary-grid{display:grid;grid-template-columns:1fr 1fr;gap:15px}.weekly-summary-card{padding:18px}.weekly-summary-card h3{margin:0;font-size:14px}.weekly-summary-card p{margin:5px 0 0;color:var(--muted);font-size:10.5px;line-height:1.5}.weekly-highlight-list{display:grid;gap:9px;margin-top:15px}.weekly-highlight{display:grid;grid-template-columns:95px 1fr auto;align-items:center;gap:10px;font-size:11px}.weekly-highlight-label{color:#617067}.weekly-highlight-track{height:9px;background:#edf2ef;border-radius:99px;overflow:hidden}.weekly-highlight-bar{height:100%;border-radius:inherit;background:linear-gradient(90deg,var(--green-700),var(--green-500))}.weekly-highlight-bar.blue{background:linear-gradient(90deg,#2f6fed,#68a0ff)}.weekly-highlight-bar.amber{background:linear-gradient(90deg,#e3a008,#f5c84d)}.weekly-highlight-value{font-weight:850;font-variant-numeric:tabular-nums}
+    .weekly-checklist{display:grid;gap:9px;margin-top:15px}.weekly-check{display:flex;align-items:flex-start;gap:9px;padding:10px 11px;border:1px solid #e3ebe7;border-radius:10px;background:#fbfdfc}.weekly-check-icon{width:24px;height:24px;border-radius:8px;display:grid;place-items:center;background:var(--green-100);color:var(--green-700);flex:0 0 auto}.weekly-check-icon.warn{background:#fff4d7;color:#a66a00}.weekly-check-icon.danger{background:#fff0f1;color:var(--red)}.weekly-check-icon svg{width:13px;height:13px}.weekly-check strong{display:block;font-size:11px}.weekly-check span{display:block;color:#7a8780;font-size:9.5px;margin-top:3px}
+    .branch-report-panel{overflow:hidden}.branch-report-tabs{display:flex;align-items:center;gap:7px;flex-wrap:wrap;padding:13px 18px;background:#f7faf8;border-top:1px solid #eef3f0;border-bottom:1px solid var(--line)}.branch-report-tab{border:1px solid var(--line);background:#fff;color:#68766e;border-radius:9px;padding:7px 10px;font-size:10.5px;font-weight:800}.branch-report-tab.active{background:var(--green-700);border-color:var(--green-700);color:#fff}.branch-report-tab span{display:inline-flex;min-width:18px;justify-content:center;margin-left:4px;padding:2px 5px;border-radius:99px;background:rgba(127,127,127,.12);font-size:8.5px}.branch-report-tab.active span{background:rgba(255,255,255,.18)}
+    .branch-report-body{padding:16px 18px 18px}.branch-kpis{display:grid;grid-template-columns:repeat(5,1fr);gap:9px;margin-bottom:15px}.branch-kpi{border:1px solid var(--line);background:#fbfdfc;border-radius:11px;padding:11px 12px}.branch-kpi span{display:block;color:#748179;font-size:9.5px}.branch-kpi b{display:inline-block;margin-top:6px;font-size:19px}.branch-kpi small{margin-left:2px;color:#849088;font-size:9px}.branch-kpi.danger b{color:var(--red)}
+    .branch-detail-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin:0 0 8px}.branch-detail-head strong{font-size:12px}.branch-detail-head small{color:#87938d;font-size:9.5px}.branch-search{width:230px;border:1px solid var(--line);border-radius:9px;background:#fff;padding:8px 10px;font-size:10.5px;outline:0}.branch-search:focus{border-color:#8bcdaa;box-shadow:0 0 0 3px rgba(22,184,108,.1)}
+    .branch-staff-head,.branch-staff-summary{display:grid;grid-template-columns:1.35fr repeat(5,.75fr) 34px;align-items:center;gap:8px}.branch-staff-head{padding:9px 12px;background:#f3f7f5;border:1px solid var(--line);border-radius:9px;color:#67746d;font-size:9.5px;font-weight:800}.branch-staff-head span:not(:first-child){text-align:right}.branch-staff-list{display:grid;gap:7px;margin-top:7px}.branch-staff-item{border:1px solid var(--line);border-radius:11px;overflow:hidden;background:#fff}.branch-staff-item[open]{border-color:#addac1;box-shadow:0 5px 14px rgba(18,60,41,.06)}.branch-staff-summary{list-style:none;padding:10px 12px;cursor:pointer;min-height:55px}.branch-staff-summary::-webkit-details-marker{display:none}.branch-person{display:flex;align-items:center;gap:9px;min-width:0}.branch-avatar{width:31px;height:31px;border-radius:9px;background:var(--green-100);color:var(--green-700);display:grid;place-items:center;flex:0 0 auto}.branch-avatar svg{width:14px;height:14px}.branch-person b{display:block;font-size:11px}.branch-person small{display:block;color:#849088;font-size:8.5px;margin-top:2px}.branch-staff-value{text-align:right;font-size:10.5px;font-weight:750}.branch-staff-value.red{color:var(--red)}.branch-staff-chevron{display:grid;place-items:center;color:#7c8982}.branch-staff-chevron svg{width:14px;height:14px;transition:.18s}.branch-staff-item[open] .branch-staff-chevron svg{transform:rotate(180deg)}
+    .branch-company-area{padding:8px 12px 12px 52px;border-top:1px solid #e8efeb;background:#f8fbf9}.branch-company-table thead th{font-size:9px;padding:8px 9px;border-top:0}.branch-company-table tbody td{font-size:10px;padding:9px}.branch-company-table thead th:nth-child(2),.branch-company-table tbody td:nth-child(2){text-align:left}.branch-company-table tbody td:nth-child(2){max-width:310px;overflow:hidden;text-overflow:ellipsis;font-weight:750}.branch-company-table thead th:last-child,.branch-company-table tbody td:last-child{text-align:left}.branch-empty{padding:34px 18px;text-align:center;border:1px dashed #cfdcd5;border-radius:11px;color:#7d8a83;font-size:11px}.branch-empty strong{display:block;color:#46544d;margin-bottom:5px}.weekly-print-note{color:#829088;font-size:9.5px;display:flex;align-items:center;gap:5px}.weekly-print-note svg{width:13px;height:13px}
+    .weekly-print-header{display:none}.weekly-summary-grid{grid-template-columns:minmax(0,2fr) minmax(330px,1fr)}
+    .weekly-trend-card{padding:18px 18px 14px;min-width:0}.weekly-trend-head{display:flex;align-items:flex-start;justify-content:space-between;gap:15px}.weekly-trend-copy h3{margin:0;font-size:14px}.weekly-trend-copy p{margin:5px 0 0;color:var(--muted);font-size:10.5px}.weekly-trend-legend{display:flex;align-items:center;gap:13px;color:#68766e;font-size:9.5px;white-space:nowrap}.weekly-trend-legend span{display:flex;align-items:center;gap:5px}.weekly-legend-bar{width:11px;height:8px;border-radius:3px;background:#cdeeda}.weekly-legend-line{width:13px;height:2px;border-radius:99px;background:var(--green-700);position:relative}.weekly-legend-line::after{content:"";position:absolute;width:5px;height:5px;border-radius:50%;background:var(--green-700);left:4px;top:-2px}.weekly-trend-chart{margin-top:10px;min-height:225px}.weekly-trend-chart svg{display:block;width:100%;height:auto;overflow:visible}.weekly-trend-chart text{font-family:Pretendard,"Malgun Gothic",sans-serif}.weekly-chart-empty{height:210px;display:grid;place-items:center;color:#86928c;font-size:11px;background:#fbfdfc;border:1px dashed var(--line);border-radius:11px}.weekly-checklist{gap:7px}.weekly-check{display:grid;grid-template-columns:28px minmax(0,1fr);align-items:center;padding:9px 10px}.weekly-check > .weekly-check-icon{align-self:center;justify-self:center;display:flex;align-items:center;justify-content:center;margin:0;color:var(--green-700)}.weekly-check > .weekly-check-icon svg{display:block;width:13px;height:13px;margin:0}.weekly-check > .weekly-check-icon.info{background:#e8f2ff;color:#2f6fed}.weekly-check > .weekly-check-icon.neutral{background:#fff4d7;color:#a66a00}
+
     .report-mode .upload-panel,.report-mode .notice.success,.report-mode #printBtn,.report-mode .period-controls,.report-mode .scroll-top-btn{display:none!important}
     .report-mode .main{padding-top:24px}
     @media print{
@@ -218,6 +233,8 @@
       body{background:#fff;-webkit-print-color-adjust:exact;print-color-adjust:exact}
       .shell{min-width:0}.topbar{position:static;height:58px}.top-actions,.upload-panel,.notice,.period-controls,.stat-info,.scroll-top-btn{display:none!important}.main{max-width:none;padding:18px 0 0}
       .kpi,.panel{box-shadow:none}.chart-body{height:205px}.footer{margin-top:8px}
+      body.weekly-print .topbar,body.weekly-print .page-head,body.weekly-print .upload-panel,body.weekly-print .notice,body.weekly-print .period-panel,body.weekly-print .tab-nav,body.weekly-print .footer,body.weekly-print .scroll-top-btn{display:none!important}
+      body.weekly-print .tab-panel{display:none!important}body.weekly-print #tabWeekly{display:block!important}body.weekly-print .weekly-report{gap:7mm}body.weekly-print .branch-report-tabs,body.weekly-print .branch-detail-head,body.weekly-print .branch-staff-head,body.weekly-print .branch-staff-list,body.weekly-print .weekly-print-note{display:none!important}body.weekly-print .weekly-print-header{display:flex;align-items:flex-end;justify-content:space-between;border-bottom:2px solid var(--green-800);padding:0 0 5mm}body.weekly-print .weekly-print-header h2{margin:0 0 2mm;font-size:22px}body.weekly-print .weekly-print-header p{margin:0;color:#64716a;font-size:10px}body.weekly-print .weekly-print-meta{text-align:right;font-size:9.5px;color:#64716a;line-height:1.7}body.weekly-print .weekly-print-meta b{color:var(--ink)}body.weekly-print .panel,body.weekly-print .weekly-kpi{box-shadow:none}body.weekly-print .branch-report-panel{break-before:page}
     }
   </style>
 </head>
@@ -316,6 +333,13 @@
           <button class="tab-btn" id="tabBtnCustomers" type="button" role="tab" aria-selected="false" aria-controls="tabCustomers" data-tab="customers"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8M19 8v6M16 11h6"/></svg>신청·고객사</button>
           <button class="tab-btn" id="tabBtnUsage" type="button" role="tab" aria-selected="false" aria-controls="tabUsage" data-tab="usage"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M4 18V6M4 18h16M8 15l3-4 3 2 5-7"/></svg>이용 현황</button>
           <button class="tab-btn" id="tabBtnSecurity" type="button" role="tab" aria-selected="false" aria-controls="tabSecurity" data-tab="security"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M12 3 4 6v5c0 5 3.4 8.7 8 10 4.6-1.3 8-5 8-10V6z"/><path d="M12 8v4M12 16h.01"/></svg>보안 접속</button>
+          <div class="weekly-tab-group" id="weeklyTabGroup">
+            <button class="tab-btn" id="tabBtnWeekly" type="button" role="tab" aria-selected="false" aria-controls="tabWeekly" data-tab="weekly"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><rect x="3" y="4" width="18" height="17" rx="2"/><path d="M8 2v4M16 2v4M3 9h18M8 13h3M13 13h3M8 17h3"/></svg>주간 보고서</button>
+            <div class="weekly-tab-actions" id="weeklyTabActions" hidden>
+              <button class="weekly-tab-action" id="weeklyCopyLink" type="button" title="주간 보고서 링크 복사" aria-label="주간 보고서 링크 복사"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M10 13a5 5 0 0 0 7.5.5l2-2a5 5 0 0 0-7-7l-1.1 1.1M14 11a5 5 0 0 0-7.5-.5l-2 2a5 5 0 0 0 7 7l1.1-1.1"/></svg><span class="action-label">링크 복사</span></button>
+              <button class="weekly-tab-action" id="weeklyPrint" type="button" title="주간 보고서 PDF 저장" aria-label="주간 보고서 PDF 저장"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M6 9V2h12v7M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"/><path d="M6 14h12v8H6z"/></svg><span class="action-label">PDF 저장</span></button>
+            </div>
+          </div>
         </nav>
 
         <div class="tab-panel" id="tabOverview" role="tabpanel" aria-labelledby="tabBtnOverview">
@@ -415,6 +439,60 @@
       </section>
 
       <section class="security-box" id="securityFailureDetail" data-detail-target><div class="panel-head"><div class="panel-title"><span class="line"></span><strong data-stat="accessFailure">로그인 실패 내역</strong><small>아이디와 IP는 화면에서 마스킹</small></div><div class="table-tools"><span id="securityRecentNote" class="panel-badge period">전체 —건</span><select class="select" id="securityRecentLimit" aria-label="로그인 실패 표시 건수"><option value="10">최근 10건</option><option value="20">최근 20건</option><option value="all">전체 보기</option></select></div></div><div class="table-wrap"><table class="security-table"><thead><tr><th>일시</th><th>고객사</th><th>사용자</th><th>아이디</th><th>접속 IP</th><th>결과</th></tr></thead><tbody id="securityTableBody"><tr class="empty-row"><td colspan="6">Excel 데이터를 적용하면 접속 실패 내역이 표시됩니다.</td></tr></tbody></table></div></section>
+        </div>
+
+        <div class="tab-panel" id="tabWeekly" role="tabpanel" aria-labelledby="tabBtnWeekly" hidden>
+          <div class="weekly-report">
+            <header class="weekly-print-header">
+              <div><h2>CWIZ Enterprise 주간 운영 보고서</h2><p>이용신청부터 고객사·계측기·CMS 매핑 및 서비스 이용 현황</p></div>
+              <div class="weekly-print-meta"><div>조회기간 <b id="weeklyPrintPeriod">—</b></div><div>기준일 <b id="weeklyPrintBasis">—</b></div><div>생성일시 <b id="weeklyPrintGenerated">—</b></div></div>
+            </header>
+
+            <section class="weekly-kpis" aria-label="주간 핵심 지표">
+              <article class="weekly-kpi"><span>기간 이용신청</span><b id="weeklyApplications">—</b><small>건</small></article>
+              <article class="weekly-kpi"><span>신규 고객사</span><b id="weeklyNewCustomers">—</b><small>개사</small></article>
+              <article class="weekly-kpi"><span>활동 고객사</span><b id="weeklyActiveCompanies">—</b><small>개사</small></article>
+              <article class="weekly-kpi"><span>데이터 작업</span><b id="weeklyActivities">—</b><small>건</small></article>
+              <article class="weekly-kpi"><span>등록 계측기</span><b id="weeklyAssets">—</b><small>대</small></article>
+              <article class="weekly-kpi danger"><span>기한 초과</span><b id="weeklyOverdue">—</b><small>대</small></article>
+            </section>
+
+            <section class="weekly-summary-grid">
+              <article class="panel weekly-trend-card">
+                <div class="weekly-trend-head"><div class="weekly-trend-copy"><h3>승인 및 고객사 누적 추이</h3><p>최근 최대 8주 · 월요일~일요일 · 마지막 주는 기준일 현재</p></div><div class="weekly-trend-legend"><span><i class="weekly-legend-bar"></i>주간 승인</span><span><i class="weekly-legend-line"></i>누적 등록 고객사</span></div></div>
+                <div class="weekly-trend-chart" id="weeklyTrendChart"><div class="weekly-chart-empty">Excel 데이터를 적용하면 추이가 표시됩니다.</div></div>
+              </article>
+              <article class="panel weekly-summary-card">
+                <h3>주요 운영 지표</h3><p>성과 지표를 먼저 보여주고 관리가 필요한 항목을 함께 확인합니다.</p>
+                <div class="weekly-checklist">
+                  <div class="weekly-check"><span class="weekly-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m5 12 4 4L19 6"/></svg></span><div><strong id="weeklyCheckMapping">CMS 매핑률 —</strong><span>기준일 현재 전체 계측기 기준</span></div></div>
+                  <div class="weekly-check"><span class="weekly-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8M19 8v6M16 11h6"/></svg></span><div><strong id="weeklyCheckUsage">이용 고객사 —</strong><span id="weeklyCheckUsageDetail">로그인 — · 업무활동 —</span></div></div>
+                  <div class="weekly-check"><span class="weekly-check-icon"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 3-6.7L3 8M3 3v5h5"/></svg></span><div><strong id="weeklyCheckReturning">재방문 고객사 —</strong><span>선택 기간 중 서로 다른 날짜에 2일 이상 로그인</span></div></div>
+                  <div class="weekly-check"><span class="weekly-check-icon info"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M7 3h10v4H7zM5 5H3v16h18V5h-2M8 12h8M8 16h5"/></svg></span><div><strong id="weeklyCheckWaiting">승인 대기 —</strong><span>조회기간과 관계없는 기준일 현재 미처리 신청</span></div></div>
+                  <div class="weekly-check"><span class="weekly-check-icon neutral"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3 2.5 20h19zM12 9v5M12 17h.01"/></svg></span><div><strong id="weeklyCheckUnused">미이용 고객사 —</strong><span>전체 로그에서 이용 기록이 없는 정상 고객사</span></div></div>
+                </div>
+              </article>
+            </section>
+
+            <section class="panel branch-report-panel" id="weeklyBranchReport">
+              <div class="panel-head"><div class="panel-title"><span class="line"></span><strong>지사별 운영 현황</strong><small>영업 담당자 소속 지사 기준</small></div><span class="panel-badge">기준일 현재</span></div>
+              <div class="branch-report-tabs" id="branchReportTabs" role="tablist" aria-label="지사 선택"></div>
+              <div class="branch-report-body">
+                <div class="branch-kpis">
+                  <div class="branch-kpi"><span>운영 고객사</span><b id="branchCustomers">—</b><small>개사</small></div>
+                  <div class="branch-kpi"><span>담당자</span><b id="branchStaff">—</b><small>명</small></div>
+                  <div class="branch-kpi"><span>등록 계측기</span><b id="branchAssets">—</b><small>대</small></div>
+                  <div class="branch-kpi"><span>CMS 매핑률</span><b id="branchRate">—</b><small>%</small></div>
+                  <div class="branch-kpi danger"><span>기한 초과</span><b id="branchOverdue">—</b><small>대</small></div>
+                </div>
+                <div class="branch-detail-head"><div><strong id="branchDetailTitle">담당자 운영 현황</strong><small> · 담당자 행을 펼치면 업체가 표시됩니다.</small></div><input class="branch-search" id="branchSearch" type="search" placeholder="담당자 또는 업체명 검색" aria-label="담당자 또는 업체명 검색"></div>
+                <div class="branch-staff-head" aria-hidden="true"><span>담당자</span><span>담당 업체</span><span>등록 계측기</span><span>미매핑</span><span>매핑률</span><span>기한 초과</span><span></span></div>
+                <div class="branch-staff-list" id="branchStaffList"></div>
+                <div class="branch-empty" id="branchEmpty" hidden><strong>표시할 운영 고객사가 없습니다.</strong><span>선택한 지사 또는 검색 조건을 확인해 주세요.</span></div>
+                <p class="weekly-print-note"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7h.01"/></svg>PDF에는 지사 요약까지만 포함되며 담당자·업체 상세 목록은 화면에서만 제공합니다.</p>
+              </div>
+            </section>
+          </div>
         </div>
       </div>
 
@@ -559,6 +637,8 @@
     let dashboardPeriodEnd = null;
     let dashboardPeriodMin = null;
     let staffModalReturnFocus = null;
+    let staffBranchMap = {};
+    let selectedReportBranch = "전체";
     const $ = (id) => document.getElementById(id);
     const nf = new Intl.NumberFormat("ko-KR");
     const pf = new Intl.NumberFormat("ko-KR", { maximumFractionDigits:1, minimumFractionDigits:1 });
@@ -837,6 +917,180 @@
       }
       const staff = [...staffMap.values()].map((s) => ({...s,rate:s.assets ? Math.max(0,(s.assets-s.unmapped)/s.assets) : null,companies:s.companies.sort((a,b) => (b.assets ?? -1)-(a.assets ?? -1) || a.company.localeCompare(b.company,"ko"))})).sort((a,b) => b.assets-a.assets || b.customers-a.customers);
       return { appTotal,approvedApplications,approved,waiting,rejected,customerTotal,normal,inactive,totalAssets,unmapped,mapped,rate:totalAssets?mapped/totalAssets:0,prep,near,overdue,applicationRows,customerRows,instrumentRows,activityRows,accessRows,staff };
+    }
+
+    async function loadStaffBranchMap() {
+      try {
+        const url=encodeURI(getDataBaseUrl()+"staff-branch-map.json")+`?t=${Date.now()}`;
+        const response=await fetch(url,{cache:"no-cache"});
+        if (!response.ok) throw new Error(`HTTP ${response.status}`);
+        const payload=await response.json();
+        staffBranchMap=payload?.staff && typeof payload.staff === "object" ? payload.staff : {};
+      } catch (error) {
+        staffBranchMap={};
+        console.warn("직원-지사 기준표를 불러오지 못했습니다.",error);
+      }
+    }
+
+    function reportBranchName(staffName) {
+      const name=String(staffName || "").trim();
+      return staffBranchMap[name] || "미확인";
+    }
+
+    function latestByCompany(rows,predicate=() => true) {
+      const map=new Map();
+      rows.filter(predicate).forEach((row) => {
+        const key=companyKey(row.company);
+        if (!key || map.has(key)) return;
+        map.set(key,row);
+      });
+      return map;
+    }
+
+    function buildBranchReportData() {
+      if (!dashboardData) return {branches:[],rows:[]};
+      const instrumentsByBiz=new Map(dashboardData.instrumentRows.filter((row) => row.biz).map((row) => [row.biz,row]));
+      const instrumentsByCompany=new Map(dashboardData.instrumentRows.map((row) => [companyKey(row.company),row]));
+      const latestAccess=latestByCompany(dashboardData.accessRows,(row) => row.logType === "로그인" && row.result === "성공");
+      const latestActivity=latestByCompany(dashboardData.activityRows);
+      const rows=dashboardData.customerRows.filter((customer) => customer.status === "정상").map((customer) => {
+        const instrument=instrumentsByBiz.get(customer.biz) || instrumentsByCompany.get(companyKey(customer.company));
+        const access=latestAccess.get(companyKey(customer.company));
+        const activity=latestActivity.get(companyKey(customer.company));
+        return {
+          ...customer,
+          branch:reportBranchName(customer.staff),
+          assets:instrument?.assets ?? 0,
+          unmapped:instrument?.unmapped ?? 0,
+          prep:instrument?.prep ?? 0,
+          near:instrument?.near ?? 0,
+          overdue:instrument?.overdue ?? 0,
+          rate:instrument?.rate ?? null,
+          latestAccess:access?.timestamp || "",
+          latestActivity:activity?.timestamp || "",
+          latestActivityLabel:activity?.category || activity?.logType || ""
+        };
+      });
+      const preferred=["서울본사","부산지사","대전지사"];
+      const detected=[...new Set(rows.map((row) => row.branch).filter((name) => name !== "미확인"))];
+      const branches=[...preferred.filter((name) => detected.includes(name) || name === "대전지사"),...detected.filter((name) => !preferred.includes(name)).sort((a,b) => a.localeCompare(b,"ko")),"미확인"];
+      return {branches,rows};
+    }
+
+    function summarizeBranchRows(rows) {
+      const assets=rows.reduce((sum,row) => sum+row.assets,0);
+      const unmapped=rows.reduce((sum,row) => sum+row.unmapped,0);
+      return {
+        customers:rows.length,
+        staff:new Set(rows.map((row) => row.staff).filter(Boolean)).size,
+        assets,
+        unmapped,
+        rate:assets ? Math.max(0,(assets-unmapped)/assets) : null,
+        overdue:rows.reduce((sum,row) => sum+row.overdue,0)
+      };
+    }
+
+    function branchStaffRows(rows) {
+      const map=new Map();
+      rows.forEach((company) => {
+        const key=company.staff || "담당자 미지정";
+        if (!map.has(key)) map.set(key,{name:key,branch:company.branch,customers:0,assets:0,unmapped:0,overdue:0,companies:[]});
+        const staff=map.get(key);
+        staff.customers+=1; staff.assets+=company.assets; staff.unmapped+=company.unmapped; staff.overdue+=company.overdue; staff.companies.push(company);
+      });
+      return [...map.values()].map((staff) => ({...staff,rate:staff.assets ? Math.max(0,(staff.assets-staff.unmapped)/staff.assets) : null,companies:staff.companies.sort((a,b) => b.assets-a.assets || a.company.localeCompare(b.company,"ko"))})).sort((a,b) => b.customers-a.customers || b.assets-a.assets || a.name.localeCompare(b.name,"ko"));
+    }
+
+    function branchCompanyTable(companies) {
+      return `<div class="branch-company-area"><table class="branch-company-table"><thead><tr><th>순번</th><th>업체</th><th>상태</th><th>계측기</th><th>미매핑</th><th>매핑률</th><th>기한 초과</th><th>최근 접속</th><th>최근 활동</th></tr></thead><tbody>${companies.map((company,index) => `<tr><td>${index+1}</td><td title="${escapeHtml(company.company)}">${escapeHtml(company.company)}</td><td>${statusPill(company.status)}</td><td>${nf.format(company.assets)}</td><td>${nf.format(company.unmapped)}</td><td>${ratePill(company.rate)}</td><td><span class="risk ${company.overdue ? "red":""}">${nf.format(company.overdue)}</span></td><td>${escapeHtml(shortActivityTime(company.latestAccess) || "—")}</td><td>${company.latestActivity ? `${escapeHtml(shortActivityTime(company.latestActivity))}<br><small>${escapeHtml(company.latestActivityLabel)}</small>`:"—"}</td></tr>`).join("")}</tbody></table></div>`;
+    }
+
+    function renderBranchReport() {
+      if (!dashboardData) return;
+      const report=buildBranchReportData();
+      const branchCounts=new Map(report.branches.map((branch) => [branch,report.rows.filter((row) => row.branch === branch).length]));
+      const validBranches=new Set(["전체",...report.branches]);
+      if (!validBranches.has(selectedReportBranch)) selectedReportBranch="전체";
+      $("branchReportTabs").innerHTML=["전체",...report.branches].map((branch) => `<button type="button" class="branch-report-tab ${branch === selectedReportBranch ? "active":""}" data-report-branch="${escapeHtml(branch)}" role="tab" aria-selected="${branch === selectedReportBranch}">${escapeHtml(branch)}<span>${nf.format(branch === "전체" ? report.rows.length : branchCounts.get(branch) || 0)}</span></button>`).join("");
+      const branchRows=selectedReportBranch === "전체" ? report.rows : report.rows.filter((row) => row.branch === selectedReportBranch);
+      const summary=summarizeBranchRows(branchRows);
+      setText("branchCustomers",nf.format(summary.customers)); setText("branchStaff",nf.format(summary.staff)); setText("branchAssets",nf.format(summary.assets)); setText("branchRate",summary.rate === null ? "—" : pf.format(summary.rate*100)); setText("branchOverdue",nf.format(summary.overdue));
+      setText("branchDetailTitle",`${selectedReportBranch} 담당자 운영 현황`);
+      const query=$("branchSearch").value.trim().toLocaleLowerCase("ko-KR");
+      const staffRows=branchStaffRows(branchRows).filter((staff) => !query || `${staff.name} ${staff.branch} ${staff.companies.map((company) => company.company).join(" ")}`.toLocaleLowerCase("ko-KR").includes(query));
+      $("branchStaffList").innerHTML=staffRows.map((staff,index) => `<details class="branch-staff-item" ${index === 0 ? "open":""}><summary class="branch-staff-summary"><span class="branch-person"><span class="branch-avatar"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/></svg></span><span><b>${escapeHtml(staff.name)}</b><small>${escapeHtml(staff.branch)}</small></span></span><span class="branch-staff-value">${nf.format(staff.customers)}개사</span><span class="branch-staff-value">${nf.format(staff.assets)}</span><span class="branch-staff-value">${nf.format(staff.unmapped)}</span><span class="branch-staff-value">${staff.rate === null ? "—":percent(staff.rate)}</span><span class="branch-staff-value ${staff.overdue ? "red":""}">${nf.format(staff.overdue)}</span><span class="branch-staff-chevron"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m6 9 6 6 6-6"/></svg></span></summary>${branchCompanyTable(staff.companies)}</details>`).join("");
+      $("branchStaffList").hidden=!staffRows.length; $("branchEmpty").hidden=Boolean(staffRows.length);
+    }
+
+    function renderWeeklyTrend() {
+      if (!dashboardData || !dashboardBasisDate) return;
+      const currentWeekStart=weekStartIso(dashboardBasisDate);
+      const earliestWeekStart=weekStartIso(dashboardPeriodMin || currentWeekStart);
+      const maximumStart=addDaysIso(currentWeekStart,-49);
+      const firstWeekStart=earliestWeekStart > maximumStart ? earliestWeekStart : maximumStart;
+      const values=[];
+      for (let start=firstWeekStart; start<=currentWeekStart; start=addDaysIso(start,7)) {
+        const fullEnd=addDaysIso(start,6),end=fullEnd > dashboardBasisDate ? dashboardBasisDate : fullEnd;
+        const approved=dashboardData.applicationRows.filter((row) => row.status === "승인" && row.approvedDate && row.approvedDate >= start && row.approvedDate <= end).length;
+        const cumulative=dashboardData.customerRows.filter((row) => row.date && row.date <= end).length;
+        const date=new Date(`${start}T00:00:00`),weekNumber=Math.floor((date.getDate()-1)/7)+1;
+        const weekName=`${date.getMonth()+1}월 ${weekNumber}주차`;
+        const rangeLabel=`${start.slice(5).replace("-",".")}~${end.slice(5).replace("-",".")}`;
+        values.push({start,end,weekName,rangeLabel,approved,cumulative});
+      }
+      if (!values.some((item) => item.approved || item.cumulative)) {
+        $("weeklyTrendChart").innerHTML='<div class="weekly-chart-empty">표시할 승인·고객사 등록 이력이 없습니다.</div>';
+        return;
+      }
+      const width=720,height=238,left=42,right=48,top=18,bottom=38,plotWidth=width-left-right,plotHeight=height-top-bottom;
+      const approvalMax=Math.max(1,...values.map((item) => item.approved));
+      const cumulativeValues=values.map((item) => item.cumulative);
+      const cumulativeMax=Math.max(1,...cumulativeValues),cumulativeMin=Math.min(...cumulativeValues);
+      const cumulativePadding=Math.max(3,Math.ceil((cumulativeMax-cumulativeMin)*.3));
+      const cumulativeFloor=Math.max(0,cumulativeMin-cumulativePadding);
+      const cumulativeRange=Math.max(1,cumulativeMax-cumulativeFloor);
+      const step=plotWidth/values.length,barWidth=Math.min(34,step*.42);
+      const grid=Array.from({length:5},(_,index) => {
+        const ratio=index/4,y=top+plotHeight*ratio;
+        const leftValue=Math.round(approvalMax*(1-ratio));
+        const rightValue=Math.round(cumulativeMax-cumulativeRange*ratio);
+        return `<line x1="${left}" y1="${y}" x2="${width-right}" y2="${y}" stroke="#e5ece8" stroke-width="1"/><text x="${left-8}" y="${y+3}" text-anchor="end" fill="#8a9690" font-size="8">${leftValue}</text><text x="${width-right+8}" y="${y+3}" fill="#8a9690" font-size="8">${rightValue}</text>`;
+      }).join("");
+      const bars=values.map((item,index) => {
+        const x=left+step*index+(step-barWidth)/2;
+        const barHeight=item.approved/approvalMax*plotHeight;
+        const y=top+plotHeight-barHeight;
+        return `<g><title>${item.weekName} (${item.start}~${item.end}) · 승인 ${nf.format(item.approved)}건</title><rect x="${x}" y="${y}" width="${barWidth}" height="${barHeight}" rx="4" fill="#cdeeda"/><text x="${x+barWidth/2}" y="${Math.max(top+9,y-5)}" text-anchor="middle" fill="#557168" font-size="8" font-weight="700">${item.approved || ""}</text></g>`;
+      }).join("");
+      const points=values.map((item,index) => {
+        const x=left+step*index+step/2;
+        const y=top+(cumulativeMax-item.cumulative)/cumulativeRange*plotHeight;
+        return {x,y,...item};
+      });
+      const line=points.map((point) => `${point.x},${point.y}`).join(" ");
+      const dots=points.map((point) => `<g><title>${point.weekName} (${point.start}~${point.end}) · 누적 등록 고객사 ${nf.format(point.cumulative)}개사</title><circle cx="${point.x}" cy="${point.y}" r="3.2" fill="#087a4b" stroke="#fff" stroke-width="1.5"/></g>`).join("");
+      const labels=values.map((item,index) => `<text x="${left+step*index+step/2}" y="${height-14}" text-anchor="middle" fill="#6f7c75" font-size="7.8">${item.rangeLabel}</text>`).join("");
+      $("weeklyTrendChart").innerHTML=`<svg viewBox="0 0 ${width} ${height}" role="img" aria-label="최근 최대 8주 주간 승인 건수와 누적 등록 고객사 추이"><text x="${left}" y="10" fill="#8a9690" font-size="8">승인(건)</text><text x="${width-right}" y="10" text-anchor="end" fill="#8a9690" font-size="8">누적 고객사(개사)</text>${grid}${bars}<polyline points="${line}" fill="none" stroke="#087a4b" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>${dots}${labels}</svg>`;
+    }
+
+    function renderWeeklyReport() {
+      if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
+      const applications=rowsInRange(dashboardData.applicationRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const newCustomers=rowsInRange(dashboardData.customerRows,dashboardPeriodStart,dashboardPeriodEnd).length;
+      const activities=rowsInRange(dashboardData.activityRows,dashboardPeriodStart,dashboardPeriodEnd);
+      const accessSummary=summarizeAccess(rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd));
+      const activityCompanies=new Set(activities.map((row) => companyKey(row.company)).filter((key) => key && key !== companyKey("고객사 미확인")));
+      const activeCompanies=new Set(activityCompanies);
+      rowsInRange(dashboardData.accessRows,dashboardPeriodStart,dashboardPeriodEnd).filter((row) => row.logType === "로그인" && row.result === "성공").forEach((row) => {const key=companyKey(row.company);if(key)activeCompanies.add(key)});
+      setText("weeklyPrintPeriod",`${dashboardPeriodStart} ~ ${dashboardPeriodEnd}`); setText("weeklyPrintBasis",dashboardBasisDate || "—"); setText("weeklyPrintGenerated",new Intl.DateTimeFormat("ko-KR",{year:"numeric",month:"2-digit",day:"2-digit",hour:"2-digit",minute:"2-digit",hour12:false}).format(new Date()));
+      setText("weeklyApplications",nf.format(applications.length)); setText("weeklyNewCustomers",nf.format(newCustomers)); setText("weeklyActiveCompanies",nf.format(activeCompanies.size)); setText("weeklyActivities",nf.format(activities.length)); setText("weeklyAssets",nf.format(dashboardData.totalAssets)); setText("weeklyOverdue",nf.format(dashboardData.overdue));
+      renderWeeklyTrend();
+      setText("weeklyCheckMapping",`CMS 매핑률 ${percent(dashboardData.rate)}`);
+      setText("weeklyCheckUsage",`이용 고객사 ${nf.format(activeCompanies.size)}개사`); setText("weeklyCheckUsageDetail",`로그인 ${nf.format(accessSummary.activeCompanies)}개사 · 업무활동 ${nf.format(activityCompanies.size)}개사`);
+      setText("weeklyCheckReturning",`재방문 고객사 ${nf.format(accessSummary.returningCompanies)}개사`);
+      setText("weeklyCheckWaiting",`승인 대기 ${nf.format(dashboardData.waiting)}건`);
+      setText("weeklyCheckUnused",`미이용 고객사 ${nf.format(unusedCustomerRows().length)}개사`);
+      renderBranchReport();
     }
 
     function rowsInRange(rows, start, end) { return rows.filter((row) => row.date && row.date >= start && row.date <= end); }
@@ -1124,6 +1378,7 @@
       if (!dashboardData || !dashboardPeriodStart || !dashboardPeriodEnd) return;
       setText("periodApplied",periodText());
       renderPeriodKpis(); renderApplicationChart(); renderApplicationTable(); renderActivitySection(); renderAccessSection(); renderSecuritySection(); renderUnusedCustomers();
+      renderWeeklyReport();
       setText("criteriaPeriod",`${dashboardPeriodStart} ~ ${dashboardPeriodEnd}`);
       setText("criteriaBasis",dashboardBasisDate || "—");
     }
@@ -1237,6 +1492,37 @@
       document.querySelectorAll("[data-tab]").forEach((button) => { const active=button.dataset.tab === name; button.classList.toggle("active",active); button.setAttribute("aria-selected",String(active)); });
       const panelId=`tab${name[0].toUpperCase()}${name.slice(1)}`;
       document.querySelectorAll(".tab-panel").forEach((panel) => { panel.hidden=panel.id !== panelId; });
+      const weeklyActive=name === "weekly";
+      $("weeklyTabActions").hidden=!weeklyActive;
+      $("weeklyTabGroup").classList.toggle("tools-visible",weeklyActive);
+      const url=new URL(window.location.href);
+      if (name === "weekly") {
+        url.searchParams.set("tab","weekly");
+        if (dashboardPeriodStart) url.searchParams.set("week",dashboardPeriodStart);
+      } else if (url.searchParams.get("tab") === "weekly") {
+        url.searchParams.delete("tab"); url.searchParams.delete("week");
+      }
+      history.replaceState(null,"",url);
+    }
+
+    async function copyWeeklyReportLink() {
+      const url=new URL(window.location.href);
+      url.searchParams.set("tab","weekly");
+      if (dashboardPeriodStart) url.searchParams.set("week",dashboardPeriodStart);
+      try {
+        await navigator.clipboard.writeText(url.toString());
+        const button=$("weeklyCopyLink");
+        button.classList.add("copied");
+        button.title="링크 복사 완료";
+        button.setAttribute("aria-label","주간 보고서 링크 복사 완료");
+        window.setTimeout(() => {
+          button.classList.remove("copied");
+          button.title="주간 보고서 링크 복사";
+          button.setAttribute("aria-label","주간 보고서 링크 복사");
+        },1400);
+      } catch (error) {
+        window.prompt("아래 주소를 복사해 주세요.",url.toString());
+      }
     }
     function jumpToDetail(card) {
       activateTab(card.dataset.jumpTab);
@@ -1865,6 +2151,20 @@
     $("customerSort").addEventListener("change",renderCustomerTable);
     $("customerLimit").addEventListener("change",renderCustomerTable);
     $("staffLimit").addEventListener("change",renderStaffTable);
+    $("branchReportTabs").addEventListener("click",(event) => {
+      const button=event.target.closest("[data-report-branch]");
+      if (!button) return;
+      selectedReportBranch=button.dataset.reportBranch;
+      $("branchSearch").value="";
+      renderBranchReport();
+    });
+    $("branchSearch").addEventListener("input",renderBranchReport);
+    $("weeklyCopyLink").addEventListener("click",copyWeeklyReportLink);
+    $("weeklyPrint").addEventListener("click",() => {
+      document.body.classList.add("weekly-print");
+      window.addEventListener("afterprint",() => document.body.classList.remove("weekly-print"),{once:true});
+      window.print();
+    });
     $("toggleUpload").addEventListener("click",() => { const p=$("uploadPanel"); p.classList.toggle("collapsed"); $("toggleUpload").textContent=p.classList.contains("collapsed")?"다시 불러오기":"접기"; });
     $("reportModeBtn").addEventListener("click",() => { document.body.classList.toggle("report-mode"); $("reportModeBtn").querySelector("span").textContent=document.body.classList.contains("report-mode")?"편집 모드":"보고 모드"; });
     $("printBtn").addEventListener("click",() => window.print());
@@ -1878,6 +2178,9 @@
     setupDetailJumps();
 
     async function initDashboard() {
+      const params=new URLSearchParams(window.location.search);
+      if (params.get("tab") === "weekly") activateTab("weekly");
+      await loadStaffBranchMap();
       const saveReloadNotice=consumeSaveReloadNotice();
       // 1. 로컬 캐시에서 계산 결과와 실제 Excel File 객체를 함께 복원한다.
       let cached = await loadLocalCache();
@@ -1899,6 +2202,16 @@
       }
       // 2. 서버 manifest가 실제로 더 최신일 때만 저장소 데이터를 적용한다.
       await loadEmbeddedData({ cached });
+      if (params.get("tab") === "weekly") {
+        const week=params.get("week");
+        if (dashboardData && /^\d{4}-\d{2}-\d{2}$/.test(week || "")) {
+          const start=week < dashboardPeriodMin ? dashboardPeriodMin : week;
+          const requestedEnd=addDaysIso(week,6);
+          const end=requestedEnd > dashboardBasisDate ? dashboardBasisDate : requestedEnd;
+          if (start <= end) applyPeriodRange(start,end,null);
+        }
+        activateTab("weekly");
+      }
     }
 
     initDashboard();
