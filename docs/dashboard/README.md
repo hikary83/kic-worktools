@@ -2,7 +2,7 @@
 
 > 다른 담당자 또는 AI가 기존 정책과 기능을 유지하면서 대시보드를 수정할 수 있도록 만든 기준 문서입니다.
 
-- 최종 갱신일: 2026-09-07
+- 최종 갱신일: 2026-09-08
 - 운영 파일: `docs/dashboard/index.html`
 - 공개 주소: <https://hikary83.github.io/kic-worktools/dashboard/>
 - 관련 Jira: `CW2R-73` — `[CWIZ Enterprise] Admin 대시보드 및 통계 기능 단계별 구축`
@@ -36,13 +36,14 @@ CWIZ Enterprise Admin에 정식 대시보드·통계 기능이 개발되기 전�
 ```text
 D:\Google Antigravity\kic-worktools
 └─ docs
+   ├─ data/
+   │  └─ staff-branch-map.json # 여러 업무 도구가 함께 사용하는 직원 이름·소속 기준
    └─ dashboard
       ├─ index.html          # 실행 파일: HTML, CSS, Excel 파서, 집계, 화면 렌더링, data/ 자동로드 포함
       ├─ favicon.svg         # 브라우저 탭에 표시하는 CWIZ 대시보드 아이콘
       ├─ README.md           # 이 문서
       └─ data/               # 주간 엑셀 5개 보관 폴더 (직원 접속 시 자동 로드용)
          ├─ manifest.json    # 파일명 매핑 설정
-         ├─ staff-branch-map.json # 직원 이름과 소속 지사 연결 기준
          ├─ 이용신청.xlsx
          ├─ 고객사현황.xlsx
          ├─ 고객사계측기현황.xlsx
@@ -56,7 +57,7 @@ D:\Google Antigravity\kic-worktools
 
 1. 기존 대시보드 디자인을 유지한 `주간 보고서` 탭을 추가했다.
 2. 선택 조회기간의 이용신청, 신규 고객사, 활동 고객사, 데이터 작업과 기준일 현재 등록 계측기·기한 초과를 함께 표시한다.
-3. `staff-branch-map.json`의 직원 이름을 고객사현황의 영업 담당자와 연결해 지사별 운영 현황을 계산한다.
+3. 공통 `docs/data/staff-branch-map.json`의 직원 이름을 고객사현황의 영업 담당자와 연결해 지사별 운영 현황을 계산한다.
 4. 지사 버튼을 선택한 뒤 담당자 행을 펼치면 담당 업체별 계측기, 미매핑, 매핑률, 기한 초과, 최근 접속·활동을 확인할 수 있다.
 5. `?tab=weekly&week=YYYY-MM-DD` 주소로 특정 주차 보고서를 바로 열 수 있으며, 화면의 `링크 복사` 버튼으로 공유한다.
 6. `PDF 저장` 시 주간 요약과 전체 지사 요약을 한 페이지에 출력하고 담당자·업체 상세 목록은 제외한다.

@@ -933,7 +933,8 @@
 
     async function loadStaffBranchMap() {
       try {
-        const url=encodeURI(getDataBaseUrl()+"staff-branch-map.json")+`?t=${Date.now()}`;
+        const url=new URL("../data/staff-branch-map.json",window.location.href);
+        url.searchParams.set("t",Date.now());
         const response=await fetch(url,{cache:"no-cache"});
         if (!response.ok) throw new Error(`HTTP ${response.status}`);
         const payload=await response.json();

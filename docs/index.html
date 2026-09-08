@@ -491,6 +491,8 @@
       document.getElementById('startDate').value = week.start;
       document.getElementById('endDate').value = week.end;
       initImeProtection();
+      // 캡처 분석이 끝났을 때 즉시 지사를 찾을 수 있도록 공통 직원 기준표를 미리 준비합니다.
+      loadHelpdeskStaffBranchMap();
       await ensureKicChartFontReady();
       
       // ⚡ [SWR 캐싱 전략] 로컬 캐시가 있으면 0.01초 만에 화면에 즉시 렌더링!
@@ -2530,6 +2532,52 @@
     let addCaptureAnalyzeTimer = null;
     let addCaptureAnalyzeInFlight = false;
     let addCaptureAnalyzeQueued = false;
+    let helpdeskStaffBranchMap = {};
+    let helpdeskStaffBranchMapLoaded = false;
+    let helpdeskStaffBranchMapPromise = null;
+
+    const HELPDESK_BRANCH_VALUES = ['서울본사', '부산지사', '대전지사', '웨이투웨이', '기타'];
+    const HELPDESK_BRANCH_ALIASES = {
+        '기술연구소': '기타',
+        '가평지안캠핑장': '기타'
+    };
+
+    function normalizeStaffName(value) {
+        return String(value || '').trim().replace(/\s+/g, '').replace(/님$/, '');
+    }
+
+    async function loadHelpdeskStaffBranchMap() {
+        if (helpdeskStaffBranchMapPromise) return helpdeskStaffBranchMapPromise;
+        helpdeskStaffBranchMapPromise = (async () => {
+            try {
+                const url = new URL('data/staff-branch-map.json', window.location.href);
+                url.searchParams.set('t', Date.now());
+                const response = await fetch(url, { cache: 'no-cache' });
+                if (!response.ok) throw new Error(`HTTP ${response.status}`);
+                const payload = await response.json();
+                const staff = payload && payload.staff && typeof payload.staff === 'object' ? payload.staff : {};
+                helpdeskStaffBranchMap = Object.entries(staff).reduce((result, entry) => {
+                    const normalizedName = normalizeStaffName(entry[0]);
+                    if (normalizedName) result[normalizedName] = String(entry[1] || '').trim();
+                    return result;
+                }, {});
+                helpdeskStaffBranchMapLoaded = true;
+                return helpdeskStaffBranchMap;
+            } catch (error) {
+                helpdeskStaffBranchMap = {};
+                helpdeskStaffBranchMapLoaded = false;
+                console.warn('직원-지사 공통 기준표를 불러오지 못했습니다.', error);
+                return helpdeskStaffBranchMap;
+            }
+        })();
+        return helpdeskStaffBranchMapPromise;
+    }
+
+    function getHelpdeskBranchByStaffName(staffName) {
+        const sourceBranch = helpdeskStaffBranchMap[normalizeStaffName(staffName)] || '';
+        if (HELPDESK_BRANCH_VALUES.includes(sourceBranch)) return sourceBranch;
+        return HELPDESK_BRANCH_ALIASES[sourceBranch] || '';
+    }
 
     function isAddModalOpen() {
         const modal = document.getElementById('addModal');
@@ -2674,10 +2722,18 @@
     function applyAddCaptureAnalysis(data, startedAt) {
         data = data || {};
         const filled = [];
+        const branchElement = document.getElementById('add-branch');
+        const branchBeforeAnalysis = branchElement ? branchElement.value : '';
 
         if (data.receiptDate) { document.getElementById('add-date').value = data.receiptDate; filled.push('add-date'); }
-        if (data.branch && setSelectValueIfExists('add-branch', data.branch)) filled.push('add-branch');
         if (data.requester) { document.getElementById('add-requester').value = data.requester; filled.push('add-requester'); }
+
+        // 등록자 이름 기준표를 우선하고, 매칭되지 않을 때만 캡처에서 판독한 지사를 보조로 사용합니다.
+        // 사용자가 분석 전에 직접 선택한 지사값은 덮어쓰지 않습니다.
+        const mappedBranch = getHelpdeskBranchByStaffName(data.requester);
+        const resolvedBranch = mappedBranch || data.branch || '';
+        if (!branchBeforeAnalysis && resolvedBranch && setSelectValueIfExists('add-branch', resolvedBranch)) filled.push('add-branch');
+
         if (data.system && setSelectValueIfExists('add-system', data.system)) filled.push('add-system');
         if (data.type && setSelectValueIfExists('add-type', data.type)) filled.push('add-type');
         if (data.priority && setSelectValueIfExists('add-priority', data.priority)) filled.push('add-priority');
@@ -2687,7 +2743,11 @@
         if (data.details) { document.getElementById('add-details').value = data.details; filled.push('add-details'); }
 
         filled.forEach(flashImportedField);
-        setAddCaptureWarnings(data.warnings || []);
+        const warnings = Array.isArray(data.warnings) ? data.warnings.slice() : [];
+        if (data.requester && helpdeskStaffBranchMapLoaded && !mappedBranch) {
+            warnings.push(`등록자 ${data.requester}의 지사 기준을 찾지 못했습니다.`);
+        }
+        setAddCaptureWarnings(warnings);
         const missingRequired = [];
         if (!document.getElementById('add-branch').value) missingRequired.push('지사');
         if (!document.getElementById('add-title').value) missingRequired.push('제목');
@@ -2727,6 +2787,7 @@
 
         try {
             const result = await runServerFunction('analyzeHelpdeskCapture', { images: addCaptureImages });
+            await loadHelpdeskStaffBranchMap();
             applyAddCaptureAnalysis((result && result.data) || result || {}, startedAt);
         } catch (e) {
             setAddCaptureStatus('분석 실패: ' + (e && e.message ? e.message : String(e)), 'err');
