@@ -64,7 +64,7 @@
     <header class="bg-white dark:bg-[#2F2F2F] border-b border-slate-200 dark:border-[#424242] px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40 transition-colors">
       <div>
         <h1 class="text-xl font-extrabold text-slate-900 dark:text-[#ECECEC] tracking-tight flex items-center gap-2">🏷️ 필증 출력 확인</h1>
-        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1"><b>kpo_idx</b>와 지사를 선택해 디버그 URL을 생성하고, API 응답을 카드 형태로 확인합니다.</p>
+        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1"><b>kpo_idx</b>, 접속 서버와 지사를 선택해 디버그 URL을 생성하고, API 응답을 카드 형태로 확인합니다.</p>
       </div>
       <div class="flex items-center gap-2.5">
         <button onclick="loadSample()" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#262626] text-slate-600 dark:text-[#B4B4B4] text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#383838] transition-all">샘플 입력</button>
@@ -84,7 +84,7 @@
 
         <div class="bg-emerald-50/70 dark:bg-[#1E2922] border border-emerald-100 dark:border-[#1F5438] text-emerald-900 dark:text-emerald-300 text-xs rounded-2xl p-4 leading-relaxed font-medium">
           💡 <b>사용 방법</b><br>
-          이 화면에서는 <b>kpo_idx</b>, <b>지사</b>, <b>디버그 출력 여부</b>만 선택합니다.<br>
+          이 화면에서는 <b>kpo_idx</b>, <b>접속 서버</b>, <b>지사</b>, <b>디버그 출력 여부</b>만 선택합니다.<br>
           <b>cmd=resp_print_label</b>, <b>m_company_idx=100</b>은 자동 적용됩니다.
         </div>
 
@@ -102,6 +102,19 @@
             <option value="11">대전지사</option>
             <option value="12">부산지사</option>
           </select>
+        </div>
+
+        <!-- 접속 서버 라디오 -->
+        <div>
+          <label class="block text-xs font-bold text-slate-600 dark:text-[#B4B4B4] mb-2">접속 서버</label>
+          <div class="grid grid-cols-2 gap-3">
+            <label class="flex items-center gap-2 border border-slate-200 dark:border-[#424242] rounded-2xl px-3.5 py-2.5 bg-white dark:bg-[#212121] text-slate-700 dark:text-[#ECECEC] text-xs font-bold cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-[#262626]">
+              <input type="radio" name="serverEnvironment" value="production" checked class="accent-emerald-600"> 실서버
+            </label>
+            <label class="flex items-center gap-2 border border-slate-200 dark:border-[#424242] rounded-2xl px-3.5 py-2.5 bg-white dark:bg-[#212121] text-slate-700 dark:text-[#ECECEC] text-xs font-bold cursor-pointer transition-all hover:bg-slate-50 dark:hover:bg-[#262626]">
+              <input type="radio" name="serverEnvironment" value="development" class="accent-emerald-600"> 개발서버
+            </label>
+          </div>
         </div>
 
         <!-- koc_debug 라디오 -->
@@ -216,7 +229,10 @@
   </div>
 
   <script>
-    const BASE_URL = 'https://cms.kic21.co.kr/correction/get_correct_excel_info.php';
+    const SERVER_URLS = {
+      production: 'https://cms.kic21.co.kr/correction/get_correct_excel_info.php',
+      development: 'https://dev-cms.kic21.co.kr/correction/get_correct_excel_info.php'
+    };
     const FIXED_CMD = 'resp_print_label';
     const FIXED_COMPANY_IDX = '100';
     const SAMPLE_RESPONSE = '{"list":{"label_type":1,"label_cnt":2,"koc_calibration_no0":"26008900-1","kcs_machine0":"DHAK0003","koc_calibration_date0":"2026-06-16","koc_calibration_next_date0":"2027-06-16","kpo_cmi_idx0":1512510,"koc_calibration_no1":"26008900-2","kcs_machine1":"29507936","koc_calibration_date1":"2026-06-16","koc_calibration_next_date1":"2027-06-16","kpo_cmi_idx1":603217}}';
@@ -227,6 +243,8 @@
     function setStatus(id, msg, type){ const el=$(id); el.className='status '+(type||''); el.textContent=msg||''; }
     function onlyDigits(value){ return String(value||'').trim().replace(/[^0-9]/g,''); }
     function getKocDebug(){ return document.querySelector('input[name="kocDebug"]:checked')?.value || '0'; }
+    function getServerEnvironment(){ return document.querySelector('input[name="serverEnvironment"]:checked')?.value || 'production'; }
+    function getServerUrl(){ return SERVER_URLS[getServerEnvironment()] || SERVER_URLS.production; }
 
     function buildUrl(){
       const kpoIdx = onlyDigits($('kpoIdx').value);
@@ -240,7 +258,7 @@
       params.set('koc_debug', kocDebug);
       params.set('m_group', mGroup);
       params.set('m_company_idx', FIXED_COMPANY_IDX);
-      return BASE_URL + '?' + params.toString();
+      return getServerUrl() + '?' + params.toString();
     }
 
     function generateUrl(){
@@ -261,6 +279,48 @@
       setStatus('formStatus', 'URL이 복사되었습니다.', 'ok');
     }
 
+    function fetchApiResponseFast(url, timeoutMs = 3000){
+      const candidates = [
+        url,
+        `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
+        `https://corsproxy.io/?${encodeURIComponent(url)}`
+      ];
+      const controllers = candidates.map(() => new AbortController());
+
+      return new Promise(resolve => {
+        let pending = candidates.length;
+        let completed = false;
+
+        const finish = text => {
+          if(completed) return;
+          completed = true;
+          clearTimeout(timeoutId);
+          controllers.forEach(controller => controller.abort());
+          resolve(text || '');
+        };
+
+        const completeOne = () => {
+          pending -= 1;
+          if(pending <= 0) finish('');
+        };
+
+        const timeoutId = setTimeout(() => finish(''), timeoutMs);
+
+        candidates.forEach((candidateUrl, index) => {
+          fetch(candidateUrl, { cache: 'no-cache', signal: controllers[index].signal })
+            .then(response => response.ok ? response.text() : '')
+            .then(text => {
+              if(text && (text.includes('list') || text.includes('{'))) finish(text);
+              else completeOne();
+            })
+            .catch(error => {
+              if(error?.name !== 'AbortError') console.warn('API fetch failed:', error);
+              completeOne();
+            });
+        });
+      });
+    }
+
     async function fetchAndCopyApiResponse(){
       let url = '';
       try {
@@ -275,45 +335,11 @@
       const origHtml = btn.innerHTML;
       btn.disabled = true;
       btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 데이터 조회 중...';
-      setStatus('formStatus', 'CMS 서버에서 데이터를 가져오는 중입니다...', '');
+      setStatus('formStatus', 'CMS 응답을 확인 중입니다. 최대 3초 후 모달로 전환됩니다...', '');
 
-      let rawText = '';
-      let fetchSuccess = false;
-
-      // 1. 직접 fetch 시도
-      try {
-        const res = await fetch(url, { cache: 'no-cache' });
-        if (res.ok) {
-          rawText = await res.text();
-          if (rawText && (rawText.includes('list') || rawText.includes('{'))) {
-            fetchSuccess = true;
-          }
-        }
-      } catch (e) {
-        console.warn('Direct fetch failed (CORS restriction):', e);
-      }
-
-      // 2. CORS로 실패한 경우 프록시 fallback 시도
-      if (!fetchSuccess) {
-        const proxyUrls = [
-          `https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`,
-          `https://corsproxy.io/?${encodeURIComponent(url)}`
-        ];
-        for (const pUrl of proxyUrls) {
-          try {
-            const res = await fetch(pUrl, { cache: 'no-cache' });
-            if (res.ok) {
-              rawText = await res.text();
-              if (rawText && (rawText.includes('list') || rawText.includes('{'))) {
-                fetchSuccess = true;
-                break;
-              }
-            }
-          } catch (err) {
-            console.warn('Proxy fetch failed:', err);
-          }
-        }
-      }
+      // 직접 요청과 두 프록시를 동시에 조회하고, 3초 안에 응답이 없으면 모달을 바로 표시합니다.
+      const rawText = await fetchApiResponseFast(url, 3000);
+      const fetchSuccess = Boolean(rawText);
 
       btn.disabled = false;
       btn.innerHTML = origHtml;
@@ -411,6 +437,7 @@
     function clearForm(){
       $('kpoIdx').value = '';
       $('mGroup').value = '1';
+      document.querySelector('input[name="serverEnvironment"][value="production"]').checked = true;
       document.querySelector('input[name="kocDebug"][value="0"]').checked = true;
       generatedUrl = '';
       setStatus('formStatus', '입력값을 초기화했습니다.');
@@ -419,6 +446,7 @@
     function loadSample(){
       $('kpoIdx').value = '1494325';
       $('mGroup').value = '1';
+      document.querySelector('input[name="serverEnvironment"][value="production"]').checked = true;
       document.querySelector('input[name="kocDebug"][value="1"]').checked = true;
       generateUrl();
     }
@@ -507,8 +535,9 @@
     function loadSampleResponse(){ $('apiResponse').value = SAMPLE_RESPONSE; analyzeApiResponse(); }
     function loadSampleReceiptResponse(){ $('apiResponse').value = SAMPLE_RECEIPT_RESPONSE; analyzeApiResponse(); }
     function clearResponse(){ $('apiResponse').value=''; $('parsedSummary').style.display='none'; $('labelCards').innerHTML='<div class="empty-state">API 응답을 붙여넣으면 라벨타입에 맞춰 카드가 표시됩니다.</div>'; setStatus('responseStatus','',''); }
-    function clearForm(){ $('kpoIdx').value=''; $('mGroup').value='1'; document.querySelector('input[name="kocDebug"][value="0"]').checked=true; generatedUrl=''; setStatus('formStatus','',''); clearResponse(); }
+    function clearForm(){ $('kpoIdx').value=''; $('mGroup').value='1'; document.querySelector('input[name="serverEnvironment"][value="production"]').checked=true; document.querySelector('input[name="kocDebug"][value="0"]').checked=true; generatedUrl=''; setStatus('formStatus','',''); clearResponse(); }
     ['kpoIdx','mGroup'].forEach(id=>$(id).addEventListener('input',()=>setStatus('formStatus','','')));
+    document.querySelectorAll('input[name="serverEnvironment"]').forEach(el=>el.addEventListener('change',()=>{ generatedUrl=''; setStatus('formStatus',el.value === 'development' ? '개발서버로 변경되었습니다. URL 생성을 다시 눌러주세요.' : '실서버로 변경되었습니다. URL 생성을 다시 눌러주세요.','warn'); }));
     document.querySelectorAll('input[name="kocDebug"]').forEach(el=>el.addEventListener('change',()=>{ generatedUrl=''; setStatus('formStatus','디버그 값이 변경되었습니다. URL 생성을 다시 눌러주세요.','warn'); }));
   </script>
 
