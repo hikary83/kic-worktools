@@ -1661,13 +1661,12 @@
         .trim()
         .replace(/^["']+|["']+$/g, '')
         .replace(/\s+/g, ' ')
-        .replace(/[.!?]+$/g, '');
+        .replace(/[.!?…]+$/g, '');
       if (caption.length <= 30) return caption;
 
-      const sliced = caption.slice(0, 29);
+      const sliced = caption.slice(0, 30);
       const lastSpace = sliced.lastIndexOf(' ');
-      const shortened = lastSpace >= 18 ? sliced.slice(0, lastSpace) : sliced;
-      return shortened.trim() + '…';
+      return (lastSpace > 0 ? sliced.slice(0, lastSpace) : sliced).trim();
     }
 
     async function generateAssets(forceRegenerate = false) {
