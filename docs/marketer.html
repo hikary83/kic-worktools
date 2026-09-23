@@ -1656,6 +1656,20 @@
       }
     }
 
+    function normalizeAssetCaption(value) {
+      let caption = String(value || '')
+        .trim()
+        .replace(/^["']+|["']+$/g, '')
+        .replace(/\s+/g, ' ')
+        .replace(/[.!?]+$/g, '');
+      if (caption.length <= 30) return caption;
+
+      const sliced = caption.slice(0, 29);
+      const lastSpace = sliced.lastIndexOf(' ');
+      const shortened = lastSpace >= 18 ? sliced.slice(0, lastSpace) : sliced;
+      return shortened.trim() + '…';
+    }
+
     async function generateAssets(forceRegenerate = false) {
       updateCategoryAndDateBadges();
 
@@ -1675,9 +1689,9 @@
       btnMore.disabled = true;
 
       const assetSteps = [
-        "포스팅 본문의 핵심 키워드와 기술 맥락을 분석하고 있습니다...",
-        "서로 다른 3가지 시각적 구도(현장, 클로즈업, 엔지니어)를 도출하고 있습니다...",
-        "최적화된 미드저니 영문 프롬프트와 캡션, 해시태그 세트를 일괄 추출하고 있습니다..."
+        "본문의 이미지 삽입 문구와 인접 문단을 분석하고 있습니다...",
+        "각 이미지 번호에 맞는 피사체·동작·구도를 구성하고 있습니다...",
+        "본문 맞춤 영문 프롬프트와 짧은 한 줄 캡션을 완성하고 있습니다..."
       ];
       startProgressBar('assets', assetSteps);
 
@@ -1715,7 +1729,7 @@
               prompt: promptMatch[1].trim(),
               filename: filenameMatch ? filenameMatch[1].trim().replace(/\.[^/.]+$/, "") : `image_${index + 1}`,
               alt: altMatch ? altMatch[1].trim() : 'KIC 블로그 이미지',
-              caption: captionMatch ? captionMatch[1].trim().replace(/^["']+|["']+$/g, '') : ''
+              caption: captionMatch ? normalizeAssetCaption(captionMatch[1]) : ''
             });
           }
         });
@@ -1754,7 +1768,7 @@
             if (line.includes('프롬프트(EN):')) asset.prompt = line.split('프롬프트(EN):')[1].trim();
             if (line.includes('파일명:')) asset.filename = line.split('파일명:')[1].trim().replace(/\.[^/.]+$/, "");
             if (line.includes('Alt 태그:')) asset.alt = line.split('Alt 태그:')[1].trim();
-            if (line.includes('캡션:')) asset.caption = line.split('캡션:')[1].trim().replace(/^["']+|["']+$/g, '');
+            if (line.includes('캡션:')) asset.caption = normalizeAssetCaption(line.split('캡션:')[1]);
           });
           if (asset.prompt) newAssets.push(asset);
         });
@@ -1768,7 +1782,7 @@
             if (line.includes('프롬프트(EN):')) asset.prompt = line.split('프롬프트(EN):')[1].trim();
             if (line.includes('파일명:')) asset.filename = line.split('파일명:')[1].trim().replace(/\.[^/.]+$/, "");
             if (line.includes('Alt 태그:')) asset.alt = line.split('Alt 태그:')[1].trim();
-            if (line.includes('캡션:')) asset.caption = line.split('캡션:')[1].trim().replace(/^["']+|["']+$/g, '');
+            if (line.includes('캡션:')) asset.caption = normalizeAssetCaption(line.split('캡션:')[1]);
           });
           if (asset.prompt) imageAssets.push(asset);
         }
