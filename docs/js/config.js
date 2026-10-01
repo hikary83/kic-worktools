@@ -57,6 +57,8 @@ async function callGASApi(action, data = {}) {
 
     return result.data;
   } catch (error) {
+    // 싱크는 미리보기 토큰/선택값이 필수입니다. 파라미터 없는 GET으로 재시도하지 않습니다.
+    if (['previewJiraSync', 'lookupJiraSync', 'applyJiraSync'].includes(action)) throw error;
     console.warn("POST call failed, trying GET fallback for:", action, error);
     
     // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도

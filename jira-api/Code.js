@@ -56,6 +56,9 @@ function doPost(e) {
     if (payload.action === 'getJiraTimelineProjects') {
       return jsonOutput_({ success: true, data: getAvailableProjects_() });
     }
+    if (payload.action === 'getHelpdeskJiraSyncIssues') {
+      return jsonOutput_({ success: true, data: getHelpdeskJiraSyncIssues_(payload.data || {}) });
+    }
     if (payload.action === 'saveJiraTimelineProjects') {
       return jsonOutput_({ success: true, data: saveProjectSettings_(payload.data || {}) });
     }

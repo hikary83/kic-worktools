@@ -433,6 +433,12 @@ function doPost(e) {
     if (action === 'getDashboardData') {
       const stats = getDashboardData(data.startDate, data.endDate);
       result = { success: true, data: stats };
+    } else if (action === 'previewJiraSync') {
+      result = { success: true, data: previewHelpdeskJiraSync() };
+    } else if (action === 'lookupJiraSync') {
+      result = { success: true, data: lookupHelpdeskJiraSync(data) };
+    } else if (action === 'applyJiraSync') {
+      result = { success: true, data: applyHelpdeskJiraSync(data) };
     } else if (action === 'getJiraTimelineIssues') {
       const stats = getJiraTimelineIssuesForWeb(data.googleIdToken);
       result = { success: true, data: stats };

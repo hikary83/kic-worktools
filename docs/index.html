@@ -33,8 +33,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/kic-sidebar.js?v=2.7.4"></script>
+  <script src="js/kic-sidebar.js?v=2.8.0"></script>
   <script src="js/kic-common.js"></script>
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.0">
+  <script src="js/helpdesk-jira-sync.js?v=2.8.0" defer></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
 
@@ -95,6 +97,7 @@
           <button onclick="openSettingsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-[#262626] text-slate-500 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog"></i></button>
           <button onclick="openAddModal()" class="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-sky-950/60 text-blue-600 dark:text-sky-400 border border-blue-100 dark:border-sky-800/60 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white transition-colors shadow-sm" title="새 이슈 등록"><i class="fas fa-plus"></i></button>
           <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors shadow-sm" title="구글 시트 열기"><i class="fas fa-file-excel"></i></a>
+          <button onclick="openHelpdeskJiraSync()" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-sm" title="Jira 싱크 확인" aria-label="Jira 싱크 확인"><i class="fas fa-sync-alt"></i></button>
         </div>
       </div>
     </div>
