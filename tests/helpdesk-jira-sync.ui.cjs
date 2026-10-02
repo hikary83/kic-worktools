@@ -102,6 +102,19 @@ async function main() {
     const bounds = () => page.locator('.hd-sync-dialog').evaluate(element => {
       const { x, y, width, height } = element.getBoundingClientRect(); return { x, y, width, height };
     });
+    const assertStateCentered = async () => {
+      const position = await page.locator('.hd-sync-state-content').evaluate(content => {
+        const state = content.parentElement, body = state.parentElement;
+        const bodyRect = body.getBoundingClientRect(), stateRect = state.getBoundingClientRect(), contentRect = content.getBoundingClientRect();
+        const bodyStyle = getComputedStyle(body), previous = state.previousElementSibling, next = state.nextElementSibling;
+        const top = previous ? previous.getBoundingClientRect().bottom + parseFloat(getComputedStyle(previous).marginBottom) : bodyRect.top + parseFloat(bodyStyle.paddingTop);
+        const bottom = next ? next.getBoundingClientRect().top - parseFloat(getComputedStyle(next).marginTop) : bodyRect.bottom - parseFloat(bodyStyle.paddingBottom);
+        return { horizontalOffset: (contentRect.left + contentRect.right - stateRect.left - stateRect.right) / 2,
+          verticalOffset: (contentRect.top + contentRect.bottom - top - bottom) / 2 };
+      });
+      assert.ok(Math.abs(position.horizontalOffset) <= 1, JSON.stringify(position));
+      assert.ok(Math.abs(position.verticalOffset) <= 1, JSON.stringify(position));
+    };
     const fullBounds = await bounds();
     for (const filter of ['all', 'changes', 'unlinked', 'review', 'matched']) {
       await page.locator(`[data-sync-filter="${filter}"]`).click();
@@ -142,6 +155,8 @@ async function main() {
     await page.getByRole('button', { name: 'IT-261001-002 싱크 제외', exact: true }).click();
     await page.getByText('해당하는 이슈가 없습니다.').waitFor();
     assert.deepEqual(await bounds(), fullBounds);
+    await assertStateCentered();
+    if (process.argv[3]) await page.screenshot({ path: path.join(process.argv[3], 'helpdesk-jira-sync-empty-centered.png') });
     assert.equal(await page.locator('[data-sync-filter="unlinked"] span').textContent(), '0');
     assert.equal(await page.locator('[data-sync-filter="all"] span').textContent(), '5');
     await page.locator('[data-sync-filter="all"]').click();
@@ -218,12 +233,14 @@ async function main() {
     await page.evaluate(() => { window.holdPreview = true; });
     await page.locator('[data-sync-action="refresh"]').click();
     assert.deepEqual(await bounds(), fullBounds);
+    await assertStateCentered();
     await page.evaluate(() => { window.holdPreview = false; window.releasePreview(); });
     await page.locator('[data-sync-row]').first().waitFor();
     await page.evaluate(() => { window.failPreview = true; });
     await page.locator('[data-sync-action="refresh"]').click();
     await page.getByText('테스트 조회 실패').waitFor();
     assert.deepEqual(await bounds(), fullBounds);
+    await assertStateCentered();
     await page.evaluate(() => { window.failPreview = false; });
     await page.getByRole('button', { name: '다시 조회', exact: true }).click(); await page.locator('[data-sync-row]').first().waitFor();
     await page.locator('[data-sync-filter="all"]').click();
@@ -234,6 +251,7 @@ async function main() {
     assert.equal(await page.locator('[data-sync-field]:checked').count(), 7);
     await page.locator('[data-sync-action="apply"]').click();
     await page.getByText('3개 이슈 반영 · 0개 확인 필요').waitFor();
+    await assertStateCentered();
     const selections = await page.evaluate(() => calls.find(call => call.action === 'applyJiraSync').data.selections);
     assert.equal(selections.length, 3);
     assert.deepEqual(selections.map(row => row.id), ['IT-261001-001', 'IT-261001-003', 'IT-261001-004']);
@@ -255,6 +273,7 @@ async function main() {
     for (const filter of ['matched', 'review', 'unlinked', 'all']) {
       await page.locator(`[data-sync-filter="${filter}"]`).click();
       assert.deepEqual(await bounds(), mobileBounds);
+      if (filter === 'unlinked') await assertStateCentered();
     }
     if (process.argv[3]) await page.screenshot({ path: path.join(process.argv[3], 'helpdesk-jira-sync-mobile.png') });
     await page.keyboard.press('Escape');

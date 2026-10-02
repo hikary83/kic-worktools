@@ -103,13 +103,14 @@
     const toolbar = modal.querySelector('.hd-sync-toolbar');
     const body = modal.querySelector('.hd-sync-body');
     toolbar.hidden = state.loading || !!state.error || !!state.result;
+    body.classList.toggle('hd-sync-body-state', state.loading || !!state.error || !!state.result || !visibleRows().length);
     if (state.loading) {
-      body.innerHTML = '<div class="hd-sync-state" role="status"><i class="fas fa-spinner fa-spin"></i>Jira 링크와 상태를 확인하고 있습니다…<br>완료된 티켓까지 조회하므로 잠시 걸릴 수 있습니다.</div>';
+      body.innerHTML = '<div class="hd-sync-state" role="status"><div class="hd-sync-state-content"><i class="fas fa-spinner fa-spin"></i>Jira 링크와 상태를 확인하고 있습니다…<br>완료된 티켓까지 조회하므로 잠시 걸릴 수 있습니다.</div></div>';
     } else if (state.error) {
-      body.innerHTML = `<div class="hd-sync-state"><i class="fas fa-exclamation-circle"></i>${escape(state.error)}<br><button class="hd-sync-btn" data-sync-action="refresh">다시 조회</button></div>`;
+      body.innerHTML = `<div class="hd-sync-state"><div class="hd-sync-state-content"><i class="fas fa-exclamation-circle"></i>${escape(state.error)}<br><button class="hd-sync-btn" data-sync-action="refresh">다시 조회</button></div></div>`;
     } else if (state.result) {
       const { applied, skipped } = state.result;
-      body.innerHTML = `<div class="hd-sync-state"><i class="fas fa-check-circle"></i><strong>${applied.length}개 이슈 반영 · ${skipped.length}개 확인 필요</strong><br>Jira 티켓은 변경하지 않았습니다.<br><button class="hd-sync-btn" data-sync-action="refresh">변경안 다시 조회</button></div>
+      body.innerHTML = `<div class="hd-sync-state"><div class="hd-sync-state-content"><i class="fas fa-check-circle"></i><strong>${applied.length}개 이슈 반영 · ${skipped.length}개 확인 필요</strong><br>Jira 티켓은 변경하지 않았습니다.<br><button class="hd-sync-btn" data-sync-action="refresh">변경안 다시 조회</button></div></div>
         ${skipped.map(row => `<div class="hd-sync-notice hd-sync-warning"><strong>${escape(row.id)}</strong> · ${escape(row.reason)}</div>`).join('')}`;
     } else {
       toolbar.innerHTML = `<div class="hd-sync-filters">${Object.keys(labels).map(filter => `<button class="hd-sync-filter" data-sync-filter="${filter}" aria-pressed="${state.filter === filter}" ${busy() ? 'disabled' : ''}>${labels[filter]}<span>${filter === 'all' ? state.rows.length : state.rows.filter(row => !row.excluded && kind(row) === filter).length}</span></button>`).join('')}</div>
@@ -122,7 +123,7 @@
         ${state.exclusionError ? `<div class="hd-sync-notice hd-sync-error">${escape(state.exclusionError)}</div>` : ''}
         ${state.applyError ? `<div class="hd-sync-notice hd-sync-error">${escape(state.applyError)}</div>` : ''}`;
       body.innerHTML = notices + (rows.length ? `<table class="hd-sync-table"><thead><tr><th>이슈번호 / 업무</th><th>Jira 연결</th><th><label class="hd-sync-all"><input type="checkbox" data-sync-all ${busy() ? 'disabled' : ''}> 표시된 변경안 전체 선택</label></th></tr></thead>
-        <tbody>${rows.map(renderRow).join('')}</tbody></table>` : '<div class="hd-sync-state"><i class="fas fa-check-circle"></i>해당하는 이슈가 없습니다.</div>');
+        <tbody>${rows.map(renderRow).join('')}</tbody></table>` : '<div class="hd-sync-state"><div class="hd-sync-state-content"><i class="fas fa-check-circle"></i>해당하는 이슈가 없습니다.</div></div>');
       updateAllCheckbox();
     }
     updateFooter();
