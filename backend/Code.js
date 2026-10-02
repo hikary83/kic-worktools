@@ -439,6 +439,8 @@ function doPost(e) {
       result = { success: true, data: lookupHelpdeskJiraSync(data) };
     } else if (action === 'applyJiraSync') {
       result = { success: true, data: applyHelpdeskJiraSync(data) };
+    } else if (action === 'setJiraSyncExcluded') {
+      result = { success: true, data: setHelpdeskJiraSyncExcluded(data) };
     } else if (action === 'getJiraTimelineIssues') {
       const stats = getJiraTimelineIssuesForWeb(data.googleIdToken);
       result = { success: true, data: stats };

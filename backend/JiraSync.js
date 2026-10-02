@@ -2,6 +2,21 @@
 const HELPDESK_JIRA_SYNC_API_URL = 'https://script.google.com/macros/s/AKfycbxncJs9huZd1ENzETRxRyKO5ikexxscHptSYGE6LIXsWP1DFDEn1Zmodk0H7vE8EuDR/exec';
 const HELPDESK_JIRA_SYNC_ORIGIN = 'https://kic-itsd.atlassian.net';
 const HELPDESK_JIRA_SYNC_TTL = 600;
+const HELPDESK_JIRA_SYNC_EXCLUDED_PREFIX = 'HELPDESK_JIRA_SYNC_EXCLUDED_';
+
+function helpdeskSyncExclusionKey_(sheetId, id) { return HELPDESK_JIRA_SYNC_EXCLUDED_PREFIX + sheetId + '_' + id; }
+
+function helpdeskSyncExcludedIds_(sheetId) {
+  const prefix = helpdeskSyncExclusionKey_(sheetId, '');
+  const properties = PropertiesService.getScriptProperties().getProperties();
+  const excluded = {};
+  Object.keys(properties).forEach(function(key) {
+    if (key.indexOf(prefix) !== 0 || properties[key] !== 'Y') return;
+    const id = key.slice(prefix.length);
+    if (/^IT-\d{6}-\d{3,}$/.test(id)) excluded[id] = true;
+  });
+  return excluded;
+}
 
 function requestHelpdeskJiraSync_(issueKeys, issueNumbers) {
   const response = UrlFetchApp.fetch(HELPDESK_JIRA_SYNC_API_URL, {
@@ -30,7 +45,7 @@ function requestHelpdeskJiraSync_(issueKeys, issueNumbers) {
 }
 
 function helpdeskJiraKey_(value) {
-  const match = String(value || '').trim().match(/^https:\/\/kic-itsd\.atlassian\.net\/browse\/([A-Z][A-Z0-9_]*-\d+)(?:[?#].*)?\/?$/i);
+  const match = String(value || '').trim().match(/^https:\/\/kic-itsd\.atlassian\.net\/browse\/([A-Z][A-Z0-9_]*-\d+)\/?(?:[?#].*)?$/i);
   return match ? match[1].toUpperCase() : '';
 }
 
@@ -53,6 +68,7 @@ function helpdeskSyncBaseline_(row) {
 
 function helpdeskSyncChanges_(row, issue) {
   const changes = [];
+  // 같은 티켓이어도 주소 문자열이 다르면 기존처럼 정리 제안을 표시합니다. 체크해야 저장됩니다.
   if (row.jiraLink !== issue.url) changes.push({ field: 'jiraLink', label: 'Jira 링크', from: row.jiraLink || '미등록', to: issue.url });
   if (!row.jiraLinked) changes.push({ field: 'jiraLinked', label: 'Jira 연동', from: '미표시', to: '연동됨' });
   const status = helpdeskJiraStatus_(issue);
@@ -70,7 +86,7 @@ function helpdeskSyncChanges_(row, issue) {
 
 function helpdeskSyncPublicRow_(row) {
   return {
-    id: row.id, title: row.title, status: row.status, sourceLink: row.sourceLink || '', jiraLink: row.jiraLink, message: row.message || '',
+    id: row.id, title: row.title, status: row.status, sourceLink: row.sourceLink || '', jiraLink: row.jiraLink, message: row.message || '', excluded: row.excluded === true,
     candidates: row.candidates.map(function(issue) {
       return { key: issue.key, title: issue.title, url: issue.url, status: issue.status,
         changes: helpdeskSyncChanges_(row, issue),
@@ -93,6 +109,7 @@ function requireHelpdeskSyncPreview_(token) {
 
 function previewHelpdeskJiraSync() {
   const sheet = getMainSheet();
+  const excluded = helpdeskSyncExcludedIds_(sheet.getSheetId());
   const count = Math.max(0, sheet.getLastRow() - START_ROW + 1);
   // 미리보기에서 시트/헤더를 변경하지 않습니다.
   const rows = count ? sheet.getRange(START_ROW, 1, count, Math.min(JIRA_LINKED_COLUMN, sheet.getMaxColumns())).getValues() : [];
@@ -106,9 +123,9 @@ function previewHelpdeskJiraSync() {
     const status = normalizeIssueStatus(row[11]);
     const link = String(row[16] || '').trim();
     // 종료된 미연결 건은 제외합니다. 진행 중 건과 연결된 종료 건은 기간에 관계없이 확인합니다.
-    if (!link && (status === '완료' || status === '반려')) return;
+    if (!excluded[id] && !link && (status === '완료' || status === '반려')) return;
     records.push({ id: id, title: String(row[8] || '').slice(0, 500), status: status, sourceLink: String(row[15] || '').trim(),
-      jiraLink: link, jiraLinked: isJiraLinkedFlagValue(row[18]), baseline: helpdeskSyncBaseline_(row), candidates: [],
+      jiraLink: link, jiraLinked: isJiraLinkedFlagValue(row[18]), baseline: helpdeskSyncBaseline_(row), candidates: [], excluded: !!excluded[id],
       message: link && !helpdeskJiraKey_(link) ? 'Jira 링크 형식을 확인해 주세요. Jira 번호로 직접 조회할 수 있습니다.' : '' });
   });
   const keys = Array.from(new Set(records.map(function(row) { return helpdeskJiraKey_(row.jiraLink); }).filter(Boolean)));
@@ -138,13 +155,38 @@ function previewHelpdeskJiraSync() {
     cache.putAll(entries, HELPDESK_JIRA_SYNC_TTL);
   }
   cache.put(helpdeskSyncCacheKey_(token), JSON.stringify({ sheetId: sheet.getSheetId(), expiresAt: expiresAt }), HELPDESK_JIRA_SYNC_TTL);
-  return { token: token, expiresAt: expiresAt, rows: records.map(helpdeskSyncPublicRow_), warnings: result.warnings || [] };
+  return { token: token, expiresAt: expiresAt, rows: records.map(helpdeskSyncPublicRow_), warnings: result.warnings || [], exclusionSupported: true };
+}
+
+function setHelpdeskJiraSyncExcluded(data) {
+  // 적용 작업과 같은 잠금을 사용해 제외 설정과 이슈 변경이 서로 엇갈리지 않게 합니다.
+  const lock = LockService.getScriptLock();
+  if (!lock.tryLock(10000)) throw new Error('다른 저장 작업이 진행 중입니다. 잠시 후 다시 시도해 주세요.');
+  try {
+    const context = requireHelpdeskSyncPreview_(data.token);
+    const id = String(data.id || '');
+    if (!/^IT-\d{6}-\d{3,}$/.test(id) || typeof data.excluded !== 'boolean') throw new Error('싱크 제외할 이슈와 설정을 확인해 주세요.');
+    const raw = CacheService.getScriptCache().get(helpdeskSyncCacheKey_(data.token, id));
+    if (!raw || JSON.parse(raw).id !== id) throw new Error('변경안을 다시 조회해 주세요.');
+    const sheet = getMainSheet();
+    if (sheet.getSheetId() !== context.sheetId) throw new Error('대상 시트가 변경됐습니다. 다시 조회해 주세요.');
+    if (findIssueRowById(sheet, id) < START_ROW) throw new Error('이슈를 찾을 수 없습니다. 다시 조회해 주세요.');
+    const properties = PropertiesService.getScriptProperties();
+    const key = helpdeskSyncExclusionKey_(context.sheetId, id);
+    if (data.excluded) properties.setProperty(key, 'Y');
+    else properties.deleteProperty(key);
+    // 팀 공통 설정만 변경합니다. 기존 시트의 상태/링크/숨김 표시와 Jira 티켓은 그대로 둡니다.
+    return { id: id, excluded: data.excluded };
+  } finally { lock.releaseLock(); }
 }
 
 function lookupHelpdeskJiraSync(data) {
   const context = requireHelpdeskSyncPreview_(data.token);
   const id = String(data.id || '');
   if (!/^IT-\d{6}-\d{3,}$/.test(id)) throw new Error('이슈번호를 확인해 주세요.');
+  if (PropertiesService.getScriptProperties().getProperty(helpdeskSyncExclusionKey_(context.sheetId, id)) === 'Y') {
+    throw new Error('싱크에서 제외된 이슈입니다. 전체 탭에서 제외를 해제한 뒤 조회해 주세요.');
+  }
   const cache = CacheService.getScriptCache();
   const raw = cache.get(helpdeskSyncCacheKey_(data.token, id));
   if (!raw) throw new Error('변경안을 다시 조회해 주세요.');
@@ -154,6 +196,7 @@ function lookupHelpdeskJiraSync(data) {
   if (!issue) throw new Error('Jira 티켓을 찾지 못했습니다. 번호와 접근 권한을 확인해 주세요.');
   // 조회 결과를 추가할 뿐, 연결이나 상태를 저장하지 않습니다.
   const row = JSON.parse(raw);
+  row.excluded = false;
   row.candidates = row.candidates.filter(function(candidate) { return candidate.key !== key; }).concat([issue]);
   row.message = '직접 조회한 연결 후보입니다. 제목과 내용을 확인한 뒤 변경안을 선택해 주세요.';
   cache.put(helpdeskSyncCacheKey_(data.token, id), JSON.stringify(row), Math.max(1, Math.ceil((context.expiresAt - Date.now()) / 1000)));
@@ -170,6 +213,7 @@ function applyHelpdeskJiraSync(data) {
     const cache = CacheService.getScriptCache();
     const sheet = getMainSheet();
     if (sheet.getSheetId() !== context.sheetId) throw new Error('대상 시트가 변경됐습니다. 다시 조회해 주세요.');
+    const excluded = helpdeskSyncExcludedIds_(context.sheetId);
     const prepared = [], seen = {};
     // 모든 요청을 검증한 다음에만 쓰기를 시작합니다.
     selections.forEach(function(selection) {
@@ -192,6 +236,8 @@ function applyHelpdeskJiraSync(data) {
     });
     const applied = [], skipped = [];
     prepared.forEach(function(item) {
+      // 다른 사용자가 조회 이후 제외했더라도 오래된 미리보기로 적용할 수 없습니다.
+      if (excluded[item.row.id]) { skipped.push({ id: item.row.id, reason: '팀 공통 싱크 제외 목록에 등록된 이슈입니다.' }); return; }
       const targetRow = findIssueRowById(sheet, item.row.id);
       if (targetRow < START_ROW) { skipped.push({ id: item.row.id, reason: '이슈를 찾을 수 없습니다.' }); return; }
       const current = sheet.getRange(targetRow, 1, 1, Math.min(JIRA_LINKED_COLUMN, sheet.getMaxColumns())).getValues()[0];
