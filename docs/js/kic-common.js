@@ -131,7 +131,7 @@ const KicModal = {
 
     // 일반 .kic-modal-backdrop 또는 [data-modal] 닫기
     const activeModals = document.querySelectorAll('.kic-modal-backdrop:not(.hidden), [data-modal-open="true"]');
-    activeModals.forEach(m => m.classList.add('hidden'));
+    activeModals.forEach(m => { if (m.dataset.modalSaving !== 'true') m.classList.add('hidden'); });
   }
 };
 

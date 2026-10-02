@@ -33,10 +33,10 @@
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/config.js?v=2.8.1"></script>
-  <script src="js/kic-sidebar.js?v=2.8.2"></script>
-  <script src="js/kic-common.js"></script>
-  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.2">
-  <script src="js/helpdesk-jira-sync.js?v=2.8.2" defer></script>
+  <script src="js/kic-sidebar.js?v=2.8.3"></script>
+  <script src="js/kic-common.js?v=2.8.3"></script>
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
+  <script src="js/helpdesk-jira-sync.js?v=2.8.3" defer></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
 
@@ -375,10 +375,10 @@
   </div>
 
   <!-- [모달] 현황 업데이트 -->
-  <div id="editModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
+  <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
     <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
       <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#2F2F2F] z-10 rounded-t-3xl">
-        <h2 class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-edit text-emerald-500"></i> 현황 업데이트</h2>
+        <h2 id="edit-modal-heading" class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-edit text-emerald-500"></i> 현황 업데이트</h2>
         <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
       </div>
       <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar">
@@ -2336,9 +2336,11 @@
     /* ==============================================================
        이슈 등록/수정 모달 관리
        ============================================================== */
-    function openEditById(id) {
+    let helpdeskEditContext = null;
+    function openEditById(id, options = {}) {
         const item = window.allIssuesMap[id];
-        if (!item) return;
+        if (!item || helpdeskEditContext?.saving || helpdeskEditContext?.closing) return false;
+        helpdeskEditContext = { id, waitForSave: options.waitForSave === true, onClose: options.onClose, saving: false, closing: false };
         document.getElementById('edit-id').value = item.id;
         document.getElementById('edit-source-type').value = item.sourceType || 'helpdesk';
         document.getElementById('edit-id-display').innerHTML = item.sourceType === 'quarter'
@@ -2348,7 +2350,9 @@
         document.getElementById('edit-menu-display').innerText = item.menu || '메뉴 정보 없음';
         document.getElementById('edit-title').value = item.title || '';
         document.getElementById('edit-details').value = item.details || '';
-        document.getElementById('edit-dev').value = item.dev || '';
+        const devSelect = document.getElementById('edit-dev');
+        if (item.dev && ![...devSelect.options].some(option => option.value === item.dev)) devSelect.add(new Option(item.dev, item.dev));
+        devSelect.value = item.dev || '';
         document.getElementById('edit-status').value = item.status || '접수대기';
         document.getElementById('edit-action').value = item.actionContent || '';
         document.getElementById('edit-remark').value = item.remark || '';
@@ -2359,9 +2363,21 @@
         
         const modal = document.getElementById('editModal');
         modal.classList.remove('hidden');
-        setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('editModalContent').classList.remove('scale-95'); }, 10);
+        setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('editModalContent').classList.remove('scale-95'); document.getElementById('edit-title').focus(); }, 10);
+        return true;
     }
-    function closeEditModal() { document.getElementById('editModal').classList.add('opacity-0'); document.getElementById('editModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('editModal').classList.add('hidden'), 300); }
+    function closeEditModal(options = {}) {
+        const modal = document.getElementById('editModal'), context = helpdeskEditContext;
+        if (modal.classList.contains('hidden') || context?.closing || (context?.waitForSave && context.saving)) return;
+        if (context) context.closing = true;
+        modal.classList.add('opacity-0');
+        document.getElementById('editModalContent').classList.add('scale-95');
+        setTimeout(() => {
+            modal.classList.add('hidden');
+            if (helpdeskEditContext === context) helpdeskEditContext = null;
+            if (typeof context?.onClose === 'function') context.onClose({ id: context.id, saved: options.saved === true });
+        }, 300);
+    }
 
     // [v16.11] 현황 업데이트 모달 AI 답변
     // 별도 'IT 헬프데스크 답변' 화면과 동일하게 서버의 generateHelpdeskReply()를 호출합니다.
@@ -2505,6 +2521,8 @@
     }
 
     function submitEditForm() {
+        const context = helpdeskEditContext;
+        if (context?.saving) return;
         const saveButton = (typeof event !== 'undefined' && event.currentTarget) ? event.currentTarget : null;
         const jiraLinkedFlag = document.getElementById('edit-jira-linked').checked ? 'Y' : '';
         const data = { id: document.getElementById('edit-id').value, sourceType: document.getElementById('edit-source-type').value || 'helpdesk', title: document.getElementById('edit-title').value, details: document.getElementById('edit-details').value, dev: document.getElementById('edit-dev').value, status: document.getElementById('edit-status').value, actionContent: document.getElementById('edit-action').value, remark: document.getElementById('edit-remark').value, sourceLink: document.getElementById('edit-source-link').value, jiraLink: document.getElementById('edit-jira-link').value, jiraLinkedFlag, jiraLinked: jiraLinkedFlag };
@@ -2517,15 +2535,22 @@
             hiddenFlag: data.status === '반려' ? (existing.hiddenFlag || '') : '',
             isHidden: data.status === '반려' ? Boolean(existing.isHidden) : false
         };
-        closeEditModal();
+        if (context) context.saving = true;
+        const editModal = document.getElementById('editModal');
+        if (context?.waitForSave) editModal.dataset.modalSaving = 'true';
+        else closeEditModal();
         showToast(`${data.id} 저장 중...`, 'info');
         setButtonSaving(saveButton, true, '저장중...');
-        runServerFunction('updateIssueFromDashboard', data).then(() => {
+        return runServerFunction('updateIssueFromDashboard', data).then(() => {
             showToast(`${data.id} 저장되었습니다.`);
             applyLocalIssueUpdate(updatedIssue);
             setButtonSaving(saveButton, false);
+            if (context) context.saving = false;
+            if (context?.waitForSave) { delete editModal.dataset.modalSaving; closeEditModal({ saved: true }); }
         }).catch(e => {
             setButtonSaving(saveButton, false);
+            if (context) context.saving = false;
+            if (context?.waitForSave) delete editModal.dataset.modalSaving;
             showToast('저장 실패: ' + e.message, 'error');
         });
     }
@@ -2900,6 +2925,13 @@
 
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' || e.key === 'Esc') closeAllActiveModals();
+      const editor = document.getElementById('editModal');
+      if (e.key !== 'Tab' || editor.classList.contains('hidden')) return;
+      const focusables = [...editor.querySelectorAll('button:not(:disabled), input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), a[href]')].filter(element => element.getClientRects().length);
+      const first = focusables[0], last = focusables[focusables.length - 1];
+      if (!first) return;
+      if (e.shiftKey && (document.activeElement === first || !editor.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+      else if (!e.shiftKey && (document.activeElement === last || !editor.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
     });
 
     ['addModal', 'editModal', 'settingsModal'].forEach(modalId => {

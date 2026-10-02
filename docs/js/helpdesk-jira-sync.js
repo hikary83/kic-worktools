@@ -39,7 +39,7 @@
 
   window.openHelpdeskJiraSync = function () {
     initModal();
-    if (!modal.hidden) return;
+    if (!modal.hidden || state?.editingId) return;
     previousFocus = document.activeElement;
     previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
@@ -56,9 +56,11 @@
     if (previousFocus && previousFocus.isConnected) previousFocus.focus();
   }
 
-  async function refresh() {
+  async function refresh(options = {}) {
     const request = ++generation;
+    const previous = state;
     state = { rows: [], selected: {}, fields: {}, filter: 'changes', loading: true, applying: false, token: '', warnings: [], result: null, exclusionSupported: false };
+    if (options.view) state.filter = options.view.filter;
     render();
     try {
       const result = await callGASApi('previewJiraSync');
@@ -69,15 +71,28 @@
       state.warnings = result.warnings || [];
       state.exclusionSupported = result.exclusionSupported === true;
       state.rows.forEach(row => { if (row.candidates.length === 1) state.selected[row.id] = row.candidates[0].key; });
-      if (!state.rows.some(row => !row.excluded && kind(row) === 'changes')) state.filter = 'all';
+      if (options.view && previous) {
+        state.rows.forEach(row => {
+          const key = previous.selected[row.id];
+          if (row.candidates.some(issue => issue.key === key)) state.selected[row.id] = key;
+          const oldRow = previous.rows.find(item => item.id === row.id);
+          // 새 미리보기와 동일한 제안만 유지합니다. 수정한 이슈·달라진 행의 체크는 해제합니다.
+          if (row.id !== options.editedId && !row.excluded && JSON.stringify(oldRow) === JSON.stringify(row)) {
+            const issue = candidate(row);
+            state.fields[row.id] = new Set([...(previous.fields[row.id] || [])].filter(field => issue?.changes.some(change => change.field === field)));
+          }
+        });
+      }
+      if (!options.view && !state.rows.some(row => !row.excluded && kind(row) === 'changes')) state.filter = 'all';
     } catch (error) { if (request === generation) state.error = error.message; }
     if (request !== generation) return;
     state.loading = false;
     render();
+    if (options.view) restoreView(options.view);
   }
 
   function candidate(row) { return row.candidates.find(issue => issue.key === state.selected[row.id]); }
-  function busy() { return state.applying || !!state.lookupId || !!state.exclusionId; }
+  function busy() { return state.applying || !!state.lookupId || !!state.exclusionId || !!state.editLoadingId || !!state.editingId; }
   function kind(row) {
     const issue = candidate(row);
     if (!issue) return row.candidates.length || row.jiraLink ? 'review' : 'unlinked';
@@ -91,7 +106,7 @@
   function updateFooter() {
     const selected = selections();
     const count = selected.reduce((sum, row) => sum + row.fields.length, 0);
-    const text = state.applying ? '선택한 변경안을 저장하고 있습니다…' : state.exclusionId ? '팀 공통 싱크 제외 설정을 저장하고 있습니다…' : selected.length ? `${selected.length}개 이슈 · ${count}개 변경 항목 선택` : '선택한 변경안이 없습니다.';
+    const text = state.applying ? '선택한 변경안을 저장하고 있습니다…' : state.exclusionId ? '팀 공통 싱크 제외 설정을 저장하고 있습니다…' : state.editLoadingId ? '수정할 이슈 내용을 불러오고 있습니다…' : selected.length ? `${selected.length}개 이슈 · ${count}개 변경 항목 선택` : '선택한 변경안이 없습니다.';
     modal.querySelector('#hd-sync-selection').textContent = text;
     const button = modal.querySelector('[data-sync-action="apply"]');
     button.disabled = !count || state.loading || busy() || !!state.result;
@@ -138,6 +153,7 @@
       if (url.protocol === 'https:' || url.protocol === 'http:') sourceUrl = url.href;
     } catch (error) { /* 원문 링크가 비어 있거나 잘못된 경우 열기 버튼을 표시하지 않습니다. */ }
     const source = sourceUrl ? `<a class="hd-sync-source" href="${escape(sourceUrl)}" target="_blank" rel="noopener noreferrer" title="원문 보기" aria-label="${escape(row.id)} 원문 보기"><i class="fas fa-external-link-alt" aria-hidden="true"></i></a>` : '';
+    const edit = `<button type="button" class="hd-sync-btn hd-sync-edit" data-sync-action="edit" data-sync-id="${escape(row.id)}" title="이슈 수정" aria-label="${escape(row.id)} 이슈 수정" ${busy() ? 'disabled' : ''}><i class="fas fa-${state.editLoadingId === row.id ? 'spinner fa-spin' : 'pen'}" aria-hidden="true"></i></button>`;
     const choices = row.candidates.length > 1 ? `<select class="hd-sync-select" data-sync-candidate="${escape(row.id)}" aria-label="${escape(row.id)} Jira 연결 후보" ${disabled ? 'disabled' : ''}>
       <option value="">Jira 티켓 선택</option>${row.candidates.map(option => `<option value="${escape(option.key)}" ${issue && issue.key === option.key ? 'selected' : ''}>${escape(option.key + ' · ' + option.title)}</option>`).join('')}</select>` : '';
     const linked = issue ? `<a href="${escape(issue.url)}" target="_blank" rel="noopener noreferrer">${escape(issue.key)} <i class="fas fa-external-link-alt"></i></a><div class="hd-sync-title">${escape(issue.title)}</div><div class="hd-sync-meta">Jira 상태 · ${escape(issue.status)}</div>` : '<span class="hd-sync-meta">연결할 Jira 티켓을 확인해 주세요.</span>';
@@ -147,7 +163,7 @@
     const message = row.message && issue ? `<div class="hd-sync-meta">${escape(row.message)}</div>` : '';
     const error = state.lookupError && state.lookupError.id === row.id ? `<div class="hd-sync-meta hd-sync-error">${escape(state.lookupError.message)}</div>` : '';
     const exclusion = `<button class="hd-sync-btn hd-sync-exclude-btn" data-sync-action="${row.excluded ? 'restore' : 'exclude'}" data-sync-id="${escape(row.id)}" aria-label="${escape(row.id)} ${row.excluded ? '싱크 제외 해제' : '싱크 제외'}" ${busy() || !state.exclusionSupported ? 'disabled' : ''}><i class="fas fa-${row.excluded ? 'undo' : 'ban'}" aria-hidden="true"></i>${state.exclusionId === row.id ? '저장 중…' : row.excluded ? '제외 해제' : '싱크 제외'}</button>`;
-    return `<tr data-sync-row="${escape(row.id)}" class="${row.excluded ? 'hd-sync-excluded-row' : ''}"><td><div class="hd-sync-issue-heading"><span class="hd-sync-id">${escape(row.id)}</span>${source}${row.excluded ? '<span class="hd-sync-excluded-badge">싱크 제외</span>' : ''}</div><div class="hd-sync-title">${escape(row.title)}</div><div class="hd-sync-meta">현재 상태 · ${escape(row.status)}</div>${exclusion}</td>
+    return `<tr data-sync-row="${escape(row.id)}" class="${row.excluded ? 'hd-sync-excluded-row' : ''}"><td><div class="hd-sync-issue-heading"><span class="hd-sync-id">${escape(row.id)}</span>${edit}${source}${row.excluded ? '<span class="hd-sync-excluded-badge">싱크 제외</span>' : ''}</div><div class="hd-sync-title">${escape(row.title)}</div><div class="hd-sync-meta">현재 상태 · ${escape(row.status)}</div>${exclusion}</td>
       <td>${choices}${linked}${message}${!row.excluded ? `<details class="hd-sync-lookup" ${!issue ? 'open' : ''}><summary>Jira 번호로 직접 조회</summary>
         <div><input class="hd-sync-input" data-sync-key="${escape(row.id)}" placeholder="예: ITM-123" aria-label="${escape(row.id)} Jira 번호" ${disabled ? 'disabled' : ''}>
         <button class="hd-sync-btn" data-sync-action="lookup" data-sync-id="${escape(row.id)}" ${disabled ? 'disabled' : ''}>${state.lookupId === row.id ? '조회 중…' : '조회'}</button></div>${error}</details>` : ''}</td>
@@ -205,9 +221,50 @@
     const action = button.dataset.syncAction;
     if (action === 'close') close();
     if (action === 'refresh' && !busy()) refresh();
+    if (action === 'edit') await editIssue(button.dataset.syncId);
     if (action === 'exclude' || action === 'restore') await setExcluded(button.dataset.syncId, action === 'exclude');
     if (action === 'lookup') await lookup(button.dataset.syncId);
     if (action === 'apply') await apply();
+  }
+
+  function restoreView(view) {
+    modal.querySelector('.hd-sync-body').scrollTop = view.scrollTop;
+    const button = [...modal.querySelectorAll('[data-sync-action="edit"]')].find(button => button.dataset.syncId === view.id)
+      || modal.querySelector(`[data-sync-filter="${state.filter}"]`)
+      || modal.querySelector('[data-sync-action="close"]');
+    button.focus({ preventScroll: true });
+  }
+
+  async function editIssue(id) {
+    if (busy() || state.loading || !state.rows.some(row => row.id === id)) return;
+    const view = { id, filter: state.filter, scrollTop: modal.querySelector('.hd-sync-body').scrollTop };
+    state.editLoadingId = id; state.applyError = ''; render();
+    try {
+      if (typeof window.openEditById !== 'function') throw new Error('헬프데스크 수정창을 사용할 수 없습니다.');
+      let item = window.allIssuesMap?.[id];
+      if (!item) {
+        // 기간 밖 완료 건도 기존 조회 API로 전체 원본을 읽습니다. 싱크 요약값으로 수정 폼을 만들지 않습니다.
+        const data = await callGASApi('getDashboardData', { startDate: '', endDate: '' });
+        item = ['pendingCurrent', 'completedCurrent', 'pendingPast', 'rejectedPast'].flatMap(key => data[key] || []).find(item => item.id === id && item.sourceType !== 'quarter');
+        if (!item) throw new Error('이슈 원본을 찾지 못했습니다. 다시 조회해 주세요.');
+      }
+      if (item.id !== id || item.sourceType === 'quarter') throw new Error('헬프데스크 이슈 원본을 확인해 주세요.');
+      window.allIssuesMap = window.allIssuesMap || {};
+      window.allIssuesMap[id] = item;
+      state.editLoadingId = ''; state.editingId = id; render();
+      modal.hidden = true; // 두 모달을 겹쳐 표시하지 않고 기존 수정창만 엽니다.
+      const opened = window.openEditById(id, { waitForSave: true, onClose: async result => {
+        state.editingId = '';
+        modal.hidden = false;
+        document.body.style.overflow = 'hidden';
+        if (result.saved) await refresh({ view, editedId: id });
+        else { render(); restoreView(view); }
+      } });
+      if (opened === false) throw new Error('다른 수정 작업이 진행 중입니다. 잠시 후 다시 시도해 주세요.');
+    } catch (error) {
+      state.editLoadingId = ''; state.editingId = ''; modal.hidden = false;
+      state.applyError = error.message; render(); restoreView(view);
+    }
   }
 
   async function lookup(id) {
