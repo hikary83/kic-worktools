@@ -354,66 +354,113 @@ function onSelectionChange(e) {
   if (row >= 3) sheet.getRange("p1").setValue(row);
 }
 
+// 실행 로그와 응답에 같은 요청 ID/처리 시간만 남깁니다. 업무 본문·인증 정보는 기록하지 않습니다.
+let activeApiDiagnostic = null;
+
+function beginApiDiagnostic(method, requestId) {
+  const now = Date.now();
+  activeApiDiagnostic = {
+    schema: 1,
+    requestId: /^kic-[a-z0-9-]{10,70}$/.test(String(requestId || '')) ? String(requestId) : 'kic-' + Utilities.getUuid().toLowerCase(),
+    method: method, action: 'unknown', startedAt: now, stageStartedAt: now,
+    stage: 'request_parse', stages: [], writeStarted: null
+  };
+}
+
+function markApiDiagnosticStage(stage) {
+  if (!activeApiDiagnostic) return;
+  const now = Date.now();
+  activeApiDiagnostic.stages.push({stage: activeApiDiagnostic.stage, elapsedMs: Math.max(0, now - activeApiDiagnostic.stageStartedAt)});
+  activeApiDiagnostic.stage = stage;
+  activeApiDiagnostic.stageStartedAt = now;
+}
+
+function apiDiagnosticWriteStarted() {
+  if (activeApiDiagnostic) activeApiDiagnostic.writeStarted = true;
+}
+
+function finishApiDiagnostic(result) {
+  if (activeApiDiagnostic) {
+    const d = activeApiDiagnostic;
+    const now = Date.now();
+    const diagnostic = {
+      schema: 1, requestId: d.requestId, method: d.method, action: d.action,
+      elapsedMs: Math.max(0, now - d.startedAt), stage: d.failureStage || d.stage,
+      writeStarted: d.writeStarted,
+      stages: d.stages.concat([{stage: d.stage, elapsedMs: Math.max(0, now - d.stageStartedAt)}]).slice(-20)
+    };
+    result.diagnostics = diagnostic;
+    // 시트/Properties에 로그를 기록하지 않아 추가 서비스 대기를 만들지 않습니다.
+    try { console.log(JSON.stringify({event: 'kic_api_request', success: result.success === true, code: result.code || (result.success === true ? 'OK' : 'API_EXECUTION_ERROR'), diagnostics: diagnostic})); } catch (_) {}
+  }
+  return ContentService.createTextOutput(JSON.stringify(result)).setMimeType(ContentService.MimeType.TEXT);
+}
+
 function doGet(e) {
   try {
-    const action = e.parameter.action;
-    let result = { success: false, error: 'Invalid action' };
+    const parameter = e && e.parameter || {};
+    beginApiDiagnostic('GET', parameter.requestId);
+    const action = parameter.action;
+    activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
+    markApiDiagnosticStage('action_execute');
     
     if (action === 'getDashboardData') {
-      const startDate = e.parameter.startDate;
-      const endDate = e.parameter.endDate;
+      const startDate = parameter.startDate;
+      const endDate = parameter.endDate;
       const data = getDashboardData(startDate, endDate);
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
-        .setMimeType(ContentService.MimeType.TEXT);
+      return finishApiDiagnostic({ success: true, data: data });
     }
 
     if (action === 'getDevelopers') {
       const devs = getDevelopers();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: devs }))
-        .setMimeType(ContentService.MimeType.TEXT);
+      return finishApiDiagnostic({ success: true, data: devs });
     }
 
     if (action === 'getBlogPostPlans') {
       const plans = getBlogPostPlans();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: plans }))
-        .setMimeType(ContentService.MimeType.TEXT);
+      return finishApiDiagnostic({ success: true, data: plans });
     }
 
     if (action === 'generateBlogImage') {
       const prompt = e.parameter.prompt || (e.parameter.data ? JSON.parse(e.parameter.data).prompt : '');
       const res = generateBlogImage({ prompt: prompt });
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: res }))
-        .setMimeType(ContentService.MimeType.TEXT);
+      return finishApiDiagnostic({ success: true, data: res });
     }
 
     if (action === 'migrateBlogPostingSheet') {
       const res = migrateBlogPostingSheet();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: res }))
-        .setMimeType(ContentService.MimeType.TEXT);
+      return finishApiDiagnostic({ success: true, data: res });
     }
 
-    return ContentService.createTextOutput(JSON.stringify({ 
+    return finishApiDiagnostic({
       success: false, 
+      code: 'API_INFO_RESPONSE',
       message: 'KIC API Server is running. Please use GitHub Pages frontend to access UI.' 
-    })).setMimeType(ContentService.MimeType.TEXT);
+    });
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-      .setMimeType(ContentService.MimeType.TEXT);
+    return finishApiDiagnostic({ success: false, error: error.toString() });
+  } finally {
+    activeApiDiagnostic = null;
   }
 }
 
 function doPost(e) {
   try {
+    beginApiDiagnostic('POST');
     let rawData = '';
-    if (e.postData && e.postData.contents) {
+    if (e && e.postData && e.postData.contents) {
       rawData = e.postData.contents;
     } else {
       throw new Error('No post data received.');
     }
     
     const payload = JSON.parse(rawData);
+    if (/^kic-[a-z0-9-]{10,70}$/.test(String(payload.requestId || ''))) activeApiDiagnostic.requestId = payload.requestId;
     const action = payload.action;
+    activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
+    if (action === 'addIssue' || action === 'updateIssue') activeApiDiagnostic.writeStarted = false;
+    markApiDiagnosticStage('action_execute');
     const data = payload.data || {};
     let result = { success: false, error: 'Invalid post action' };
 
@@ -487,12 +534,13 @@ function doPost(e) {
       result = { success: true, data: devs };
     }
 
-    return ContentService.createTextOutput(JSON.stringify(result))
-      .setMimeType(ContentService.MimeType.TEXT);
+    return finishApiDiagnostic(result);
 
   } catch (error) {
-    return ContentService.createTextOutput(JSON.stringify({ success: false, error: error.toString() }))
-      .setMimeType(ContentService.MimeType.TEXT);
+    const code = activeApiDiagnostic && activeApiDiagnostic.stage === 'lock_wait' ? 'ISSUE_LOCK_WAIT_FAILED' : 'API_EXECUTION_ERROR';
+    return finishApiDiagnostic({ success: false, code: code, error: error.toString() });
+  } finally {
+    activeApiDiagnostic = null;
   }
 }
 
@@ -1021,6 +1069,7 @@ function requestGeminiWithContinuation(url, basePayload, originalContents) {
    📊 대시보드 데이터 조회 및 업데이트
    ========================================== */
 function getDashboardData(startDateStr, endDateStr) {
+  markApiDiagnosticStage('sheet_open');
   const sheet = getMainSheet();
   const lastRow = sheet.getLastRow();
 
@@ -1059,7 +1108,9 @@ function getDashboardData(startDateStr, endDateStr) {
   }
 
   if (lastRow >= START_ROW) {
+    markApiDiagnosticStage('sheet_read');
     const data = sheet.getRange(START_ROW, 1, lastRow - START_ROW + 1, JIRA_LINKED_COLUMN).getValues();
+    markApiDiagnosticStage('issue_aggregate');
     data.forEach(row => {
       if (!row[0]) return;
       const receiptDate = new Date(row[2]);
@@ -1113,10 +1164,13 @@ function getDashboardData(startDateStr, endDateStr) {
       : 0;
   }
 
+  markApiDiagnosticStage('quarter_sheet_open');
   const quarterSheet = getQuarterRequestSheet();
   if (quarterSheet && quarterSheet.getLastRow() >= START_ROW) {
     const quarterLastRow = quarterSheet.getLastRow();
+    markApiDiagnosticStage('quarter_sheet_read');
     const quarterData = quarterSheet.getRange(START_ROW, 1, quarterLastRow - START_ROW + 1, JIRA_LINKED_COLUMN).getValues();
+    markApiDiagnosticStage('quarter_aggregate');
     quarterData.forEach(row => {
       if (!row[0]) return;
       const issueObj = buildDashboardIssueObject(row, SOURCE_TYPE_QUARTER);
@@ -1129,6 +1183,7 @@ function getDashboardData(startDateStr, endDateStr) {
   // 칸반 보드에서는 이월 미처리, 불가(반려), 분기요청 항목을 함께 보여줍니다.
   stats.pastKanbanItems = stats.quarterRequestItems.concat(stats.pendingPast, stats.rejectedPast);
   // [⚡ v17.0] 1회 네트워크 호출로 담당자 목록까지 한 번에 통합 전달하여 초기 로딩 지연을 50% 단축합니다.
+  markApiDiagnosticStage('developers_read');
   try {
     stats.developers = getDevelopers();
   } catch(e) {
@@ -1144,14 +1199,21 @@ function sanitizeString(str) {
 }
 
 function addIssueFromDashboard(formData) {
+  markApiDiagnosticStage('sheet_open');
   const sheet = getMainSheet();
+  markApiDiagnosticStage('sheet_headers');
   ensureLinkColumns(sheet);
 
   const lock = LockService.getScriptLock();
+  markApiDiagnosticStage('lock_wait');
   lock.waitLock(10000);
   try {
+    markApiDiagnosticStage('issue_identity');
     const identity = reserveIssueIdentity(sheet, formData.receiptDate);
+    markApiDiagnosticStage('insert_position');
     const targetRow = findInsertRowForIssueDate(sheet, identity.date);
+    markApiDiagnosticStage('sheet_insert');
+    apiDiagnosticWriteStarted();
     insertIssueRowAt(sheet, targetRow);
 
     const rowValues = [[
@@ -1177,7 +1239,9 @@ function addIssueFromDashboard(formData) {
     ]];
 
     // [v15] A:S를 한 번에 기록해 Spreadsheet 서비스 호출 횟수를 크게 줄입니다.
+    markApiDiagnosticStage('sheet_write');
     sheet.getRange(targetRow, 1, 1, JIRA_LINKED_COLUMN).setValues(rowValues);
+    markApiDiagnosticStage('sheet_format');
     sheet.getRange(targetRow, 3).setNumberFormat(NUMBER_FORMAT_DT);
 
     return {
@@ -1185,7 +1249,11 @@ function addIssueFromDashboard(formData) {
       id: identity.id,
       date: Utilities.formatDate(identity.date, TIMEZONE, 'yyyy-MM-dd HH:mm')
     };
+  } catch (error) {
+    if (activeApiDiagnostic) activeApiDiagnostic.failureStage = activeApiDiagnostic.stage;
+    throw error;
   } finally {
+    markApiDiagnosticStage('lock_release');
     lock.releaseLock();
   }
 }
@@ -1208,13 +1276,17 @@ function updateIssueFromDashboard(formData) {
   if (!formData || !formData.id) throw new Error('수정할 이슈 ID가 없습니다.');
 
   const targetSourceType = formData.sourceType === SOURCE_TYPE_QUARTER ? SOURCE_TYPE_QUARTER : SOURCE_TYPE_HELPDESK;
+  markApiDiagnosticStage('sheet_open');
   const sheet = targetSourceType === SOURCE_TYPE_QUARTER ? getQuarterRequestSheet() : getMainSheet();
   if (!sheet) throw new Error(targetSourceType === SOURCE_TYPE_QUARTER ? '분기요청 시트를 찾을 수 없습니다.' : '이슈사항 시트를 찾을 수 없습니다.');
 
+  markApiDiagnosticStage('sheet_headers');
   ensureLinkColumns(sheet);
+  markApiDiagnosticStage('issue_find');
   const targetRow = findIssueRowById(sheet, formData.id);
   if (targetRow === -1) throw new Error('해당 이슈를 찾을 수 없습니다: ' + formData.id);
 
+  markApiDiagnosticStage('sheet_read');
   const range = sheet.getRange(targetRow, 9, 1, JIRA_LINKED_COLUMN - 8); // I:S
   const row = range.getValues()[0];
   const oldStatus = normalizeIssueStatus(row[3]);
@@ -1241,7 +1313,10 @@ function updateIssueFromDashboard(formData) {
   row[10] = formData.jiraLinkedFlag === 'Y' || formData.jiraLinked === 'Y' ? 'Y' : '';
 
   // [v15] 개별 setValue 다중 호출 대신 한 번에 저장합니다.
+  markApiDiagnosticStage('sheet_write');
+  apiDiagnosticWriteStarted();
   range.setValues([row]);
+  markApiDiagnosticStage('sheet_format');
   if ((newStatus === '완료' || newStatus === '반려') && row[4] instanceof Date) {
     sheet.getRange(targetRow, 13).setNumberFormat(NUMBER_FORMAT_DT);
   }

@@ -32,8 +32,8 @@
   <link href="css/kic-theme.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.8.5"></script>
-  <script src="js/kic-sidebar.js?v=2.8.5"></script>
+  <script src="js/config.js?v=2.8.6"></script>
+  <script src="js/kic-sidebar.js?v=2.8.6"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.3" defer></script>
@@ -942,7 +942,8 @@
         : 'bg-emerald-600/95 text-white border border-emerald-400 shadow-emerald-900/20';
 
       toast.className = `fixed top-6 right-6 z-[99999] flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md ${bgClass}`;
-      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
+      toast.innerHTML = `<span>${icon}</span><span style="white-space:pre-line;overflow-wrap:anywhere"></span>`;
+      toast.lastElementChild.textContent = message;
       toast.classList.remove('hidden');
 
       clearTimeout(window.__toastTimer);

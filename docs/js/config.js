@@ -30,6 +30,115 @@ function createGASApiError(message, code, httpStatus) {
   return error;
 }
 
+// 진단 기록은 최대 40건/24시간 보관합니다. 본문·이미지·직원 이름·오류 원문은 저장하지 않습니다.
+const GAS_DIAGNOSTIC_KEY = 'kic_api_diagnostics_v1';
+const GAS_DIAGNOSTIC_ACTIONS = new Set(['getDashboardData', 'getDevelopers', 'saveDevelopers', 'getBlogPostPlans', 'analyzeCapture', 'generateReply', 'addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded', 'generateGeminiReport', 'generateBlogContent', 'generateBlogAssets', 'generateBlogMoreAssets', 'generateBlogImage', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
+const GAS_WRITE_ACTIONS = new Set(['addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'saveDevelopers', 'applyJiraSync', 'setJiraSyncExcluded', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
+let gasDiagnosticRecords = [];
+
+function safeGASResponseAddress(value) {
+  try {
+    const url = new URL(value);
+    if (!['https:', 'http:'].includes(url.protocol)) return '';
+    // Google 응답의 일회성 키는 쿼리 문자열에 있습니다. 다른 주소는 경로도 보관하지 않습니다.
+    const path = ['script.google.com', 'script.googleusercontent.com'].includes(url.hostname) && /^\/macros\/(?:echo|s\/[A-Za-z0-9_-]+\/(?:exec|dev))$/.test(url.pathname) ? url.pathname : '';
+    return url.origin + path;
+  } catch (_) { return ''; }
+}
+
+function safeGASDiagnosticToken(value) {
+  return /^[A-Za-z0-9_.-]{1,80}$/.test(String(value || '')) ? String(value) : '';
+}
+
+function safeGASServerDiagnostic(value) {
+  if (!value || value.schema !== 1 || !Number.isFinite(value.elapsedMs) || value.elapsedMs < 0) return null;
+  return {
+    requestId: /^kic-[a-z0-9-]{10,70}$/.test(value.requestId) ? value.requestId : '',
+    method: ['POST', 'GET'].includes(value.method) ? value.method : '',
+    elapsedMs: Math.min(value.elapsedMs, 3600000),
+    stage: safeGASDiagnosticToken(value.stage),
+    writeStarted: typeof value.writeStarted === 'boolean' ? value.writeStarted : null,
+    stages: (Array.isArray(value.stages) ? value.stages : []).slice(0, 20).map(item => ({
+      stage: safeGASDiagnosticToken(item && item.stage),
+      elapsedMs: Number.isFinite(item && item.elapsedMs) ? Math.max(0, Math.min(item.elapsedMs, 3600000)) : 0
+    }))
+  };
+}
+
+function sanitizeGASDiagnostic(record) {
+  if (!record || !/^kic-[a-z0-9-]{10,70}$/.test(record.requestId) || !Number.isFinite(Date.parse(record.startedAt))) return null;
+  const number = value => Number.isFinite(value) ? Math.max(0, Math.min(value, 3600000)) : null;
+  return {
+    requestId: record.requestId, startedAt: new Date(record.startedAt).toISOString(),
+    action: GAS_DIAGNOSTIC_ACTIONS.has(record.action) ? record.action : 'unknown',
+    method: record.method === 'GET' ? 'GET' : 'POST',
+    outcome: record.outcome === 'success' ? 'success' : 'failure',
+    code: safeGASDiagnosticToken(record.code) || 'UNKNOWN',
+    stage: safeGASDiagnosticToken(record.stage),
+    httpStatus: Number.isInteger(record.httpStatus) && record.httpStatus >= 100 && record.httpStatus <= 599 ? record.httpStatus : null,
+    elapsedMs: number(record.elapsedMs), responseWaitMs: number(record.responseWaitMs), bodyReadMs: number(record.bodyReadMs),
+    requestChars: Number.isInteger(record.requestChars) ? Math.max(0, Math.min(record.requestChars, 20000000)) : null,
+    responseChars: Number.isInteger(record.responseChars) ? Math.max(0, Math.min(record.responseChars, 20000000)) : null,
+    redirected: record.redirected === true,
+    responseAddress: safeGASResponseAddress(record.responseAddress),
+    responseFormat: ['json', 'html', 'text', 'empty', 'unread'].includes(record.responseFormat) ? record.responseFormat : 'unread',
+    server: safeGASServerDiagnostic(record.server && { ...record.server, schema: 1 })
+  };
+}
+
+function getGASDiagnostics() {
+  const cutoff = Date.now() - 86400000;
+  return gasDiagnosticRecords.filter(item => Date.parse(item.startedAt) >= cutoff).slice(-40).map(item => JSON.parse(JSON.stringify(item)));
+}
+
+try {
+  const saved = JSON.parse(localStorage.getItem(GAS_DIAGNOSTIC_KEY) || '[]');
+  gasDiagnosticRecords = (Array.isArray(saved) ? saved : []).map(sanitizeGASDiagnostic).filter(Boolean);
+  gasDiagnosticRecords = getGASDiagnostics();
+} catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
+
+async function copyGASDiagnostics() {
+  const text = JSON.stringify({ version: 'v2.8.6', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  await navigator.clipboard.writeText(text);
+}
+
+function showGASDiagnosticNotice(record) {
+  if (typeof document === 'undefined' || !document.body) return;
+  let panel = document.getElementById('kic-api-diagnostic-notice');
+  if (!panel) {
+    panel = document.createElement('aside');
+    panel.id = 'kic-api-diagnostic-notice';
+    panel.setAttribute('aria-label', '요청 진단 로그');
+    panel.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:100000;box-sizing:border-box;max-width:min(430px,calc(100vw - 32px));padding:14px;border:1px solid #64748b;border-radius:12px;background:#1e293b;color:#fff;box-shadow:0 8px 28px #0005;font:13px/1.5 sans-serif;';
+    panel.innerHTML = '<div data-summary role="status"></div><div data-note style="color:#cbd5e1;margin-top:4px"></div><div style="display:flex;gap:8px;margin-top:10px"><button type="button" data-copy style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">진단 로그 복사</button><button type="button" data-close style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">닫기</button></div>';
+    panel.querySelector('[data-copy]').onclick = async function () {
+      try { await copyGASDiagnostics(); this.textContent = '복사 완료'; }
+      catch (_) { this.textContent = '복사 권한을 확인해 주세요'; }
+    };
+    panel.querySelector('[data-close]').onclick = () => { panel.hidden = true; };
+    document.body.appendChild(panel);
+  }
+  const names = { addIssue: '신규 등록', updateIssue: '이슈 수정', analyzeCapture: '캡처 분석', generateReply: '답변 생성', getDashboardData: '목록 조회' };
+  const failed = record.outcome === 'failure';
+  panel.querySelector('[data-summary]').textContent = (names[record.action] || '서버 요청') + (failed ? ' 실패' : ' 지연 후 완료') + ' · ' + (record.httpStatus ? 'HTTP ' + record.httpStatus + ' · ' : '') + (record.elapsedMs / 1000).toFixed(1) + '초';
+  panel.querySelector('[data-note]').textContent = failed && GAS_WRITE_ACTIONS.has(record.action) ? '응답 실패만으로 저장 여부를 단정할 수 없습니다. 목록을 확인한 뒤 다시 시도해 주세요.' : '로그를 복사해 보내주면 실패 단계와 지연 시간을 확인할 수 있어요.';
+  panel.querySelector('[data-copy]').textContent = '진단 로그 복사';
+  panel.hidden = false;
+}
+
+function recordGASDiagnostic(record) {
+  // 진단 자체의 오류 때문에 성공한 저장을 실패로 표시하지 않습니다.
+  try {
+    const safe = sanitizeGASDiagnostic(record);
+    if (!safe) return;
+    gasDiagnosticRecords.push(safe);
+    gasDiagnosticRecords = getGASDiagnostics();
+    try { localStorage.setItem(GAS_DIAGNOSTIC_KEY, JSON.stringify(gasDiagnosticRecords)); } catch (_) {}
+    if (safe.outcome === 'failure') console.warn('GAS API diagnostic:', safe);
+    if (safe.outcome === 'failure' || safe.elapsedMs >= 10000) showGASDiagnosticNotice(safe);
+  } catch (_) {}
+}
+
 function getGASApiFailure(result, httpStatus) {
   const serverError = result && result.error;
   const detail = cleanGASApiErrorDetail(
@@ -37,6 +146,9 @@ function getGASApiFailure(result, httpStatus) {
     (result && result.message) || ''
   );
   const serverCode = (result && result.code) || (serverError && serverError.code);
+  if (serverCode === 'ISSUE_LOCK_WAIT_FAILED') {
+    return createGASApiError('다른 저장 작업을 기다리다가 등록 잠금 대기에서 실패했습니다. 목록에서 등록 여부를 먼저 확인해 주세요.', 'ISSUE_LOCK_WAIT_FAILED', httpStatus);
+  }
   // これはタイムアウトの証拠ではありません。想定した機能の応答ではなかったことだけを伝えます。
   if (serverCode === 'API_INFO_RESPONSE' || /KIC API Server is running/i.test(detail)) {
     return createGASApiError('요청한 기능의 결과 대신 서버 안내 응답을 받았습니다. 정상 처리 여부를 확인하지 못했습니다. [API_INFO_RESPONSE]', 'API_INFO_RESPONSE', httpStatus);
@@ -60,10 +172,24 @@ function getGASApiFailure(result, httpStatus) {
   return createGASApiError('서버가 성공 결과나 상세 오류를 보내지 않았습니다. 원인을 확인하지 못했습니다. [API_ERROR_NO_DETAILS]', 'API_ERROR_NO_DETAILS', httpStatus);
 }
 
-async function readGASApiResponse(response) {
+async function readGASApiResponse(response, diagnostic) {
+  const bodyStartedAt = Date.now();
+  if (diagnostic) diagnostic.stage = 'response_body';
   const rawText = await response.text();
+  if (diagnostic) {
+    diagnostic.bodyReadMs = Date.now() - bodyStartedAt;
+    diagnostic.responseChars = rawText.length;
+    diagnostic.stage = 'response_parse';
+    diagnostic.responseFormat = !rawText.trim() ? 'empty' : /^\s*</.test(rawText) ? 'html' : 'text';
+  }
   let result;
-  try { result = JSON.parse(rawText); } catch (error) {
+  try {
+    result = JSON.parse(rawText);
+    if (diagnostic) {
+      diagnostic.responseFormat = 'json';
+      diagnostic.server = safeGASServerDiagnostic(result && result.diagnostics);
+    }
+  } catch (error) {
     if (response.ok) {
       throw createGASApiError('서버에서 JSON 대신 빈 응답 또는 다른 형식의 응답을 받았습니다. [API_INVALID_RESPONSE]', 'API_INVALID_RESPONSE', response.status);
     }
@@ -75,8 +201,37 @@ async function readGASApiResponse(response) {
   if (!result || typeof result !== 'object' || Array.isArray(result)) {
     throw createGASApiError('서버 응답 구조가 올바르지 않습니다. [API_INVALID_RESPONSE]', 'API_INVALID_RESPONSE', response.status);
   }
+  if (diagnostic) diagnostic.stage = 'server_result';
   if (result.success !== true) throw getGASApiFailure(result, response.status);
   return result.data;
+}
+
+async function performGASRequest(action, data, method, requestId) {
+  const started = Date.now();
+  const diagnostic = { requestId, action, method, startedAt: new Date(started).toISOString(), stage: 'request_send', responseFormat: 'unread' };
+  try {
+    const url = method === 'GET' ? `${CONFIG.API_URL}?action=${encodeURIComponent(action)}&requestId=${encodeURIComponent(requestId)}` : CONFIG.API_URL;
+    const options = method === 'GET' ? { method: 'GET' } : {
+      method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
+      body: JSON.stringify({ action, data, requestId })
+    };
+    diagnostic.requestChars = options.body ? options.body.length : 0;
+    const response = await fetch(url, options);
+    Object.assign(diagnostic, { responseWaitMs: Date.now() - started, httpStatus: response.status, redirected: response.redirected, responseAddress: response.url, stage: 'response_headers' });
+    const result = await readGASApiResponse(response, diagnostic);
+    recordGASDiagnostic({ ...diagnostic, elapsedMs: Date.now() - started, outcome: 'success', code: 'OK', stage: 'complete' });
+    return result;
+  } catch (error) {
+    if (error instanceof TypeError && /fetch|network|load failed/i.test(error.message)) {
+      error = createGASApiError('네트워크 연결 또는 브라우저 접근 정책 때문에 서버 응답을 받지 못했습니다. [API_NETWORK_ERROR]', 'API_NETWORK_ERROR', diagnostic.httpStatus);
+    }
+    const failure = { ...diagnostic, elapsedMs: Date.now() - started, outcome: 'failure', code: error.code || 'UNKNOWN' };
+    recordGASDiagnostic(failure);
+    error.diagnostics = sanitizeGASDiagnostic(failure);
+    // 원래 상세 메시지는 유지하고, 복사 가능한 진단은 별도로 제공합니다.
+    error.requestId = requestId;
+    throw error;
+  }
 }
 
 // API 요청을 처리하는 공통 비동기 함수
@@ -101,38 +256,20 @@ async function callGASApi(action, data = {}) {
   }
 
   // CORS 프리플라이트를 피하기 위해 text/plain 타입의 POST Simple Request로 전송합니다.
-  const payload = { action: action, data: data };
+  const requestId = 'kic-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 14));
   
   try {
-    const response = await fetch(CONFIG.API_URL, {
-      method: "POST",
-      mode: "cors",
-      headers: {
-        "Content-Type": "text/plain"
-      },
-      body: JSON.stringify(payload)
-    });
-
-    return await readGASApiResponse(response);
+    return await performGASRequest(action, data, 'POST', requestId);
   } catch (error) {
-    if (error instanceof TypeError && /fetch|network|load failed/i.test(error.message)) {
-      error = createGASApiError('네트워크 연결 또는 브라우저 접근 정책 때문에 서버 응답을 받지 못했습니다. [API_NETWORK_ERROR]', 'API_NETWORK_ERROR');
-    }
-    console.warn('GAS API request failed:', { action, code: error.code || 'UNKNOWN', httpStatus: error.httpStatus });
     // GET 재시도는 doGet이 같은 결과를 주는 단순 조회만 합니다. 분석·저장·싱크는 재시도하지 않습니다.
     if (!['getDashboardData', 'getDevelopers', 'getBlogPostPlans'].includes(action)) throw error;
-    console.warn("POST call failed, trying GET fallback for:", action, error);
     
     // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도
     try {
-      const getUrl = `${CONFIG.API_URL}?action=${encodeURIComponent(action)}`;
-      const getResponse = await fetch(getUrl, { method: "GET" });
-      return await readGASApiResponse(getResponse);
+      return await performGASRequest(action, data, 'GET', requestId);
     } catch (fallbackError) {
-      console.error("GET Fallback also failed:", fallbackError);
+      // 두 번의 조회 결과가 모두 진단 기록에 남습니다. 기존 최초 오류 반환 방식은 유지합니다.
     }
-
-    console.error("GAS API Call completely failed:", error);
     throw error;
   }
 }
