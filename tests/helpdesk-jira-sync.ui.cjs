@@ -46,7 +46,7 @@ const html = `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="v
     .fa-pen:before {content:'✎';}
     .fa-redo-alt:before {content:'↻';} .fa-check-circle:before {content:'✓';} .fa-exclamation-circle:before {content:'!';} .fa-spinner:before {content:'⌛';}</style>
   <button onclick="openHelpdeskJiraSync()" title="Jira 싱크 확인">싱크</button><script>
-  window.calls=[]; window.reloadCount=0;window.allIssuesMap={};window.toasts=[];window.localUpdates=[];
+  window.calls=[]; window.reloadCount=0;window.snapshotInvalidations=0;window.allIssuesMap={};window.toasts=[];window.localUpdates=[];
   window.callGASApi=async function(action,data) {window.calls.push({action,data});
     if(action==='setJiraSyncExcluded' && window.failExclusion) throw Error('테스트 저장 실패');
     if(action==='setJiraSyncExcluded' && window.holdExclusion) await new Promise(resolve=>window.releaseExclusion=resolve);
@@ -58,6 +58,7 @@ const html = `<!doctype html><html lang="ko"><meta charset="utf-8"><meta name="v
     const response=await fetch('/api',{method:'POST',body:JSON.stringify({action,data})});
     const result=await response.json();if(!result.success) throw Error(result.error);return result.data;};
   window.loadData=function(){window.reloadCount++;};
+  window.markDashboardServerChange=function(){window.snapshotInvalidations++;};
   window.runServerFunction=(name,data)=>window.callGASApi('updateIssue',data);
   window.showToast=(message,type)=>window.toasts.push({message,type});
   window.applyLocalIssueUpdate=item=>{window.allIssuesMap[item.id]=item;window.localUpdates.push(item);};
@@ -292,6 +293,7 @@ async function main() {
     assert.deepEqual(selections.map(row => row.id), ['IT-261001-001', 'IT-261001-003', 'IT-261001-004']);
     assert.deepEqual(await bounds(), fullBounds);
     assert.equal(await page.evaluate(() => reloadCount), 1);
+    assert.equal(await page.evaluate(() => snapshotInvalidations), 1);
     console.log('PASS final apply sends checked fields only and reloads dashboard');
 
     await page.getByRole('button', { name: '변경안 다시 조회' }).click();
@@ -427,7 +429,7 @@ async function main() {
     assert.deepEqual(errors, []);
     console.log('PASS main-page editing still works independently without reopening sync');
     const requests = [];
-    const context = vm.createContext({ console: { warn() {}, error() {} },
+    const context = vm.createContext({ URL, console: { warn() {}, error() {} },
       fetch: async (url, options) => { requests.push({ url, options }); throw Error('Test network failure'); } });
     vm.runInContext(fs.readFileSync(path.join(root, 'docs/js/config.js'), 'utf8'), context);
     for (const action of ['previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded']) {

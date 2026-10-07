@@ -13,7 +13,7 @@ const response = (body, status = 200, raw = false) => ({
 function setup(responses, extra = {}) {
   const calls = [], logs = [];
   const context = vm.createContext({
-    TypeError, URL,
+    TypeError, URL, AbortController, setTimeout, clearTimeout,
     console: { warn: (...args) => logs.push(args), error: (...args) => logs.push(args) },
     fetch: async (url, options) => {
       calls.push({ url, options });
@@ -114,7 +114,7 @@ for (const action of ['analyzeCapture', 'generateReply', 'addIssue', 'updateIssu
     assert.equal(f.calls[0].options.method, 'POST');
   });
 }
-for (const action of ['getDashboardData', 'getDevelopers', 'getBlogPostPlans']) {
+for (const action of ['getDevelopers', 'getBlogPostPlans']) {
   test(action + ' 기존 읽기 전용 GET 대체 경로를 유지한다', async () => {
     const f = setup([new Error('Test network failure'), response({ success: true, data: 'ok' })]);
     assert.equal(await f.run(action), 'ok');
@@ -122,6 +122,11 @@ for (const action of ['getDashboardData', 'getDevelopers', 'getBlogPostPlans']) 
     assert.equal(f.calls[1].options.method, 'GET');
   });
 }
+test('getDashboardData는 GET 우선·일시 오류 때 POST 한 번 재조회한다', async () => {
+  const f = setup([new TypeError('Failed to fetch'), response({ success: true, data: { pendingCurrent: [], completedCurrent: [] } })]);
+  assert.equal((await f.run('getDashboardData')).pendingCurrent.length, 0);
+  assert.deepEqual(f.calls.map(call => call.options.method), ['GET', 'POST']);
+});
 test('404의 시간·최종 응답 경로·형식을 보관하고 일회성 키는 제외한다', async () => {
   const f = setup([{ ...response('<html>private response</html>', 404, true), redirected: true,
     url: 'https://script.googleusercontent.com/macros/echo?user_content_key=secret-key&lib=secret-lib#private' }]);

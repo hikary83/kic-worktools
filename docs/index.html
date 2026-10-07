@@ -32,11 +32,11 @@
   <link href="css/kic-theme.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.8.6"></script>
-  <script src="js/kic-sidebar.js?v=2.8.6"></script>
+  <script src="js/config.js?v=2.8.8"></script>
+  <script src="js/kic-sidebar.js?v=2.8.8"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
-  <script src="js/helpdesk-jira-sync.js?v=2.8.3" defer></script>
+  <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
 
@@ -76,7 +76,7 @@
           </h1>
           <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">Enterprise Issue Tracker & Automation</p>
         </div>
-        <span id="sync-indicator" class="hidden text-[11px] font-bold text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-sky-950/60 border border-blue-200 dark:border-sky-800/80 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
+        <span id="sync-indicator" role="status" aria-live="polite" class="hidden text-xs font-bold text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-sky-950/60 border border-blue-200 dark:border-sky-800/80 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
           <i class="fas fa-sync-alt fa-spin text-blue-500 dark:text-sky-400"></i> 동기화 중...
         </span>
       </div>
@@ -496,23 +496,9 @@
       initImeProtection();
       // 캡처 분석이 끝났을 때 즉시 지사를 찾을 수 있도록 공통 직원 기준표를 미리 준비합니다.
       loadHelpdeskStaffBranchMap();
-      await ensureKicChartFontReady();
-      
-      // ⚡ [SWR 캐싱 전략] 로컬 캐시가 있으면 0.01초 만에 화면에 즉시 렌더링!
-      let hasValidCache = false;
-      try {
-        const cachedRaw = localStorage.getItem('kic_dashboard_cache');
-        if (cachedRaw) {
-          const cached = JSON.parse(cachedRaw);
-          if (cached && cached.full && Array.isArray(cached.full.issues)) {
-            hasValidCache = true;
-            window.fullIssueData = cached.full;
-            onSuccess(buildStatsForCurrentRange(), true); // 0.01초 즉시 화면 표출!
-          }
-        }
-      } catch(e) {
-        console.warn('Dashboard cache parse error:', e);
-      }
+      // 글꼴 다운로드를 기다리지 않고 이전 목록과 첫 조회를 먼저 시작합니다.
+      const hasValidCache = restoreDashboardCache();
+      if (hasValidCache) onSuccess(buildStatsForCurrentRange(), true);
 
       // 캐시가 없으면 스피너 표시, 캐시가 있으면 백그라운드에서 최신 데이터 1회 통합 동기화
       if (!hasValidCache) {
@@ -522,16 +508,98 @@
 
       // 1회 단일 호출로 최신 데이터 & 담당자 목록 동기화
       fetchFullIssueData(hasValidCache);
+      ensureKicChartFontReady(); // 차트 글꼴은 병렬 준비; 목록/API를 막지 않습니다.
     }
 
     // ⚡ 「조회」는 받아둔 전체 이슈에서 기간만 다시 집계해 즉시 표시합니다. 최신 데이터는 뒤에서 받아 다시 반영합니다.
     window.fullIssueData = null; // { issues: 헬프데스크 전체, quarterRequestItems: 미완료 분기요청, developers }
+    let dashboardDataRevision = 0;
+    let dashboardLastSyncedAt = 0;
+    let dashboardLastLocalSaveAt = 0;
+    let dashboardNeedsRefresh = false;
+
+    function normalizeDashboardFullData(full) {
+      const validIssues = list => Array.isArray(list) && list.every(item => item && typeof item.id === 'string' && item.id);
+      if (!full || !validIssues(full.issues) || !validIssues(full.quarterRequestItems || [])) return null;
+      const developers = full.developers || [];
+      if (!Array.isArray(developers) || developers.some(item => !item || typeof item.name !== 'string')) return null;
+      return { issues: full.issues, quarterRequestItems: full.quarterRequestItems || [], developers };
+    }
+
+    function restoreDashboardCache() {
+      try {
+        const cached = JSON.parse(localStorage.getItem('kic_dashboard_cache') || 'null');
+        if (!cached || (cached.schema !== undefined && cached.schema !== 2)) return false;
+        const full = normalizeDashboardFullData(cached.full);
+        if (!full) return false;
+        const validTime = value => Number.isFinite(value) && value > 0 && value <= Date.now() ? value : 0;
+        dashboardLastSyncedAt = validTime(cached.schema === 2 ? cached.syncedAt : cached.savedAt);
+        dashboardLastLocalSaveAt = validTime(cached.lastLocalSaveAt);
+        dashboardNeedsRefresh = cached.needsRefresh === true;
+        window.fullIssueData = full;
+        window.globalDevList = full.developers;
+        setDashboardSyncStatus('cached');
+        return true;
+      } catch (e) { console.warn('Dashboard cache unavailable:', e); return false; }
+    }
+
+    function persistDashboardCache() {
+      if (!window.fullIssueData) return;
+      try {
+        localStorage.setItem('kic_dashboard_cache', JSON.stringify({ schema: 2, full: window.fullIssueData,
+          savedAt: Date.now(), syncedAt: dashboardLastSyncedAt, lastLocalSaveAt: dashboardLastLocalSaveAt, needsRefresh: dashboardNeedsRefresh }));
+      } catch (e) { console.warn('Failed to save dashboard cache:', e); }
+    }
+
+    function formatDashboardSyncTime(timestamp) {
+      if (!timestamp) return '동기화 시각 미확인';
+      const date = new Date(timestamp);
+      const pad = value => String(value).padStart(2, '0');
+      return `${date.getFullYear()}.${pad(date.getMonth() + 1)}.${pad(date.getDate())} ${pad(date.getHours())}:${pad(date.getMinutes())}`;
+    }
+
+    function setDashboardSyncStatus(phase) {
+      const el = document.getElementById('sync-indicator');
+      if (!el) return;
+      const text = { cached: '이전 목록', syncing: window.fullIssueData ? '이전 목록 표시 · 동기화 중' : '목록 조회 중',
+        retrying: window.fullIssueData ? '이전 목록 유지 · 한 번 더 조회 중' : '한 번 더 조회 중',
+        complete: '동기화 완료', saved: '저장 내용 반영 · 전체 동기화 대기',
+        changed: '저장 완료 · 목록 재확인 필요', stale: '저장 내용 유지 · 조회로 재확인',
+        failed: window.fullIssueData ? '동기화 실패 · 이전 목록 유지' : '목록 조회 실패' }[phase] || '목록 확인 중';
+      const busy = ['syncing', 'retrying'].includes(phase);
+      const success = ['complete', 'saved'].includes(phase);
+      const color = busy ? 'text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-sky-950/60 border-blue-200 dark:border-sky-800'
+        : success ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
+        : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800';
+      el.className = `text-xs font-medium border px-3 py-1.5 rounded-xl flex items-center gap-2 max-w-full ${color}`;
+      const time = dashboardLastSyncedAt ? `마지막 전체 동기화 ${formatDashboardSyncTime(dashboardLastSyncedAt)}` : '전체 동기화 시각 미확인';
+      const note = dashboardNeedsRefresh ? ' · 저장 변경 재확인 필요' : dashboardLastLocalSaveAt > dashboardLastSyncedAt ? ' · 저장 내용 포함' : '';
+      el.innerHTML = `<i aria-hidden="true" class="fas ${busy ? 'fa-sync-alt fa-spin' : success ? 'fa-check-circle' : 'fa-exclamation-circle'} shrink-0"></i><span>${text}<span class="block text-[11px] opacity-80">${time}${note}</span></span>`;
+    }
+
+    function markDashboardLocalChange() {
+      dashboardDataRevision++;
+      dashboardLastLocalSaveAt = Date.now();
+      persistDashboardCache();
+      setDashboardSyncStatus(fullIssueFetchPromise ? 'syncing' : 'saved');
+    }
+
+    function markDashboardServerChange() {
+      // Jira 적용은 전체 이슈 데이터를 반환하지 않습니다. 이전 응답을 버리고 새 목록으로 확인합니다.
+      dashboardDataRevision++;
+      dashboardNeedsRefresh = true;
+      persistDashboardCache();
+      setDashboardSyncStatus('changed');
+    }
 
     function setFullIssueData(stats) {
       // 기간 없이 조회하면 서버가 미완료는 pendingCurrent, 완료·반려는 completedCurrent로 전체를 돌려줍니다.
       const issues = [...(stats.pendingCurrent || []), ...(stats.completedCurrent || [])]
         .sort((a, b) => String(b.date).localeCompare(String(a.date)));
-      window.fullIssueData = { issues, quarterRequestItems: stats.quarterRequestItems || [], developers: stats.developers || [] };
+      const full = normalizeDashboardFullData({ issues, quarterRequestItems: stats.quarterRequestItems || [], developers: stats.developers || [] });
+      if (!full) throw new Error('목록 데이터 구조가 올바르지 않습니다.');
+      window.fullIssueData = full;
+      window.globalDevList = window.fullIssueData.developers;
     }
 
     function upsertFullIssue(issue) {
@@ -571,7 +639,7 @@
       const full = window.fullIssueData;
       window.currentStats = {
         pendingCurrent: [], completedCurrent: [], pendingPast: [], rejectedPast: [], quarterRequestItems: [], pastKanbanItems: [],
-        developers: (window.globalDevList && window.globalDevList.length) ? window.globalDevList : full.developers,
+        developers: full.developers,
         previousWeek: buildPreviousWeekStats(full.issues)
       };
       // 기존 로컬 반영과 같은 분류 규칙을 그대로 사용합니다. 객체를 복사하지 않아 상태 변경이 전체 데이터에도 반영됩니다.
@@ -775,7 +843,7 @@
     async function runServerFunction(functionName, ...args) {
       try {
         if (functionName === 'getDashboardData') {
-          return await callGASApi('getDashboardData', { startDate: args[0], endDate: args[1] });
+          return await callGASApi('getDashboardData', { startDate: args[0], endDate: args[1] }, args[2]);
         }
         if (functionName === 'getDevelopers') {
           return await callGASApi('getDevelopers');
@@ -820,51 +888,49 @@
         onSuccess(buildStatsForCurrentRange(), false);
         isBackground = true;
       }
-      fetchFullIssueData(isBackground);
+      return fetchFullIssueData(isBackground);
     }
 
-    let fullIssueFetchInFlight = false;
-    function fetchFullIssueData(isBackground = false) {
+    let fullIssueFetchPromise = null;
+    function fetchFullIssueData(isBackground = false, allowFollowup = true) {
       // 진행 중인 전체 조회가 있으면 그 결과가 도착할 때 현재 조회기간으로 다시 집계하므로 중복 요청하지 않습니다.
-      if (fullIssueFetchInFlight) return;
-      fullIssueFetchInFlight = true;
-      const syncIndicator = document.getElementById('sync-indicator');
-      if (isBackground) {
-        if (syncIndicator) {
-          syncIndicator.className = 'text-[11px] font-bold text-blue-600 bg-blue-50 border border-blue-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm';
-          syncIndicator.innerHTML = '<i class="fas fa-sync-alt fa-spin text-blue-500"></i> 동기화 중...';
-          syncIndicator.classList.remove('hidden');
-        }
-      } else {
+      if (fullIssueFetchPromise) return fullIssueFetchPromise;
+      const revision = dashboardDataRevision;
+      let followup = false;
+      setDashboardSyncStatus('syncing');
+      if (!isBackground && !window.fullIssueData) {
+        document.getElementById('loading').innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500 text-3xl mb-3"></i><p class="font-medium">목록을 조회하고 있습니다...</p>';
         document.getElementById('loading').classList.remove('hidden');
         document.getElementById('dashboard-content').classList.add('hidden');
       }
 
-      runServerFunction('getDashboardData', '', '')
+      fullIssueFetchPromise = runServerFunction('getDashboardData', '', '', { onRetry: () => setDashboardSyncStatus('retrying') })
         .then(stats => {
-          fullIssueFetchInFlight = false;
+          // 조회 시작 후 저장이 성공했다면 늦게 온 목록으로 저장 결과를 덮지 않습니다.
+          if (revision !== dashboardDataRevision) {
+            followup = allowFollowup;
+            setDashboardSyncStatus('stale');
+            return;
+          }
           setFullIssueData(stats);
-          try {
-            localStorage.setItem('kic_dashboard_cache', JSON.stringify({ full: window.fullIssueData, savedAt: Date.now() }));
-          } catch(e) {
-            console.warn('Failed to save dashboard cache:', e);
-          }
+          dashboardLastSyncedAt = Date.now();
+          dashboardNeedsRefresh = false;
+          persistDashboardCache();
           onSuccess(buildStatsForCurrentRange(), false);
-          if (syncIndicator) {
-            syncIndicator.className = 'text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
-            syncIndicator.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i> 동기화 완료';
-            setTimeout(() => syncIndicator.classList.add('hidden'), 2500);
-          }
+          setDashboardSyncStatus('complete');
         })
         .catch(err => {
-          fullIssueFetchInFlight = false;
-          if (syncIndicator) {
-            syncIndicator.className = 'text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
-            syncIndicator.innerHTML = '<i class="fas fa-exclamation-circle text-amber-500"></i> 동기화 지연 (캐시 유지)';
-            setTimeout(() => syncIndicator.classList.add('hidden'), 4000);
-          }
+          // 저장 중 오래된 조회가 실패했어도 확정된 변경 내용을 우선합니다.
+          followup = allowFollowup && revision !== dashboardDataRevision;
+          setDashboardSyncStatus('failed');
           onFailure(err, isBackground);
+        })
+        .finally(() => {
+          fullIssueFetchPromise = null;
+          // 저장과 겹친 조회만 한 번 다시 확인합니다. 연속 저장도 무한 조회하지 않습니다.
+          if (followup) return fetchFullIssueData(true, false);
         });
+      return fullIssueFetchPromise;
     }
 
     function setThisWeekAndLoad() {
@@ -897,7 +963,7 @@
       window.currentStats = stats;
 
       // 담당자 목록이 통합 반환되었으면 갱신
-      if (stats.developers && Array.isArray(stats.developers) && stats.developers.length > 0) {
+      if (Array.isArray(stats.developers)) {
         window.globalDevList = stats.developers;
         populateDevSelects();
       }
@@ -1203,6 +1269,7 @@
         window.allIssuesMap[updatedIssue.id] = updatedIssue;
         upsertFullIssue(updatedIssue);
         routeIssueToStatsCollections(updatedIssue);
+        markDashboardLocalChange();
         rerenderDashboardAfterLocalChange();
     }
 
@@ -1683,7 +1750,7 @@
 
     function updateIssueInLocalLists(issueId, updater) {
       if (!window.currentStats || !issueId || typeof updater !== 'function') return;
-      const listKeys = ['pendingCurrent', 'completedCurrent', 'pendingPast', 'rejectedPast', 'pastKanbanItems'];
+      const listKeys = ['pendingCurrent', 'completedCurrent', 'pendingPast', 'rejectedPast', 'pastKanbanItems', 'quarterRequestItems'];
       listKeys.forEach(key => {
         const list = window.currentStats[key];
         if (!Array.isArray(list)) return;
@@ -1692,6 +1759,11 @@
         });
       });
       if (window.allIssuesMap && window.allIssuesMap[issueId]) updater(window.allIssuesMap[issueId], 'allIssuesMap');
+      if (window.fullIssueData) {
+        [...window.fullIssueData.issues, ...window.fullIssueData.quarterRequestItems].forEach(item => {
+          if (item && item.id === issueId) updater(item, 'fullIssueData');
+        });
+      }
     }
 
     function applyLocalKanbanStatusChange(issueId, newStatus, sourceType) {
@@ -1714,6 +1786,7 @@
         });
       }
 
+      markDashboardLocalChange();
       rerenderIssueBoardWithoutReload();
     }
 
@@ -1722,6 +1795,7 @@
         item.isHidden = !!hideFlag;
         item.hiddenFlag = hideFlag ? 'Y' : '';
       });
+      markDashboardLocalChange();
       rerenderIssueBoardWithoutReload();
     }
 
@@ -1924,6 +1998,8 @@
 
     async function updateCharts(stats) {
       await ensureKicChartFontReady();
+      // 폰트 대기 중 새 조회/저장이 끝났다면 오래된 집계로 차트를 되돌리지 않습니다.
+      if (stats !== window.currentStats) return;
 
       const chartFont = { family: KIC_CHART_FONT_FAMILY, size: 11, weight: '400' };
       const legendFont = { family: KIC_CHART_FONT_FAMILY, size: 10, weight: '400' };
@@ -2385,6 +2461,9 @@
 
         runServerFunction('saveDevelopers', newDevs).then(() => {
             window.globalDevList = newDevs;
+            if (window.fullIssueData) window.fullIssueData.developers = newDevs;
+            if (window.currentStats) window.currentStats.developers = newDevs;
+            markDashboardLocalChange();
             populateDevSelects(); // 셀렉트 박스 즉시 갱신
             closeSettingsModal();
             btn.innerHTML = originalText;
@@ -2965,6 +3044,7 @@
                 const newIssue = buildLocalIssueFromAddData(data, result);
                 applyLocalIssueUpdate(newIssue);
             } else {
+                markDashboardServerChange();
                 loadData();
             }
             setButtonSaving(saveButton, false);

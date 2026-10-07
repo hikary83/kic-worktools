@@ -98,7 +98,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.8.7', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.8.8', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 
@@ -126,7 +126,7 @@ function showGASDiagnosticNotice(record) {
   panel.hidden = false;
 }
 
-function recordGASDiagnostic(record) {
+function recordGASDiagnostic(record, notify = true) {
   // 진단 자체의 오류 때문에 성공한 저장을 실패로 표시하지 않습니다.
   try {
     const safe = sanitizeGASDiagnostic(record);
@@ -135,7 +135,7 @@ function recordGASDiagnostic(record) {
     gasDiagnosticRecords = getGASDiagnostics();
     try { localStorage.setItem(GAS_DIAGNOSTIC_KEY, JSON.stringify(gasDiagnosticRecords)); } catch (_) {}
     if (safe.outcome === 'failure') console.warn('GAS API diagnostic:', safe);
-    if (safe.outcome === 'failure' || safe.elapsedMs >= 10000) showGASDiagnosticNotice(safe);
+    if (notify && (safe.outcome === 'failure' || safe.elapsedMs >= 10000)) showGASDiagnosticNotice(safe);
   } catch (_) {}
 }
 
@@ -203,39 +203,82 @@ async function readGASApiResponse(response, diagnostic) {
   }
   if (diagnostic) diagnostic.stage = 'server_result';
   if (result.success !== true) throw getGASApiFailure(result, response.status);
+  if (diagnostic && diagnostic.action === 'getDashboardData') {
+    const server = diagnostic.server;
+    if (server && (server.requestId !== diagnostic.requestId || server.method !== diagnostic.method)) {
+      throw createGASApiError('목록 조회와 다른 요청의 응답을 받았습니다. [API_REQUEST_MISMATCH]', 'API_REQUEST_MISMATCH', response.status);
+    }
+    const data = result.data;
+    if (!data || !Array.isArray(data.pendingCurrent) || !Array.isArray(data.completedCurrent)) {
+      throw createGASApiError('목록 데이터가 없는 응답을 받았습니다. [API_INVALID_RESPONSE]', 'API_INVALID_RESPONSE', response.status);
+    }
+  }
   return result.data;
 }
 
-async function performGASRequest(action, data, method, requestId) {
+const GAS_DASHBOARD_READ_TIMEOUT_MS = 20000;
+
+function isDashboardReadRetryable(error) {
+  return ['API_READ_TIMEOUT', 'API_NETWORK_ERROR', 'API_INFO_RESPONSE', 'API_INVALID_RESPONSE', 'API_REQUEST_MISMATCH'].includes(error.code)
+    || (error.code === 'API_HTTP_ERROR' && ([404, 408, 429].includes(error.httpStatus) || error.httpStatus >= 500));
+}
+
+async function performGASRequest(action, data, method, requestId, policy = {}) {
   const started = Date.now();
   const diagnostic = { requestId, action, method, startedAt: new Date(started).toISOString(), stage: 'request_send', responseFormat: 'unread' };
+  let timeout;
   try {
-    const url = method === 'GET' ? `${CONFIG.API_URL}?action=${encodeURIComponent(action)}&requestId=${encodeURIComponent(requestId)}` : CONFIG.API_URL;
+    const url = new URL(CONFIG.API_URL);
+    if (method === 'GET') {
+      url.searchParams.set('action', action);
+      url.searchParams.set('requestId', requestId);
+      if (action === 'getDashboardData') {
+        ['startDate', 'endDate'].forEach(key => {
+          if (typeof data[key] === 'string') url.searchParams.set(key, data[key]);
+        });
+      }
+    }
     const options = method === 'GET' ? { method: 'GET' } : {
       method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
       body: JSON.stringify({ action, data, requestId })
     };
+    const controller = policy.timeoutMs ? new AbortController() : null;
+    if (controller) {
+      options.signal = controller.signal;
+      options.cache = 'no-store';
+    }
     diagnostic.requestChars = options.body ? options.body.length : 0;
-    const response = await fetch(url, options);
-    Object.assign(diagnostic, { responseWaitMs: Date.now() - started, httpStatus: response.status, redirected: response.redirected, responseAddress: response.url, stage: 'response_headers' });
-    const result = await readGASApiResponse(response, diagnostic);
-    recordGASDiagnostic({ ...diagnostic, elapsedMs: Date.now() - started, outcome: 'success', code: 'OK', stage: 'complete' });
+    const request = (async () => {
+      const response = await fetch(url.href, options);
+      Object.assign(diagnostic, { responseWaitMs: Date.now() - started, httpStatus: response.status, redirected: response.redirected, responseAddress: response.url, stage: 'response_headers' });
+      return readGASApiResponse(response, diagnostic);
+    })();
+    // 목록 조회만 대기를 제한합니다. 브라우저 중단이 서버 작업 중단을 보장하지는 않습니다.
+    const result = controller ? await Promise.race([request, new Promise((_, reject) => {
+      timeout = setTimeout(() => {
+        reject(createGASApiError('목록 조회 응답을 20초 동안 받지 못했습니다. [API_READ_TIMEOUT]', 'API_READ_TIMEOUT', diagnostic.httpStatus));
+        controller.abort();
+      }, policy.timeoutMs);
+    })]) : await request;
+    recordGASDiagnostic({ ...diagnostic, elapsedMs: Date.now() - started, outcome: 'success', code: 'OK', stage: 'complete' }, policy.notify !== false);
     return result;
   } catch (error) {
     if (error instanceof TypeError && /fetch|network|load failed/i.test(error.message)) {
       error = createGASApiError('네트워크 연결 또는 브라우저 접근 정책 때문에 서버 응답을 받지 못했습니다. [API_NETWORK_ERROR]', 'API_NETWORK_ERROR', diagnostic.httpStatus);
     }
     const failure = { ...diagnostic, elapsedMs: Date.now() - started, outcome: 'failure', code: error.code || 'UNKNOWN' };
-    recordGASDiagnostic(failure);
+    recordGASDiagnostic(failure, policy.notify !== false);
     error.diagnostics = sanitizeGASDiagnostic(failure);
     // 원래 상세 메시지는 유지하고, 복사 가능한 진단은 별도로 제공합니다.
     error.requestId = requestId;
     throw error;
+  } finally {
+    if (timeout !== undefined) clearTimeout(timeout);
   }
 }
 
 // API 요청을 처리하는 공통 비동기 함수
-async function callGASApi(action, data = {}) {
+async function callGASApi(action, data = {}, options = {}) {
   if (!CONFIG.API_URL) {
     alert("구글 Apps Script 웹앱 URL(API_URL)이 설정되지 않았습니다. js/config.js 파일에서 설정해 주세요.");
     throw new Error("API_URL is missing");
@@ -257,12 +300,26 @@ async function callGASApi(action, data = {}) {
 
   // CORS 프리플라이트를 피하기 위해 text/plain 타입의 POST Simple Request로 전송합니다.
   const requestId = 'kic-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 14));
+
+  if (action === 'getDashboardData') {
+    // GET으로 조회 조건을 명시하고, 일시 오류에 한해서만 POST로 한 번 재조회합니다.
+    try {
+      return await performGASRequest(action, data, 'GET', requestId, { timeoutMs: GAS_DASHBOARD_READ_TIMEOUT_MS, notify: false });
+    } catch (error) {
+      if (!isDashboardReadRetryable(error)) {
+        try { showGASDiagnosticNotice(error.diagnostics); } catch (_) {}
+        throw error;
+      }
+      try { if (typeof options.onRetry === 'function') options.onRetry(error); } catch (_) {}
+      return performGASRequest(action, data, 'POST', requestId, { timeoutMs: GAS_DASHBOARD_READ_TIMEOUT_MS });
+    }
+  }
   
   try {
     return await performGASRequest(action, data, 'POST', requestId);
   } catch (error) {
     // GET 재시도는 doGet이 같은 결과를 주는 단순 조회만 합니다. 분석·저장·싱크는 재시도하지 않습니다.
-    if (!['getDashboardData', 'getDevelopers', 'getBlogPostPlans'].includes(action)) throw error;
+    if (!['getDevelopers', 'getBlogPostPlans'].includes(action)) throw error;
     
     // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도
     try {

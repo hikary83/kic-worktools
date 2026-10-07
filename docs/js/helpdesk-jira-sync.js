@@ -311,6 +311,7 @@
     try {
       state.result = await callGASApi('applyJiraSync', { token: state.token, selections: selected });
       state.fields = {};
+      if (typeof markDashboardServerChange === 'function') markDashboardServerChange();
       if (typeof loadData === 'function') loadData(false);
     } catch (error) { state.applyError = error.message + ' 실제 반영 여부는 다시 조회해서 확인해 주세요.'; }
     state.applying = false; render();
