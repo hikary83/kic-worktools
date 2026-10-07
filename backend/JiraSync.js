@@ -1,5 +1,4 @@
 // Jira는 조회만 합니다. 체크한 변경안만 기존 헬프데스크 시트에 반영합니다.
-const HELPDESK_JIRA_SYNC_API_URL = 'https://script.google.com/macros/s/AKfycbxncJs9huZd1ENzETRxRyKO5ikexxscHptSYGE6LIXsWP1DFDEn1Zmodk0H7vE8EuDR/exec';
 const HELPDESK_JIRA_SYNC_ORIGIN = 'https://kic-itsd.atlassian.net';
 const HELPDESK_JIRA_SYNC_TTL = 600;
 const HELPDESK_JIRA_SYNC_EXCLUDED_PREFIX = 'HELPDESK_JIRA_SYNC_EXCLUDED_';
@@ -19,19 +18,9 @@ function helpdeskSyncExcludedIds_(sheetId) {
 }
 
 function requestHelpdeskJiraSync_(issueKeys, issueNumbers) {
-  const response = UrlFetchApp.fetch(HELPDESK_JIRA_SYNC_API_URL, {
-    method: 'post', contentType: 'text/plain', muteHttpExceptions: true,
-    payload: JSON.stringify({ action: 'getHelpdeskJiraSyncIssues', data: { issueKeys: issueKeys, issueNumbers: issueNumbers } })
-  });
-  if (response.getResponseCode() !== 200) throw new Error('Jira 연결을 확인해 주세요. (' + response.getResponseCode() + ')');
-  let result;
-  try { result = JSON.parse(response.getContentText()); }
-  catch (error) { throw new Error('Jira 조회 API의 배포 상태를 확인해 주세요.'); }
-  if (!result.success || !result.data || !Array.isArray(result.data.issues)) {
-    throw new Error(result.error || 'Jira 싱크 조회 API를 먼저 재배포해 주세요.');
-  }
+  const data = getHelpdeskJiraSyncIssues_({ issueKeys: issueKeys, issueNumbers: issueNumbers });
   // 링크는 신뢰된 테넌트와 검증한 Jira 키로 서버에서 직접 만듭니다.
-  result.data.issues = result.data.issues.filter(function(issue) {
+  data.issues = data.issues.filter(function(issue) {
     return /^[A-Z][A-Z0-9_]*-\d+$/.test(issue.key || '');
   }).map(function(issue) {
     return {
@@ -41,7 +30,7 @@ function requestHelpdeskJiraSync_(issueKeys, issueNumbers) {
       issueNumbers: Array.isArray(issue.issueNumbers) ? issue.issueNumbers : []
     };
   });
-  return result.data;
+  return data;
 }
 
 function helpdeskJiraKey_(value) {

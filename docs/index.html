@@ -32,8 +32,8 @@
   <link href="css/kic-theme.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.8.1"></script>
-  <script src="js/kic-sidebar.js?v=2.8.3"></script>
+  <script src="js/config.js?v=2.8.4"></script>
+  <script src="js/kic-sidebar.js?v=2.8.4"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.3" defer></script>
@@ -504,13 +504,10 @@
         const cachedRaw = localStorage.getItem('kic_dashboard_cache');
         if (cachedRaw) {
           const cached = JSON.parse(cachedRaw);
-          if (cached && cached.stats) {
+          if (cached && cached.full && Array.isArray(cached.full.issues)) {
             hasValidCache = true;
-            if (cached.stats.developers && Array.isArray(cached.stats.developers)) {
-              window.globalDevList = cached.stats.developers;
-              populateDevSelects();
-            }
-            onSuccess(cached.stats, true); // 0.01초 즉시 화면 표출!
+            window.fullIssueData = cached.full;
+            onSuccess(buildStatsForCurrentRange(), true); // 0.01초 즉시 화면 표출!
           }
         }
       } catch(e) {
@@ -522,9 +519,66 @@
         document.getElementById('loading').classList.remove('hidden');
         document.getElementById('dashboard-content').classList.add('hidden');
       }
-      
+
       // 1회 단일 호출로 최신 데이터 & 담당자 목록 동기화
-      loadData(hasValidCache);
+      fetchFullIssueData(hasValidCache);
+    }
+
+    // ⚡ 「조회」는 받아둔 전체 이슈에서 기간만 다시 집계해 즉시 표시합니다. 최신 데이터는 뒤에서 받아 다시 반영합니다.
+    window.fullIssueData = null; // { issues: 헬프데스크 전체, quarterRequestItems: 미완료 분기요청, developers }
+
+    function setFullIssueData(stats) {
+      // 기간 없이 조회하면 서버가 미완료는 pendingCurrent, 완료·반려는 completedCurrent로 전체를 돌려줍니다.
+      const issues = [...(stats.pendingCurrent || []), ...(stats.completedCurrent || [])]
+        .sort((a, b) => String(b.date).localeCompare(String(a.date)));
+      window.fullIssueData = { issues, quarterRequestItems: stats.quarterRequestItems || [], developers: stats.developers || [] };
+    }
+
+    function upsertFullIssue(issue) {
+      const full = window.fullIssueData;
+      if (!full || !issue || !issue.id) return;
+      const list = issue.sourceType === 'quarter' ? full.quarterRequestItems : full.issues;
+      const index = list.findIndex(item => item.id === issue.id);
+      if (index >= 0) list[index] = issue; else list.unshift(issue);
+    }
+
+    // 서버 getDashboardData의 전주 동일 요일 비교와 같은 기준입니다(최대 7일 조회일 때만).
+    function buildPreviousWeekStats(issues) {
+      const prev = { enabled: false, startDate: '', endDate: '', total: 0, completed: 0, pending: 0, rejected: 0, completionRate: 0, systemData: {}, typeData: {}, branchData: {} };
+      const { start, end } = getCurrentDateFilterRange();
+      if (!start || !end) return prev;
+      const days = Math.floor((end - start) / 86400000) + 1;
+      if (days < 1 || days > 7) return prev;
+      const prevStart = new Date(start); prevStart.setDate(prevStart.getDate() - 7);
+      const prevEnd = new Date(end); prevEnd.setDate(prevEnd.getDate() - 7);
+      Object.assign(prev, { enabled: true, startDate: getLocalDateString(prevStart), endDate: getLocalDateString(prevEnd) });
+      issues.forEach(issue => {
+        const d = parseIssueDateValue(issue.date);
+        if (!d || d < prevStart || d > prevEnd) return;
+        prev.total++;
+        if (issue.status === '완료') prev.completed++;
+        else if (issue.status === '반려') prev.rejected++;
+        else prev.pending++;
+        if (issue.system) prev.systemData[issue.system] = (prev.systemData[issue.system] || 0) + 1;
+        if (issue.type) prev.typeData[issue.type] = (prev.typeData[issue.type] || 0) + 1;
+        if (issue.branch) prev.branchData[issue.branch] = (prev.branchData[issue.branch] || 0) + 1;
+      });
+      prev.completionRate = prev.total > 0 ? Math.round((prev.completed / prev.total) * 100) : 0;
+      return prev;
+    }
+
+    function buildStatsForCurrentRange() {
+      const full = window.fullIssueData;
+      window.currentStats = {
+        pendingCurrent: [], completedCurrent: [], pendingPast: [], rejectedPast: [], quarterRequestItems: [], pastKanbanItems: [],
+        developers: (window.globalDevList && window.globalDevList.length) ? window.globalDevList : full.developers,
+        previousWeek: buildPreviousWeekStats(full.issues)
+      };
+      // 기존 로컬 반영과 같은 분류 규칙을 그대로 사용합니다. 객체를 복사하지 않아 상태 변경이 전체 데이터에도 반영됩니다.
+      // ponytail: 건별 재분류라 O(n²)이지만 수천 건까지는 수십 ms 수준. 느려지면 한 번에 분류하도록 교체.
+      [...full.quarterRequestItems, ...full.issues].forEach(routeIssueToStatsCollections);
+      recomputeDashboardStatsFromCollections();
+      return window.currentStats;
     }
     document.addEventListener('DOMContentLoaded', initDashboard);
 
@@ -761,6 +815,19 @@
     }
 
     function loadData(isBackground = false) {
+      if (window.fullIssueData) {
+        // 받아둔 데이터로 바로 표시하고(펼침 상태 유지), 최신 데이터는 뒤에서 받아 다시 반영합니다.
+        onSuccess(buildStatsForCurrentRange(), false);
+        isBackground = true;
+      }
+      fetchFullIssueData(isBackground);
+    }
+
+    let fullIssueFetchInFlight = false;
+    function fetchFullIssueData(isBackground = false) {
+      // 진행 중인 전체 조회가 있으면 그 결과가 도착할 때 현재 조회기간으로 다시 집계하므로 중복 요청하지 않습니다.
+      if (fullIssueFetchInFlight) return;
+      fullIssueFetchInFlight = true;
       const syncIndicator = document.getElementById('sync-indicator');
       if (isBackground) {
         if (syncIndicator) {
@@ -773,11 +840,16 @@
         document.getElementById('dashboard-content').classList.add('hidden');
       }
 
-      const start = document.getElementById('startDate').value;
-      const end = document.getElementById('endDate').value;
-      runServerFunction('getDashboardData', start, end)
+      runServerFunction('getDashboardData', '', '')
         .then(stats => {
-          onSuccess(stats, false);
+          fullIssueFetchInFlight = false;
+          setFullIssueData(stats);
+          try {
+            localStorage.setItem('kic_dashboard_cache', JSON.stringify({ full: window.fullIssueData, savedAt: Date.now() }));
+          } catch(e) {
+            console.warn('Failed to save dashboard cache:', e);
+          }
+          onSuccess(buildStatsForCurrentRange(), false);
           if (syncIndicator) {
             syncIndicator.className = 'text-[11px] font-bold text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
             syncIndicator.innerHTML = '<i class="fas fa-check-circle text-emerald-500"></i> 동기화 완료';
@@ -785,6 +857,7 @@
           }
         })
         .catch(err => {
+          fullIssueFetchInFlight = false;
           if (syncIndicator) {
             syncIndicator.className = 'text-[11px] font-bold text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/60 border border-amber-200 dark:border-amber-800 px-2.5 py-1 rounded-full flex items-center gap-1.5 shadow-sm transition-all';
             syncIndicator.innerHTML = '<i class="fas fa-exclamation-circle text-amber-500"></i> 동기화 지연 (캐시 유지)';
@@ -840,18 +913,6 @@
 
       renderIssueSections(stats, isCached, isCached ? null : { isDoneHidden, isPastHidden });
       updateCharts(stats);
-
-      // 최신 서버 데이터일 때 로컬 스토리지에 캐시 보관
-      if (!isCached) {
-        try {
-          localStorage.setItem('kic_dashboard_cache', JSON.stringify({
-            stats: stats,
-            savedAt: Date.now()
-          }));
-        } catch(e) {
-          console.warn('Failed to save dashboard cache:', e);
-        }
-      }
     }
 
     function toggleSection(containerId, buttonId) {
@@ -1139,6 +1200,7 @@
     function applyLocalIssueUpdate(updatedIssue) {
         if (!updatedIssue || !updatedIssue.id) return;
         window.allIssuesMap[updatedIssue.id] = updatedIssue;
+        upsertFullIssue(updatedIssue);
         routeIssueToStatsCollections(updatedIssue);
         rerenderDashboardAfterLocalChange();
     }
@@ -2891,10 +2953,11 @@
         if(!date || !branch || !title || !details) return showToast('필수 항목(*)을 모두 입력하세요.', 'error');
         const menu = document.getElementById('add-menu').value;
         const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details };
-        closeAddModal();
         showToast('신규 이슈 등록 중...', 'info');
         setButtonSaving(saveButton, true, '등록중...');
         runServerFunction('addIssueFromDashboard', data).then(result => {
+            // 저장이 확인된 뒤에만 닫습니다. 실패하면 입력 내용을 그대로 두고 다시 시도할 수 있습니다.
+            closeAddModal();
             const newId = result && result.id ? result.id : '';
             showToast(newId ? `등록 완료: ${newId}` : '등록 완료');
             if (window.currentStats && newId) {
@@ -2907,6 +2970,14 @@
         }).catch(e => {
             setButtonSaving(saveButton, false);
             showToast('등록 실패: ' + e.message, 'error');
+            // 저장 중 창을 닫았어도 입력 내용으로 다시 보여줍니다(열기 함수는 폼을 초기화하므로 직접 표시).
+            const modal = document.getElementById('addModal');
+            if (modal.classList.contains('hidden')) {
+                modal.classList.remove('hidden');
+                setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('addModalContent').classList.remove('scale-95'); }, 10);
+            }
+            // 응답만 유실되고 저장은 된 경우가 있어 목록을 갱신해 중복 등록 여부를 확인할 수 있게 합니다.
+            loadData(true);
         });
     }
 

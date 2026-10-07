@@ -1,6 +1,8 @@
 # 헬프데스크 Jira 싱크 확인
 
-화면 버전: v2.8.3 (2026-10-02). 헬프데스크 업무 API v111·Jira 조회 API v14를 기존 주소로 유지합니다. 업무 API 최초 싱크 배포는 v109이며, v110에서 원문 링크 조회, v111에서 팀 공통 싱크 제외를 추가했습니다.
+화면 버전: v2.8.4 (2026-10-07). 헬프데스크 업무 API v113을 기존 주소로 유지합니다. 업무 API 최초 싱크 배포는 v109이며, v110에서 원문 링크 조회, v111에서 팀 공통 싱크 제외, v113에서 Jira 직접 조회를 추가했습니다.
+
+v2.8.4부터 업무 API가 Jira를 직접 조회합니다. 이전에는 별도 Jira 조회 API(통합일정용)를 거쳤으나 Apps Script 간 호출에서 요청 본문이 간헐적으로 유실되어 제거했습니다. Jira 조회 API(v17)는 통합일정 전용입니다. 등록된 Jira 번호는 100건씩 일괄 조회(`/rest/api/3/issue/bulkfetch`)하며, 쓸 수 없으면 건별 조회로 자동 전환합니다. 2026-10-07 측정 시 미리보기 서버 처리 약 4~5초(시트 1~1.7초·링크 70여 건 약 1.5초·후보 검색 0.5~1초)이며 v112와 결과가 같았습니다.
 
 v2.8.0 배포 후 읽기 전용 미리보기를 실제 호출해 92개 이슈(변경안 38·연결 필요 28·일치 26), 경고 0개를 확인했습니다. 조회는 약 11초 소요됐으며 `applyJiraSync`는 호출하지 않아 이슈 링크·상태는 변경하지 않았습니다. 이 수치는 당시 배포 확인 시점 기준입니다.
 
@@ -49,7 +51,7 @@ v2.8.1 업무 API v111 배포 후에도 읽기 전용 미리보기로 92개 이�
 
 - 화면의 조회기간과 무관하게 미완료 이슈 전체와 Jira 링크가 등록된 완료·반려 이슈를 확인합니다. 링크가 없는 완료·반려 이슈와 분기요청은 대상에서 제외합니다.
 - 등록된 링크는 `kic-itsd.atlassian.net/browse/프로젝트-번호`만 지원합니다. 해당 티켓은 프로젝트 사용 여부나 완료 여부와 관계없이 직접 조회합니다.
-- 링크가 없는 건은 통합일정에서 사용 중인 프로젝트의 Jira 제목·본문·레이블에 정확한 이슈번호가 있을 때만 후보를 찾습니다. 제목이 비슷한 것만으로 연결하지 않습니다.
+- 링크가 없는 건은 조회 계정이 볼 수 있는 전체 Jira 프로젝트에서 제목·본문·레이블에 정확한 이슈번호가 있을 때만 후보를 찾습니다(v2.8.4부터, 이전에는 통합일정 사용 프로젝트만). 제목이 비슷한 것만으로 연결하지 않습니다.
 - 링크를 등록할 때는 이슈번호가 Jira에 없어도 Jira 번호로 직접 조회하고 승인할 수 있습니다.
 - Jira 조회 실패·삭제·권한 부족을 완료로 취급하지 않습니다. 후보가 없는 경우에도 `확인 필요`에 남겨 직접 확인합니다.
 - 현재 요청 상한은 미연결 이슈번호 2,000개·등록된 Jira 번호 500개입니다. 상한을 넘으면 부분 결과를 저장하지 않고 조회 오류를 반환합니다.
@@ -82,18 +84,17 @@ v2.8.1 업무 API v111 배포 후에도 읽기 전용 미리보기로 92개 이�
 ## 소스와 배포 순서
 
 - 화면: `docs/index.html`, `docs/js/helpdesk-jira-sync.js`, `docs/css/helpdesk-jira-sync.css`
-- 업무 API: `backend/Code.js`의 `previewJiraSync` / `lookupJiraSync` / `applyJiraSync` / `setJiraSyncExcluded`, `backend/JiraSync.js`
-- Jira 조회 API: `jira-api/Code.js`의 `getHelpdeskJiraSyncIssues`, `jira-api/HelpdeskSync.js`
+- 업무 API: `backend/Code.js`의 `previewJiraSync` / `lookupJiraSync` / `applyJiraSync` / `setJiraSyncExcluded`, `backend/JiraSync.js`, Jira 조회 `backend/JiraSyncLookup.js`
+- 업무 API Script Properties: `JIRA_ACCOUNT_EMAIL`, `JIRA_API_TOKEN`(Jira 조회 계정). 테넌트는 `https://kic-itsd.atlassian.net`으로 고정합니다.
 
-1. `jira-api` 프로젝트를 push하고 **기존 배포 ID의 새 버전**으로 재배포합니다. 기존 Script Properties는 유지합니다.
-2. 루트의 `backend` 업무 API도 push하고 **기존 배포 ID의 새 버전**으로 재배포합니다.
-3. GitHub에 `docs` 화면 변경을 push합니다. 웹앱 URL을 바꾸지 않으면 브라우저 설정은 그대로입니다.
-4. 실제 이슈로 미리보기만 확인한 뒤 담당자가 승인한 소수 항목부터 적용합니다. 통합일정은 종전처럼 미완료 업무만 조회하는지 함께 확인합니다.
+1. 루트에서 `clasp push` 후 업무 API를 **기존 배포 ID의 새 버전**으로 재배포합니다(`clasp deploy -i <배포 ID>`).
+2. GitHub에 `docs` 화면 변경을 push합니다. 웹앱 URL을 바꾸지 않으면 브라우저 설정은 그대로입니다.
+3. 실제 이슈로 미리보기만 확인한 뒤 담당자가 승인한 소수 항목부터 적용합니다.
 
-싱크 최초 도입 시 프런트만 먼저 배포하면 새 API가 없어 싱크 모달이 오류를 표시합니다. 두 Apps Script 프로젝트가 분리되어 있으므로 최초 도입에는 양쪽을 모두 배포해야 합니다. v2.8.1의 제외 기능은 업무 API만 새 버전으로 재배포하면 됩니다. Jira 조회 API v14는 유지합니다.
+Jira 조회 API(`jira-api`)는 싱크와 무관하므로 싱크 변경 시 재배포하지 않습니다.
 
 ## 로컬 검증
 
-- `node tests/helpdesk-jira-sync.test.cjs`: 합성 시트/캐시/API/Script Properties를 사용하는 서버 회귀 테스트 25건. 팀 공통 제외·해제·다른 사용자의 오래된 적용·주소 정리 제안을 포함합니다. 운영 데이터는 읽거나 쓰지 않습니다.
+- `node tests/helpdesk-jira-sync.test.cjs`: 합성 시트/캐시/API/Script Properties를 사용하는 서버 회귀 테스트 28건. 팀 공통 제외·해제·다른 사용자의 오래된 적용·주소 정리 제안과 Jira 일괄/건별 조회·인증 실패를 포함합니다. 운영 데이터는 읽거나 쓰지 않습니다.
 - `node tests/helpdesk-jira-sync.ui.cjs <playwright 모듈 경로> [스크린샷 디렉터리]`: 합성 데이터로 모달 크기 고정·빈 목록·체크·복수 후보·직접 조회·적용·제외/해제·모의 서버 저장 공유·오류·구 API 감지·모바일 표시를 검증합니다. 실제 수정창 코드로 원본 필드 보존·취소 복귀·저장 후 재조회·실패 시 입력 유지·메인 화면 독립 동작도 확인합니다. 외부 네트워크는 차단합니다.
 - `node tests/helpdesk-jira-sync.ui.cjs <playwright 모듈 경로> --preview`: `http://127.0.0.1:8767/`에 예시 데이터 확인 화면을 엽니다. 실제 JS/CSS와 모의 API를 사용하고 운영 데이터는 수정하지 않습니다. 제외 목록은 로컬 모의 서버를 켜둔 동안에만 유지되며 실제 운영 저장은 Script Properties를 사용합니다.

@@ -197,9 +197,6 @@ function onOpen() {
     .addSeparator()
     .addItem('🔐 Gemini API 키 설정', 'setGeminiApiKey')
     .addItem('🧪 Gemini 연결 테스트', 'testGeminiConnection')
-    .addSeparator()
-    .addItem('⚙️ Jira 통합 일정 설정', 'showJiraTimelineSetup')
-    .addItem('🗓️ Jira 통합 일정 연결 테스트', 'testJiraTimelineConnection')
     .addToUi();
 }
 
@@ -370,16 +367,6 @@ function doGet(e) {
         .setMimeType(ContentService.MimeType.TEXT);
     }
 
-    if (action === 'getJiraTimelinePublicConfig') {
-      const data = getJiraTimelinePublicConfig();
-      return ContentService.createTextOutput(JSON.stringify({ success: true, data: data }))
-        .setMimeType(ContentService.MimeType.TEXT);
-    }
-
-    if (action === 'getJiraTimelineIssues') {
-      throw new Error('Jira 일정 데이터는 회사 Google 로그인 토큰을 포함한 POST 요청으로만 조회할 수 있습니다.');
-    }
-    
     if (action === 'getDevelopers') {
       const devs = getDevelopers();
       return ContentService.createTextOutput(JSON.stringify({ success: true, data: devs }))
@@ -441,9 +428,6 @@ function doPost(e) {
       result = { success: true, data: applyHelpdeskJiraSync(data) };
     } else if (action === 'setJiraSyncExcluded') {
       result = { success: true, data: setHelpdeskJiraSyncExcluded(data) };
-    } else if (action === 'getJiraTimelineIssues') {
-      const stats = getJiraTimelineIssuesForWeb(data.googleIdToken);
-      result = { success: true, data: stats };
     } else if (action === 'addIssue') {
       const stats = addIssueFromDashboard(data);
       result = { success: true, data: stats };
@@ -750,8 +734,9 @@ function callGeminiJsonFastFromServer(contents) {
   for (let i = 0; i < models.length; i++) {
     const model = models[i];
     const url = 'https://generativelanguage.googleapis.com/' + GEMINI_API_VERSION + '/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
+    // 본문(details)은 최대 4,000자까지 받으므로 한글 장문 게시글도 잘리지 않도록 여유를 둡니다.
     const generationConfig = {
-      maxOutputTokens: 900,
+      maxOutputTokens: 4096,
       responseMimeType: 'application/json'
     };
 
@@ -787,9 +772,22 @@ function callGeminiJsonFastFromServer(contents) {
         const text = candidate && candidate.content && candidate.content.parts
           ? candidate.content.parts.map(function(part) { return part.text || ''; }).join('').trim()
           : '';
-        if (text) return text;
-        errors.push(model + ': generated JSON was empty.');
-        continue;
+        // 잘렸거나 JSON으로 읽을 수 없는 응답은 실패로 보고 다음 모델로 넘어갑니다.
+        if (candidate && candidate.finishReason === 'MAX_TOKENS') {
+          errors.push(model + ': 응답이 길어 중간에 잘렸습니다.');
+          continue;
+        }
+        if (!text) {
+          errors.push(model + ': generated JSON was empty.');
+          continue;
+        }
+        try {
+          parseGeminiJsonObject(text);
+          return text;
+        } catch (parseError) {
+          errors.push(model + ': AI 분석 결과를 JSON으로 해석하지 못했습니다.');
+          continue;
+        }
       }
 
       const apiMessage = data && data.error && data.error.message ? data.error.message : body;
@@ -805,7 +803,8 @@ function callGeminiJsonFastFromServer(contents) {
     }
   }
 
-  throw new Error('게시판 캡처 분석에 실패했습니다. 마지막 에러: ' + (errors[errors.length - 1] || '알 수 없는 오류'));
+  // 모델별 실패 이유를 모두 보여줘야 사용량 한도(429)인지 응답 문제인지 구분할 수 있습니다.
+  throw new Error('게시판 캡처 분석에 실패했습니다. ' + (errors.map(function(message) { return message.slice(0, 160); }).join(' / ') || '알 수 없는 오류'));
 }
 
 function parseGeminiJsonObject(text) {

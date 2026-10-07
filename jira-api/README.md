@@ -16,11 +16,9 @@
 
 배포 후 발급된 `/exec` URL을 `docs/js/config.js`의 `JIRA_TIMELINE_API_URL`에 입력합니다. 이 공개 프로젝트에는 Jira 조회 외 다른 업무 API를 추가하지 않습니다.
 
-## 헬프데스크 싱크용 조회 (v2.8.0 · 2026-10-01, 서버 v14 배포 완료)
+## 헬프데스크 싱크 (v17 · 2026-10-07 분리)
 
-`getHelpdeskJiraSyncIssues`는 업무 API에서 전달한 Jira 번호와 이슈번호를 조회합니다. Jira 번호 직접 조회에는 완료 티켓과 사용 해제된 프로젝트도 포함하며, 미연결 건의 후보 검색은 `사용` 설정된 프로젝트를 대상으로 합니다. 후보는 제목·본문·레이블의 정확한 `IT-YYMMDD-NNN` 참조로만 연결하고 제목 유사도는 사용하지 않습니다. 댓글·첨부·커스텀 필드만의 참조는 자동 연결 대상이 아닙니다.
-
-이 API는 Jira 데이터를 변경하지 않습니다. 승인한 변경안을 헬프데스크 시트에 저장하는 작업은 별도 업무 API의 `applyJiraSync`에서 수행합니다. 웹앱 배포 ID나 Jira 테넌트가 바뀌면 `backend/JiraSync.js`의 조회 URL/테넌트도 함께 수정해야 합니다. [전체 운영 및 배포 기준](../HELPDESK_JIRA_SYNC.md)을 참고하세요.
+헬프데스크 Jira 싱크 조회는 v2.8.4부터 업무 API(`backend/JiraSyncLookup.js`)가 Jira를 직접 호출합니다. Apps Script 간 호출에서 요청 본문이 간헐적으로 유실되어 이 프로젝트의 `getHelpdeskJiraSyncIssues`는 v17에서 제거했습니다. 이 프로젝트는 통합일정 전용입니다. [싱크 운영 기준](../HELPDESK_JIRA_SYNC.md)을 참고하세요.
 
 ## 일정 제외 운영 기준
 

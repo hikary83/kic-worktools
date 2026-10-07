@@ -42,10 +42,8 @@ function setup(rows, issues = [], warnings = [], properties = new Map()) {
     PropertiesService: { getScriptProperties: () => ({ getProperties: () => Object.fromEntries(properties),
       getProperty: key => properties.get(key), setProperty: (key, value) => properties.set(key, value),
       deleteProperty: key => properties.delete(key) }) },
-    UrlFetchApp: { fetch: (url, options) => {
-      calls.push({ url, payload: JSON.parse(options.payload) });
-      return { getResponseCode: () => 200, getContentText: () => JSON.stringify({ success: true, data: { issues, warnings } }) };
-    } }
+    // Jira 직접 조회는 아래 별도 테스트에서 검증하고, 여기서는 조회 결과만 주입합니다.
+    getHelpdeskJiraSyncIssues_: data => { calls.push({ payload: { data } }); return JSON.parse(JSON.stringify({ issues, warnings })); }
   });
   vm.runInContext(fs.readFileSync(path.join(root, 'backend/JiraSync.js'), 'utf8'), context);
   return { context, rows, cache, writes, calls, properties,
@@ -61,7 +59,7 @@ test('미리보기는 시트 쓰기 없이 완료 티켓을 제안한다', () =>
   const preview = fixture.preview();
   assert.equal(fixture.writes.length, 0);
   assert.equal(preview.rows[0].candidates[0].changes.find(change => change.field === 'status').to, '완료');
-  assert.deepEqual(fixture.calls[0].payload.data.issueKeys, ['ITM-1']);
+  assert.deepEqual(Array.from(fixture.calls[0].payload.data.issueKeys), ['ITM-1']);
 });
 test('연결 후보는 정확한 이슈번호만 사용하고 복수 후보를 보존한다', () => {
   const fixture = setup([record('IT-261001-001'), record('IT-261001-002')], [
@@ -283,24 +281,68 @@ test('외부 테넌트 링크/모르는 상태를 자동 판단하지 않는다'
   assert.equal(ctx.helpdeskJiraStatus_({ status: 'Cancelled', category: 'done' }), '반려');
 });
 
-test('Jira 전용 조회는 Done 필터 없이 페이지를 읽고 ADF/레이블의 이슈번호를 추출한다', () => {
-  const requests = [];
+// 업무 API의 Jira 직접 조회(backend/JiraSyncLookup.js). handler(path, payload)가 [응답코드, 본문]을 돌려줍니다.
+function loadLookup(handler, properties = { JIRA_ACCOUNT_EMAIL: 'test@example.test', JIRA_API_TOKEN: 'test' }) {
+  const requests = [], fetchAllCalls = [];
   const context = vm.createContext({
-    requiredProperties_: () => [], getJiraConfig_: () => ({ baseUrl: origin, email: 'test', apiToken: 'test' }),
-    getProjectSettings_: () => [{ key: 'ITM', enabled: true }],
-    jiraRequest_: (_, url, options) => {
-      requests.push({ url, options });
-      return { isLast: true, issues: [{ key: 'ITM-1', fields: { summary: '완료 업무', labels: ['IT-261001-002'],
-        description: { content: [{ content: [{ text: '관련 이슈 IT-261001-001' }] }] }, status: { name: '완료', statusCategory: { key: 'done' } } } }] };
-    }, Utilities: { base64Encode: value => value }, UrlFetchApp: { fetchAll: () => [] }
+    HELPDESK_JIRA_SYNC_ORIGIN: origin, Utilities: { base64Encode: value => value },
+    PropertiesService: { getScriptProperties: () => ({ getProperty: key => properties[key] }) },
+    UrlFetchApp: {
+      fetch: (url, options) => {
+        const payload = JSON.parse(options.payload);
+        requests.push({ url, payload });
+        const [code, body] = handler(url.slice(origin.length), payload);
+        return { getResponseCode: () => code, getContentText: () => JSON.stringify(body) };
+      },
+      fetchAll: list => { fetchAllCalls.push(list.length); return list.map(request => {
+        const key = request.url.match(/issue\/([^?]+)/)[1];
+        return key === 'ITM-404' ? { getResponseCode: () => 404 } : { getResponseCode: () => 200,
+          getContentText: () => JSON.stringify({ key, fields: { summary: '건별', status: { name: '완료', statusCategory: { key: 'done' } } } }) };
+      }); }
+    }
   });
-  vm.runInContext(fs.readFileSync(path.join(root, 'jira-api/HelpdeskSync.js'), 'utf8'), context);
-  const result = context.getHelpdeskJiraSyncIssues_({ issueNumbers: ['IT-261001-001'] });
+  vm.runInContext(fs.readFileSync(path.join(root, 'backend/JiraSyncLookup.js'), 'utf8'), context);
+  return { lookup: data => context.getHelpdeskJiraSyncIssues_(data), requests, fetchAllCalls };
+}
+const keys105 = Array.from({ length: 105 }, (_, i) => 'ITM-' + (i + 1)).concat('ITM-404');
+
+test('후보 검색은 프로젝트 제한·Done 필터 없이 Jira를 직접 조회하고 ADF/레이블의 이슈번호를 추출한다', () => {
+  const { lookup, requests } = loadLookup(() => [200, { isLast: true, issues: [{ key: 'ITM-1', fields: { summary: '완료 업무', labels: ['IT-261001-002'],
+    description: { content: [{ content: [{ text: '관련 이슈 IT-261001-001' }] }] }, status: { name: '완료', statusCategory: { key: 'done' } } } }] }]);
+  const result = lookup({ issueNumbers: ['IT-261001-001'] });
   assert.equal(result.issues[0].category, 'done');
+  assert.equal(result.issues[0].url, origin + '/browse/ITM-1');
   assert.deepEqual(Array.from(result.issues[0].issueNumbers).sort(), ['IT-261001-001', 'IT-261001-002']);
-  assert.equal(requests[0].url, '/rest/api/3/search/jql');
-  assert.ok(!requests[0].options.payload.jql.includes('statusCategory'));
-  assert.ok(requests[0].options.payload.jql.includes('text ~ "\\"IT-261001-001\\""'));
+  assert.equal(requests[0].url, origin + '/rest/api/3/search/jql');
+  assert.ok(!requests[0].payload.jql.includes('statusCategory'));
+  assert.ok(!requests[0].payload.jql.includes('project'));
+  assert.ok(requests[0].payload.jql.includes('text ~ "\\"IT-261001-001\\""'));
+});
+test('등록된 Jira 번호는 100건씩 일괄 조회하고 응답에 없는 번호는 조회 실패로 남긴다', () => {
+  const { lookup, requests, fetchAllCalls } = loadLookup((_, payload) => [200, { issues: payload.issueIdsOrKeys.filter(key => key !== 'ITM-404')
+    .map(key => ({ key, fields: { summary: '일괄', status: { name: '진행 중', statusCategory: { key: 'indeterminate' } } } })) }]);
+  const result = lookup({ issueKeys: keys105 });
+  assert.equal(requests.length, 2);
+  assert.equal(requests[0].url, origin + '/rest/api/3/issue/bulkfetch');
+  assert.equal(requests[0].payload.issueIdsOrKeys.length, 100);
+  assert.equal(fetchAllCalls.length, 0);
+  assert.equal(result.keyLookup, 'bulk');
+  assert.equal(result.issues.length, 105);
+  assert.deepEqual(Array.from(result.warnings), ['ITM-404: 조회 실패 (404)']);
+});
+test('일괄 조회를 쓸 수 없으면 기존 건별 조회로 같은 결과를 만든다', () => {
+  const { lookup, fetchAllCalls } = loadLookup(() => [404, { errorMessages: ['Not found'] }]);
+  const result = lookup({ issueKeys: keys105 });
+  assert.deepEqual(fetchAllCalls, [20, 20, 20, 20, 20, 6]);
+  assert.match(result.keyLookup, /^single: Jira API 호출 실패 \(404\)/);
+  assert.equal(result.issues.length, 105);
+  assert.deepEqual(Array.from(result.warnings), ['ITM-404: 조회 실패 (404)']);
+});
+test('Jira 계정 설정이 없거나 인증에 실패하면 조회하지 않고 원인을 알린다', () => {
+  assert.throws(() => loadLookup(() => [200, {}], {}).lookup({ issueKeys: ['ITM-1'] }), /JIRA_ACCOUNT_EMAIL/);
+  const denied = loadLookup(() => [401, {}]);
+  assert.throws(() => denied.lookup({ issueKeys: ['ITM-1'] }), /API 토큰/);
+  assert.equal(denied.fetchAllCalls.length, 0);
 });
 
 console.log(`\n${passed} tests passed. No live API or spreadsheet writes.`);

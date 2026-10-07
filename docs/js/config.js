@@ -52,13 +52,14 @@ async function callGASApi(action, data = {}) {
     const rawText = await response.text();
     const result = JSON.parse(rawText);
     if (!result.success) {
-      throw new Error(result.error || "API execution failed");
+      // error 없이 실패하면 요청 본문이 유실되어 doGet 안내 응답을 받은 경우입니다(처리 지연 시 발생).
+      throw new Error(result.error || "서버 응답이 지연되어 요청이 처리되지 않았습니다. 잠시 후 다시 시도해 주세요.");
     }
 
     return result.data;
   } catch (error) {
-    // 싱크는 미리보기 토큰/선택값이 필수입니다. 파라미터 없는 GET으로 재시도하지 않습니다.
-    if (['previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded'].includes(action)) throw error;
+    // GET 재시도는 doGet이 같은 결과를 주는 단순 조회만 합니다. 분석·저장·싱크는 재시도하지 않습니다.
+    if (!['getDashboardData', 'getDevelopers', 'getBlogPostPlans'].includes(action)) throw error;
     console.warn("POST call failed, trying GET fallback for:", action, error);
     
     // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도
