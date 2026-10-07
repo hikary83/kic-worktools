@@ -32,8 +32,8 @@
   <link href="css/kic-theme.css" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.8.4"></script>
-  <script src="js/kic-sidebar.js?v=2.8.4"></script>
+  <script src="js/config.js?v=2.8.5"></script>
+  <script src="js/kic-sidebar.js?v=2.8.5"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.3" defer></script>
@@ -2532,7 +2532,7 @@
           .catch(err => {
               setEditAiReplyLoading(false);
               status.textContent = '답변 생성 실패: ' + ((err && err.message) || String(err));
-              status.className = 'text-[11px] text-red-600 mt-0.5 font-bold';
+              status.className = 'text-xs text-red-600 mt-1 font-bold whitespace-pre-line break-words';
           });
     }
 
@@ -2678,7 +2678,7 @@
         const el = document.getElementById('add-capture-status');
         if (!el) return;
         el.textContent = message || '';
-        el.className = 'text-xs font-bold ml-1 ' + (type === 'ok' ? 'text-emerald-600' : type === 'err' ? 'text-red-600' : type === 'work' ? 'text-blue-600' : 'text-slate-500');
+        el.className = 'text-xs font-bold ml-1 whitespace-pre-line break-words ' + (type === 'ok' ? 'text-emerald-600' : type === 'err' ? 'text-red-600' : type === 'work' ? 'text-blue-600' : 'text-slate-500');
     }
 
     function setAddCaptureWarnings(warnings) {
