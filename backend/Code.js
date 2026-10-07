@@ -23,8 +23,10 @@ const DEV_LIST_PROPERTY = "DEV_LIST_DATA";
 // [v15 성능 개선] 이슈 ID 일자별 마지막 순번 캐시 키
 const ISSUE_SEQ_PROPERTY_PREFIX = "HELPDESK_ISSUE_SEQ_";
 
-// [v16.11] 헬프데스크 답변은 일반 생성과 정교한 재생성의 모델 경로를 분리합니다.
+// [v2.8.7] 기본 답변은 3.8 Flash를 우선 사용하고, 실패 시 기존 모델 경로로 전환합니다.
+// fast/precise 구분은 화면과의 호환을 유지하며, 정교한 재생성 설정은 변경하지 않습니다.
 const GEMINI_REPLY_FAST_MODELS = [
+  "gemini-3.8-flash",
   "gemini-3.5-flash-lite",
   "gemini-3.5-flash",
   "gemini-2.5-flash-lite"
@@ -710,7 +712,7 @@ ${draftAnswer}
     if (data) parts.push({ inlineData: { mimeType: mimeType, data: data } });
   });
 
-  // 일반 생성은 저지연 Lite, 정교한 재생성은 최신 Flash를 우선 사용합니다.
+  // 두 화면의 기본 답변은 3.8 Flash, 정교한 재생성은 기존 3.7 Flash 경로를 사용합니다.
   const generated = callGeminiFastFromServer([{ role: 'user', parts: parts }], replyMode);
   const result = enforceHelpdeskReplyFormat(generated.text);
   return { success: true, text: result, mode: replyMode, model: generated.model };
@@ -947,7 +949,9 @@ function callGeminiFastFromServer(contents, mode) {
     const url = 'https://generativelanguage.googleapis.com/' + GEMINI_API_VERSION + '/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
     const generationConfig = { maxOutputTokens: replyMode === 'precise' ? 1800 : 1400 };
     if (model.indexOf('gemini-3') === 0) {
-      generationConfig.thinkingConfig = { thinkingLevel: model.indexOf('gemini-3.7') === 0 ? 'low' : 'minimal' };
+      // 3.8 Flash는 minimal을 지원하지 않으므로 지원되는 최소 단계인 low로 호출합니다.
+      const thinkingLevel = /^gemini-3\.(7|8)-/.test(model) ? 'low' : 'minimal';
+      generationConfig.thinkingConfig = { thinkingLevel: thinkingLevel };
     } else {
       generationConfig.temperature = 0.18;
       generationConfig.topP = 0.8;
