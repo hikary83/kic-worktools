@@ -71,6 +71,37 @@ async function main() {
     assert.doesNotMatch(await panel.innerText(),/목록을 확인한 뒤/);
     assert.deepEqual(errors,[]);
     console.log('PASS 느린 성공도 진단 가능하며 기존 성공 결과를 유지한다');
+    await page.evaluate(async()=>{
+      const originalNow=Date.now;let now=originalNow();Date.now=()=>now;
+      window.fetch=async(url,options)=>{
+        now+=16000;const request=JSON.parse(options.body);
+        return {status:200,ok:true,text:async()=>JSON.stringify({success:true,data:{success:true,data:{title:'secret-title'}},
+          diagnostics:{schema:1,requestId:request.requestId,method:'POST',elapsedMs:14000,stage:'capture_normalize',stages:[],
+            ai:{task:'capture',attempts:[
+              {model:'gemini-3.5-flash-lite',elapsedMs:3000,upstreamMs:2990,httpStatus:503,outcome:'failure',code:'AI_HTTP_ERROR',apiStatus:'UNAVAILABLE',reason:'secret-error'},
+              {model:'gemini-2.5-flash-lite',elapsedMs:11000,upstreamMs:10980,httpStatus:200,outcome:'success',code:'OK',finishReason:'STOP'}]}}})};
+      };
+      try {const result=await callGASApi('analyzeCapture',{images:['secret-image']});if(result.data.title!=='secret-title')throw Error('changed result');}
+      finally {Date.now=originalNow;}
+    });
+    assert.match(await panel.innerText(),/캡처 분석 지연 후 완료/);
+    assert.match(await panel.innerText(),/사용 모델: gemini-2.5-flash-lite.*모델 전환 1회/);
+    assert.match(await panel.innerText(),/gemini-3.5-flash-lite.*3.0초.*외부 API 일시 오류/);
+    const captureBox=await panel.boundingBox();assert.ok(captureBox.x>=15&&captureBox.x+captureBox.width<=360&&captureBox.y+captureBox.height<=740);
+    await panel.getByRole('button',{name:'진단 로그 복사',exact:true}).click();
+    const captureLog=JSON.parse(await page.evaluate(()=>navigator.clipboard.readText()));
+    assert.equal(captureLog.version,'v2.8.9');assert.equal(captureLog.records.at(-1).server.ai.attemptCount,2);
+    assert.equal(captureLog.records.at(-1).server.ai.fallbackUsed,true);assert.equal(captureLog.records.at(-1).server.ai.attempts[1].upstreamMs,10980);
+    assert.doesNotMatch(JSON.stringify(captureLog),/secret-title|secret-error|secret-image/);
+    await page.reload();assert.equal(await page.evaluate(()=>getGASDiagnostics().at(-1).server.ai.attemptCount),2);
+    console.log('PASS 캡처 모델별 시간·전환 이유·모바일 안내·안전한 복사·재접속 기록 유지');
+    await page.evaluate(async()=>{
+      window.fetch=async()=>({status:200,ok:true,text:async()=>JSON.stringify({success:false,error:'test failure'})});
+      try {await callGASApi('updateIssue',{});}catch(_){}
+    });
+    assert.equal(await page.locator('[data-ai]').isVisible(),false);
+    assert.match(await panel.innerText(),/이슈 수정 실패/);assert.doesNotMatch(await panel.innerText(),/gemini|모델 전환/);
+    assert.deepEqual(errors,[]);console.log('PASS 다른 기능의 실패 안내에 이전 캡처 모델 정보가 남지 않는다');
     await context.close();
   } finally {if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }

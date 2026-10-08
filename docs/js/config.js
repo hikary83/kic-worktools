@@ -50,9 +50,42 @@ function safeGASDiagnosticToken(value) {
   return /^[A-Za-z0-9_.-]{1,80}$/.test(String(value || '')) ? String(value) : '';
 }
 
+function safeGASCaptureDiagnostic(value) {
+  if (!value || value.task !== 'capture' || !Array.isArray(value.attempts)) return null;
+  const codes = ['OK', 'AI_HTTP_ERROR', 'AI_INVALID_API_KEY', 'AI_AUTH_ERROR', 'AI_RESPONSE_TRUNCATED', 'AI_EMPTY_RESPONSE', 'AI_INVALID_API_RESPONSE', 'AI_INVALID_JSON', 'AI_REQUEST_ERROR', 'AI_TIMEOUT'];
+  const apiStatuses = ['INVALID_ARGUMENT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'NOT_FOUND', 'UNAUTHENTICATED', 'PERMISSION_DENIED', 'INTERNAL', 'DEADLINE_EXCEEDED', 'UNKNOWN'];
+  const time = n => Number.isFinite(n) && n >= 0 ? Math.min(n, 3600000) : null;
+  const attempts = value.attempts.slice(0, 8).filter(item => item && typeof item.model === 'string' && /^gemini-\d+(?:\.\d+)?-(?:flash(?:-lite)?|pro)$/.test(item.model)).map(item => {
+    const code = codes.includes(item.code) && (item.code !== 'OK' || item.outcome === 'success') ? item.code : 'AI_REQUEST_ERROR';
+    const httpStatus = Number.isInteger(item.httpStatus) && item.httpStatus >= 100 && item.httpStatus <= 599 ? item.httpStatus : null;
+    return { model: item.model, elapsedMs: time(item.elapsedMs), upstreamMs: time(item.upstreamMs), httpStatus,
+      outcome: item.outcome === 'success' && code === 'OK' ? 'success' : 'failure', code,
+      // 이유는 허용된 코드로 새로 작성합니다. 외부 오류 원문이나 임의 문자열은 저장하지 않습니다.
+      reason: getGASCaptureFailureReason(code, httpStatus),
+      apiStatus: apiStatuses.includes(item.apiStatus) ? item.apiStatus : '',
+      finishReason: ['STOP', 'MAX_TOKENS'].includes(item.finishReason) ? item.finishReason : '' };
+  });
+  const selected = attempts.find(item => item.outcome === 'success');
+  return { task: 'capture', selectedModel: selected ? selected.model : '', attemptCount: attempts.length,
+    fallbackUsed: attempts.length > 1,
+    totalElapsedMs: Math.min(attempts.reduce((total, item) => total + (item.elapsedMs || 0), 0), 3600000), attempts };
+}
+
+function getGASCaptureFailureReason(code, httpStatus) {
+  if (code === 'AI_HTTP_ERROR') {
+    if (httpStatus === 429) return '호출 한도 초과(HTTP 429)';
+    if (httpStatus === 503) return '외부 API 일시 오류(HTTP 503)';
+    return httpStatus ? '외부 API 오류(HTTP ' + httpStatus + ')' : '외부 API 오류';
+  }
+  return { OK: '완료', AI_INVALID_API_KEY: 'API 키 인증 실패', AI_AUTH_ERROR: '인증/접근 권한 오류',
+    AI_RESPONSE_TRUNCATED: '출력 길이 제한으로 응답 잘림', AI_EMPTY_RESPONSE: '분석 응답 비어 있음',
+    AI_INVALID_API_RESPONSE: '외부 API 응답 형식 오류', AI_INVALID_JSON: '분석 결과 JSON 해석 실패',
+    AI_REQUEST_ERROR: '외부 API 호출/응답 처리 예외', AI_TIMEOUT: '외부 API 호출 시간초과' }[code] || '원인 미확인';
+}
+
 function safeGASServerDiagnostic(value) {
   if (!value || value.schema !== 1 || !Number.isFinite(value.elapsedMs) || value.elapsedMs < 0) return null;
-  return {
+  const safe = {
     requestId: /^kic-[a-z0-9-]{10,70}$/.test(value.requestId) ? value.requestId : '',
     method: ['POST', 'GET'].includes(value.method) ? value.method : '',
     elapsedMs: Math.min(value.elapsedMs, 3600000),
@@ -63,6 +96,9 @@ function safeGASServerDiagnostic(value) {
       elapsedMs: Number.isFinite(item && item.elapsedMs) ? Math.max(0, Math.min(item.elapsedMs, 3600000)) : 0
     }))
   };
+  const ai = safeGASCaptureDiagnostic(value.ai);
+  if (ai) safe.ai = ai;
+  return safe;
 }
 
 function sanitizeGASDiagnostic(record) {
@@ -98,7 +134,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.8.8', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.8.9', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 
@@ -110,7 +146,7 @@ function showGASDiagnosticNotice(record) {
     panel.id = 'kic-api-diagnostic-notice';
     panel.setAttribute('aria-label', '요청 진단 로그');
     panel.style.cssText = 'position:fixed;right:16px;bottom:16px;z-index:100000;box-sizing:border-box;max-width:min(430px,calc(100vw - 32px));padding:14px;border:1px solid #64748b;border-radius:12px;background:#1e293b;color:#fff;box-shadow:0 8px 28px #0005;font:13px/1.5 sans-serif;';
-    panel.innerHTML = '<div data-summary role="status"></div><div data-note style="color:#cbd5e1;margin-top:4px"></div><div style="display:flex;gap:8px;margin-top:10px"><button type="button" data-copy style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">진단 로그 복사</button><button type="button" data-close style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">닫기</button></div>';
+    panel.innerHTML = '<div data-summary role="status"></div><div data-note style="color:#cbd5e1;margin-top:4px"></div><div data-ai hidden style="white-space:pre-line;overflow-wrap:anywhere;color:#cbd5e1;margin-top:7px;font-size:12px"></div><div style="display:flex;gap:8px;margin-top:10px"><button type="button" data-copy style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">진단 로그 복사</button><button type="button" data-close style="padding:6px 12px;border:1px solid #94a3b8;border-radius:7px;cursor:pointer">닫기</button></div>';
     panel.querySelector('[data-copy]').onclick = async function () {
       try { await copyGASDiagnostics(); this.textContent = '복사 완료'; }
       catch (_) { this.textContent = '복사 권한을 확인해 주세요'; }
@@ -122,6 +158,12 @@ function showGASDiagnosticNotice(record) {
   const failed = record.outcome === 'failure';
   panel.querySelector('[data-summary]').textContent = (names[record.action] || '서버 요청') + (failed ? ' 실패' : ' 지연 후 완료') + ' · ' + (record.httpStatus ? 'HTTP ' + record.httpStatus + ' · ' : '') + (record.elapsedMs / 1000).toFixed(1) + '초';
   panel.querySelector('[data-note]').textContent = failed && GAS_WRITE_ACTIONS.has(record.action) ? '응답 실패만으로 저장 여부를 단정할 수 없습니다. 목록을 확인한 뒤 다시 시도해 주세요.' : '로그를 복사해 보내주면 실패 단계와 지연 시간을 확인할 수 있어요.';
+  const ai = record.action === 'analyzeCapture' ? safeGASCaptureDiagnostic(record.server && record.server.ai) : null;
+  const aiInfo = panel.querySelector('[data-ai]');
+  aiInfo.hidden = !ai;
+  aiInfo.textContent = ai ? (ai.selectedModel ? '사용 모델: ' + ai.selectedModel : '분석 성공 모델 없음')
+    + ' · ' + (ai.attemptCount === 0 ? '모델 호출 없음' : ai.fallbackUsed ? '모델 전환 ' + (ai.attemptCount - 1) + '회' : '모델 전환 없음')
+    + '\n' + ai.attempts.map(item => item.model + ' · ' + (item.elapsedMs === null ? '시간 미확인' : (item.elapsedMs / 1000).toFixed(1) + '초') + ' · ' + item.reason).join('\n') : '';
   panel.querySelector('[data-copy]').textContent = '진단 로그 복사';
   panel.hidden = false;
 }

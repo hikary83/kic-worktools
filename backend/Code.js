@@ -381,6 +381,34 @@ function apiDiagnosticWriteStarted() {
   if (activeApiDiagnostic) activeApiDiagnostic.writeStarted = true;
 }
 
+// 캡처 모델의 시도 결과만 기록합니다. 외부 응답 원문·프롬프트·사진·키는 받지 않습니다.
+function beginCaptureApiDiagnostic() {
+  try {
+    if (activeApiDiagnostic && activeApiDiagnostic.action === 'analyzeCapture') {
+      activeApiDiagnostic.ai = { task: 'capture', selectedModel: '', attempts: [] };
+    }
+  } catch (_) { /* 진단 때문에 분석 동작이 실패하지 않도록 합니다. */ }
+}
+
+function recordCaptureModelDiagnostic(model, startedAt, detail) {
+  try {
+    const ai = activeApiDiagnostic && activeApiDiagnostic.ai;
+    if (!ai || ai.task !== 'capture' || ai.attempts.length >= 8) return;
+    const apiStatuses = ['INVALID_ARGUMENT', 'RESOURCE_EXHAUSTED', 'UNAVAILABLE', 'NOT_FOUND', 'UNAUTHENTICATED', 'PERMISSION_DENIED', 'INTERNAL', 'DEADLINE_EXCEEDED', 'UNKNOWN'];
+    ai.attempts.push({
+      model: model,
+      elapsedMs: Math.max(0, Date.now() - startedAt),
+      upstreamMs: detail.upstreamMs,
+      httpStatus: detail.httpStatus,
+      outcome: detail.code === 'OK' ? 'success' : 'failure',
+      code: detail.code,
+      apiStatus: apiStatuses.indexOf(detail.apiStatus) !== -1 ? detail.apiStatus : '',
+      finishReason: ['STOP', 'MAX_TOKENS'].indexOf(detail.finishReason) !== -1 ? detail.finishReason : ''
+    });
+    if (detail.code === 'OK') ai.selectedModel = model;
+  } catch (_) { /* 모델의 성공/실패/전환 정책은 진단과 무관하게 유지합니다. */ }
+}
+
 function finishApiDiagnostic(result) {
   if (activeApiDiagnostic) {
     const d = activeApiDiagnostic;
@@ -391,6 +419,14 @@ function finishApiDiagnostic(result) {
       writeStarted: d.writeStarted,
       stages: d.stages.concat([{stage: d.stage, elapsedMs: Math.max(0, now - d.stageStartedAt)}]).slice(-20)
     };
+    if (d.ai) {
+      diagnostic.ai = {
+        task: 'capture', selectedModel: d.ai.selectedModel,
+        attemptCount: d.ai.attempts.length, fallbackUsed: d.ai.attempts.length > 1,
+        totalElapsedMs: d.ai.attempts.reduce(function(total, attempt) { return total + attempt.elapsedMs; }, 0),
+        attempts: d.ai.attempts.slice()
+      };
+    }
     result.diagnostics = diagnostic;
     // 시트/Properties에 로그를 기록하지 않아 추가 서비스 대기를 만들지 않습니다.
     try { console.log(JSON.stringify({event: 'kic_api_request', success: result.success === true, code: result.code || (result.success === true ? 'OK' : 'API_EXECUTION_ERROR'), diagnostics: diagnostic})); } catch (_) {}
@@ -721,6 +757,8 @@ ${draftAnswer}
 // [v16.10] 게시판 캡처 이미지를 분석해 새 이슈 등록 폼에 자동 입력할 데이터를 반환합니다.
 // 제목은 AI가 다듬지 않고 캡처의 게시글 제목 원문을 그대로 사용합니다.
 function analyzeHelpdeskCapture(payload) {
+  beginCaptureApiDiagnostic();
+  markApiDiagnosticStage('capture_prepare');
   payload = payload || {};
   const images = Array.isArray(payload.images) ? payload.images.slice(0, 3) : [];
   if (images.length === 0) throw new Error('분석할 게시판 캡처 이미지를 붙여넣어 주세요.');
@@ -768,7 +806,9 @@ function analyzeHelpdeskCapture(payload) {
     if (data) parts.push({ inlineData: { mimeType: mimeType, data: data } });
   });
 
+  markApiDiagnosticStage('capture_models');
   const raw = callGeminiJsonFastFromServer([{ role: 'user', parts: parts }]);
+  markApiDiagnosticStage('capture_normalize');
   const parsed = parseGeminiJsonObject(raw);
   const normalized = normalizeHelpdeskCaptureResult(parsed);
   return { success: true, data: normalized };
@@ -805,51 +845,73 @@ function callGeminiJsonFastFromServer(contents) {
       contents: contents
     };
 
+    const modelStartedAt = Date.now();
+    const modelDiagnostic = { upstreamMs: null, httpStatus: null, code: 'AI_REQUEST_ERROR', apiStatus: '', finishReason: '' };
+    let fetchStartedAt;
     try {
+      fetchStartedAt = Date.now();
       const response = UrlFetchApp.fetch(url, {
         method: 'post',
         contentType: 'application/json',
         muteHttpExceptions: true,
         payload: JSON.stringify(payload)
       });
+      modelDiagnostic.upstreamMs = Math.max(0, Date.now() - fetchStartedAt);
       const status = response.getResponseCode();
+      modelDiagnostic.httpStatus = status;
       const body = response.getContentText();
       let data;
-      try { data = JSON.parse(body); } catch (e) { data = {}; }
+      let bodyIsJson = true;
+      try { data = JSON.parse(body); } catch (e) { data = {}; bodyIsJson = false; }
+      modelDiagnostic.apiStatus = data && data.error && data.error.status;
 
       if (status >= 200 && status < 300) {
         const candidate = data.candidates && data.candidates[0];
+        modelDiagnostic.finishReason = candidate && candidate.finishReason;
         const text = candidate && candidate.content && candidate.content.parts
           ? candidate.content.parts.map(function(part) { return part.text || ''; }).join('').trim()
           : '';
         // 잘렸거나 JSON으로 읽을 수 없는 응답은 실패로 보고 다음 모델로 넘어갑니다.
         if (candidate && candidate.finishReason === 'MAX_TOKENS') {
+          modelDiagnostic.code = 'AI_RESPONSE_TRUNCATED';
           errors.push(model + ': 응답이 길어 중간에 잘렸습니다.');
           continue;
         }
         if (!text) {
+          modelDiagnostic.code = bodyIsJson ? 'AI_EMPTY_RESPONSE' : 'AI_INVALID_API_RESPONSE';
           errors.push(model + ': generated JSON was empty.');
           continue;
         }
         try {
           parseGeminiJsonObject(text);
+          modelDiagnostic.code = 'OK';
           return text;
         } catch (parseError) {
+          modelDiagnostic.code = 'AI_INVALID_JSON';
           errors.push(model + ': AI 분석 결과를 JSON으로 해석하지 못했습니다.');
           continue;
         }
       }
 
       const apiMessage = data && data.error && data.error.message ? data.error.message : body;
+      modelDiagnostic.code = 'AI_HTTP_ERROR';
       if (status === 400 && String(apiMessage).toLowerCase().indexOf('api key not valid') !== -1) {
+        modelDiagnostic.code = 'AI_INVALID_API_KEY';
         throw new Error('Gemini API 키가 유효하지 않습니다.');
       }
-      if (status === 401 || status === 403) throw new Error('인증 오류: ' + apiMessage);
+      if (status === 401 || status === 403) {
+        modelDiagnostic.code = 'AI_AUTH_ERROR';
+        throw new Error('인증 오류: ' + apiMessage);
+      }
       errors.push(model + ': HTTP ' + status + ' - ' + apiMessage);
     } catch (error) {
       const message = String(error.message || error);
+      if (modelDiagnostic.upstreamMs === null && fetchStartedAt !== undefined) modelDiagnostic.upstreamMs = Math.max(0, Date.now() - fetchStartedAt);
+      if (modelDiagnostic.code === 'AI_REQUEST_ERROR' && /timed?\s*out|timeout/i.test(message)) modelDiagnostic.code = 'AI_TIMEOUT';
       if (message.indexOf('Gemini API 키') !== -1 || message.indexOf('인증 오류') !== -1) throw error;
       errors.push(model + ': ' + message);
+    } finally {
+      recordCaptureModelDiagnostic(model, modelStartedAt, modelDiagnostic);
     }
   }
 
