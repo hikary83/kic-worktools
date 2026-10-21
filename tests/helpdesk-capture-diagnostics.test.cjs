@@ -103,7 +103,7 @@ function clientFixture(serverResult,existingStorage){
 test('서버 모델 진단이 저장·복사·새로고침 이후에도 유지됨',async()=>{
   const result=setup([jsonError(429,'RESOURCE_EXHAUSTED'),response()]).request(),f=clientFixture(result);
   const data=await f.context.callGASApi('analyzeCapture',{images});assert.equal(data.data.title,'private-title');
-  await f.context.copyGASDiagnostics();const log=JSON.parse(f.copied);assert.equal(log.version,'v2.9.0');
+  await f.context.copyGASDiagnostics();const log=JSON.parse(f.copied);assert.equal(log.version,'v2.9.1');
   const ai=log.records[0].server.ai;assert.equal(ai.selectedModel,'gemini-2.5-flash-lite');assert.equal(ai.fallbackUsed,true);
   assert.equal(ai.attempts[0].reason,'호출 한도 초과(HTTP 429)');assert.doesNotMatch(f.copied,/secret|private-title|private-body|private-staff|private-error/);
   const reload=clientFixture(result,f.storage);

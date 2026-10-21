@@ -7,7 +7,8 @@
   <meta http-equiv="Cache-Control" content="no-cache,no-store,must-revalidate">
   <title>CWIZ 이용·운영 분석</title>
   <link rel="icon" href="./favicon.svg" type="image/svg+xml">
-  <link rel="stylesheet" href="./assets/usage.css">
+  <link rel="stylesheet" href="./assets/usage.css?v=2.9.1">
+  <link rel="stylesheet" href="./assets/classic.css?v=2.9.1">
 </head>
 <body>
   <svg class="symbols" aria-hidden="true"><defs>
@@ -19,21 +20,31 @@
     <symbol id="i-info" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 11v6m0-10h.01"/></symbol>
     <symbol id="i-print" viewBox="0 0 24 24"><path d="M6 8V3h12v5M6 18H3v-8h18v8h-3M6 14h12v7H6z"/></symbol>
     <symbol id="i-arrow" viewBox="0 0 24 24"><path d="M5 12h14m-5-5 5 5-5 5"/></symbol>
+    <symbol id="i-save" viewBox="0 0 24 24"><path d="M4 3h13l4 4v14H3V3zM7 3v6h10V3M7 21v-8h10v8"/></symbol>
+    <symbol id="i-calendar" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="2"/><path d="M8 3v4m8-4v4M3 10h18"/></symbol>
   </defs></svg>
+  <header class="topbar">
+    <div class="brand"><span class="brand-symbol"><svg><use href="#i-chart"/></svg></span><div class="brand-copy"><strong>CWIZ Enterprise</strong><span>USAGE &amp; OPERATION ANALYTICS</span></div></div>
+    <div class="top-actions"><button class="top-btn" id="criteriaBtn"><svg><use href="#i-info"/></svg><span>통계 기준</span></button><button class="top-btn" id="reportModeBtn"><svg><use href="#i-chart"/></svg><span>보고 모드</span></button><button class="top-btn" id="printBtn" disabled><svg><use href="#i-print"/></svg><span>요약 PDF</span></button></div>
+  </header>
   <main class="workspace">
     <header class="page-head">
-      <div class="heading"><span class="brand-icon"><svg><use href="#i-chart"/></svg></span><div><p class="eyebrow">CWIZ ENTERPRISE · USAGE ANALYTICS</p><h1>이용·운영 분석</h1><p class="subtitle">고객 계정의 이용 신호와 내부 운영지원을 구분해 확인합니다.</p></div></div>
-      <div class="head-actions"><span class="draft-label">로그 기반 분석</span><button class="button quiet" id="criteriaBtn"><svg><use href="#i-info"/></svg>집계 기준</button><button class="button primary" id="printBtn" disabled><svg><use href="#i-print"/></svg>요약 PDF</button></div>
+      <div class="heading"><span class="heading-accent"></span><div><h1>CWIZ Enterprise 이용·운영 분석</h1><p class="subtitle">고객 계정의 이용 신호와 내부 운영지원을 구분해 확인합니다.</p></div></div>
+      <div class="page-meta"><span><svg><use href="#i-calendar"/></svg>기준일 <b id="basisDate">—</b></span><span>최근 적용 <b id="appliedTime">—</b></span></div>
     </header>
     <section class="upload-card" id="uploadCard" aria-label="로그 파일 업로드">
-      <div class="upload-line"><div class="upload-heading"><span class="soft-icon"><svg><use href="#i-upload"/></svg></span><div><h2>로그 엑셀로 분석 시작</h2><p>파일명이 같아도 컬럼으로 구분합니다. 필요한 로그만 선택해도 분석할 수 있어요.</p></div></div><div class="inline-actions"><button class="button quiet" id="resetBtn">분석 초기화</button><label class="button primary file-picker" id="filePicker">로그 파일 선택<input id="logFiles" type="file" accept=".xlsx" multiple aria-label="로그 엑셀 파일 선택"></label></div></div>
+      <div class="upload-line"><div class="upload-heading"><span class="soft-icon"><svg><use href="#i-upload"/></svg></span><div><h2>로그 Excel 데이터 관리</h2><p id="uploadSummary">Upload로 먼저 확인하고 Save로 팀 공통 자료에 반영합니다.</p></div></div><div class="inline-actions"><button class="link-btn" id="resetBtn">파일 초기화</button><button class="link-btn" id="toggleUpload" aria-expanded="true" aria-controls="uploadDetails">접기</button></div></div>
+      <div id="uploadDetails">
       <div class="drop-zone" id="dropZone" tabindex="0" role="button" aria-label="로그 파일을 놓거나 선택하세요"><svg><use href="#i-upload"/></svg><span><strong>여기에 엑셀 파일을 놓아주세요</strong><small>고객 변경·접속 / 관리자 활동·접속 / 대리로그인 / 시스템 오류</small></span><span class="format-label">.xlsx · 최대 6종</span></div>
       <div id="sourceCards" class="source-grid"></div>
-      <div class="privacy-line"><span class="local-dot"></span><span>브라우저 안에서만 분석 · 서버 전송 없음</span><label><input id="rememberData" type="checkbox">이 브라우저에 분석 데이터 보관</label></div>
+      <div class="upload-action-row"><label class="button quiet file-picker" id="filePicker">파일 선택<input id="logFiles" type="file" accept=".xlsx" multiple aria-label="로그 엑셀 파일 선택"></label><button class="button primary" id="applyBtn" disabled><svg><use href="#i-upload"/></svg>Upload</button><button class="button save-button" id="saveBtn" disabled><svg><use href="#i-save"/></svg>Save</button><button class="link-btn" id="ghTokenBtn">GitHub 토큰 설정</button><button class="link-btn reload-button" id="reloadSharedBtn">공통 자료 다시 불러오기</button></div>
+      <p class="selection-note" id="selectedFilesNote">파일을 선택한 뒤 Upload를 눌러 주세요.</p>
+      <div class="privacy-line"><span class="local-dot"></span><span>Upload는 내 화면 확인 · Save는 GitHub 공통 저장 · 새로고침 시 자동 복원</span><span class="storage-state" id="cacheState" role="status">저장 자료 대기</span></div>
+      </div>
     </section>
-    <div class="status-note" id="statusNote" role="status" aria-live="polite">파일을 선택하면 기존 운영현황 자료와 분리된 새 분석이 시작됩니다.</div>
+    <div class="status-note" id="statusNote" role="status" aria-live="polite">저장된 공통 자료를 확인하고 있습니다.</div>
     <section class="period-card" aria-label="분석 기간">
-      <div><strong>분석 기간</strong><small id="availablePeriod">아직 로그가 없습니다.</small></div><div class="period-inputs"><label>시작일<input id="periodStart" type="date" disabled></label><span>~</span><label>종료일<input id="periodEnd" type="date" disabled></label><button class="button primary" id="queryBtn" disabled>조회</button></div><div class="presets"><button data-preset="7" disabled>최근 7일</button><button data-preset="28" disabled>최근 4주</button><button data-preset="all" class="selected" disabled>파일 전체</button></div>
+      <div class="period-copy"><span class="soft-icon"><svg><use href="#i-calendar"/></svg></span><div><strong>조회기간</strong><small id="availablePeriod">아직 로그가 없습니다.</small></div></div><div class="period-inputs"><label>시작일<input id="periodStart" type="date" disabled></label><span>~</span><label>종료일<input id="periodEnd" type="date" disabled></label><button class="button primary" id="queryBtn" disabled>조회</button></div><div class="presets"><button data-preset="7" disabled>최근 7일</button><button data-preset="28" disabled>최근 4주</button><button data-preset="all" class="selected" disabled>파일 전체</button></div>
     </section>
     <nav class="tabs" role="tablist" aria-label="로그 분석 항목">
       <button id="tab-summary" role="tab" aria-selected="true" aria-controls="analysisView" data-tab="summary" class="active"><svg><use href="#i-chart"/></svg>분석 요약</button>
@@ -46,6 +57,8 @@
     <footer class="page-footer"><span>원본 행 보존 · 동일 값 반복 행 자동 삭제 안 함 · 현재 고객사 전체 대비 이용률은 산출하지 않음</span><a href="./legacy.html">기존 운영현황 열기 <span aria-hidden="true">↗</span></a></footer>
   </main>
   <dialog id="detailDialog" aria-labelledby="dialogTitle"><div class="dialog-head"><div><p class="eyebrow" id="dialogEyebrow">CWIZ ANALYSIS</p><h2 id="dialogTitle">상세 확인</h2></div><button class="icon-button" id="dialogClose" aria-label="상세 창 닫기">×</button></div><div id="dialogBody" class="dialog-body"></div></dialog>
-  <script type="module" src="./js/usage-app.mjs"></script>
+  <dialog class="settings-dialog" id="tokenDialog" aria-labelledby="tokenTitle"><div class="dialog-head"><h2 id="tokenTitle">GitHub 토큰 설정</h2><button class="icon-button" id="tokenClose" aria-label="토큰 설정 닫기">×</button></div><div class="dialog-body"><p>이전 운영현황에서 설정한 토큰을 함께 사용합니다. 저장소의 Contents 쓰기 권한이 필요합니다.</p><label for="ghTokenInput">Personal Access Token</label><input id="ghTokenInput" type="password" autocomplete="off" spellcheck="false" aria-label="GitHub 토큰"><p class="small-caption">토큰은 이 브라우저에만 보관하며 공통 자료나 GitHub 파일에 저장하지 않습니다.</p><div class="dialog-actions"><button class="button quiet" id="tokenClearBtn">토큰 삭제</button><button class="button primary" id="tokenSaveBtn">설정 저장</button></div></div></dialog>
+  <dialog class="settings-dialog" id="saveDialog" aria-labelledby="saveTitle"><div class="dialog-head"><h2 id="saveTitle">팀 공통 자료 저장</h2><button class="icon-button" id="saveClose" aria-label="공통 저장 닫기">×</button></div><div class="dialog-body"><p id="saveSummary"></p><div class="info-box amber">선택한 원본 엑셀을 GitHub 공개 저장소에 올려 다른 사람과 공유합니다. 기존 공통 자료를 이 파일 구성으로 교체합니다.</div><p class="small-caption">저장 완료 후 공동 화면 반영까지 약간의 배포 대기 시간이 있습니다. 이 브라우저에서는 방금 저장한 최신 자료를 계속 표시합니다.</p><p id="saveProgress" role="status"></p><div class="dialog-actions"><button class="button quiet" id="saveCancel">취소</button><button class="button save-button" id="saveConfirm">Save · 공통 저장</button></div></div></dialog>
+  <script type="module" src="./js/usage-app.mjs?v=2.9.1"></script>
 </body>
 </html>

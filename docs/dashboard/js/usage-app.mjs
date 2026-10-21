@@ -1,13 +1,18 @@
 import {parseXlsx} from './xlsx-reader.mjs';
 import {DEFINITIONS,readDataset,createModel,aggregate,weeklyTrend,counts,attribution,companyKey,accountKey,clean,redactSecrets} from './usage-model.mjs';
+import {fetchManifest,fetchSnapshot,publishSnapshot,sharedDecision} from './usage-sharing.mjs';
 
 const $=id=>document.getElementById(id),nf=new Intl.NumberFormat('ko-KR');
 const esc=value=>redactSecrets(value).replace(/[&<>"']/g,char=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[char]));
 const icon=id=>`<svg aria-hidden="true"><use href="#i-${id}"/></svg>`;
 const fmt=value=>value===null||value===undefined?'—':nf.format(value);
 const pct=value=>value===null?'—':(value*100).toFixed(1)+'%';
-const state={model:null,summary:null,tab:'summary',staff:{},busy:false,remember:false,filters:{customerSearch:'',customerScope:'all',customerSort:'days',customerLimit:'10',operatorBranch:'all',operatorLimit:'10',securityScope:'customerAccess'},dialog:null};
+const state={model:null,summary:null,tab:'summary',staff:{},busy:false,files:{},pendingFiles:null,cacheMeta:null,uploadCollapsed:false,filters:{customerSearch:'',customerScope:'all',customerSort:'days',customerLimit:'10',operatorBranch:'all',operatorLimit:'10',securityScope:'customerAccess'},dialog:null};
 let loadRevision=0;
+let cacheTail=Promise.resolve();
+const sharedBase=new URL('./shared-data/',location.href);
+const cacheQueue=task=>{const work=cacheTail.then(task);cacheTail=work.catch(()=>{});return work;};
+const dateLabel=value=>value&&Number.isFinite(Date.parse(value))?new Intl.DateTimeFormat('ko-KR',{timeZone:'Asia/Seoul',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false}).format(new Date(value)):'—';
 const sourceLabel=kind=>DEFINITIONS.find(def=>def.id===kind)?.label||kind;
 const note=(message,type='')=>{$('statusNote').textContent=message;$('statusNote').className='status-note '+type;};
 const available=(kind,value)=>state.summary?.has(kind)?value:null;
@@ -17,6 +22,24 @@ function userId(value){return value?redactSecrets(value):'아이디 없음';}
 function ip(value){return value?redactSecrets(value):'—';}
 function sourceCards(){
   $('sourceCards').innerHTML=DEFINITIONS.map(def=>{const source=state.model?.sources[def.id];return `<div class="source-chip ${source?'ready':''}" title="${esc(source?.fileName||'아직 선택하지 않은 파일입니다.')}" data-source-kind="${def.id}"><div><strong>${def.label}</strong><b>${source?fmt(source.rows.length)+'행':'미제공'}</b></div><small>${source?(source.start?source.start.slice(5)+' ~ '+source.end.slice(5):'기록 0행 · 헤더 확인 완료'):'필요한 파일만 선택 가능'}</small></div>`;}).join('');
+  refreshFileActions();
+}
+function refreshFileActions(){
+  const kinds=Object.keys(state.model?.sources||{}),hasFiles=kinds.length&&kinds.every(kind=>state.files[kind]);
+  $('applyBtn').disabled=state.busy||!(state.pendingFiles?.length||hasFiles);
+  $('saveBtn').disabled=state.busy||Boolean(state.pendingFiles)||!hasFiles;
+  for(const id of ['logFiles','resetBtn','reloadSharedBtn','ghTokenBtn'])$(id).disabled=state.busy;
+  $('uploadDetails').hidden=state.uploadCollapsed;$('uploadCard').classList.toggle('collapsed',state.uploadCollapsed);
+  $('toggleUpload').textContent=state.uploadCollapsed?'파일 수동 업로드':'접기';$('toggleUpload').setAttribute('aria-expanded',String(!state.uploadCollapsed));
+  $('uploadSummary').textContent=state.model?`${kinds.length}종 적용 · ${state.model.start} ~ ${state.model.end} · ${state.cacheMeta?.source==='local-upload'?'내 화면 확인 · Save 전':state.cacheMeta?.source==='save-pending'?'공통 저장 완료 · 배포 대기':'팀 공통 자료'}`:'Upload로 먼저 확인하고 Save로 팀 공통 자료에 반영합니다.';
+  $('basisDate').textContent=state.model?.end||'—';$('appliedTime').textContent=dateLabel(state.cacheMeta?.savedAt);
+  if(state.pendingFiles)$('selectedFilesNote').textContent=`선택 ${state.pendingFiles.length}개: ${state.pendingFiles.map(file=>file.name).join(', ')} · Upload를 눌러 적용하세요.`;
+  else $('selectedFilesNote').textContent=state.model?(hasFiles?'원본 엑셀 복원 완료 · 재업로드 없이 Save할 수 있습니다.':'이전 캐시의 분석 결과입니다. Save하려면 원본 엑셀을 다시 선택해 Upload해 주세요.'):'파일을 선택한 뒤 Upload를 눌러 주세요.';
+}
+function selectFiles(files){
+  if(state.busy||!files.length)return;
+  if(files.length>6){note('최대 6종의 로그 파일을 선택해 주세요.','error');return;}
+  loadRevision++;state.pendingFiles=files;state.uploadCollapsed=false;refreshFileActions();note(`${files.length}개 파일 선택 · Upload를 누르면 내 화면에서 먼저 분석합니다.`);
 }
 function limitOptions(value){return ['10','20','all'].map(v=>`<option value="${v}" ${v===value?'selected':''}>${v==='all'?'전체 보기':v+'개 보기'}</option>`).join('');}
 function table(headers,body){return `<div class="table-wrap"><table><thead><tr>${headers.map(h=>`<th class="${h.numeric?'numeric':''}">${esc(h.label||h)}</th>`).join('')}</tr></thead><tbody>${body||`<tr><td class="empty-cell" colspan="${headers.length}">선택 조건에 해당하는 기록이 없습니다.</td></tr>`}</tbody></table></div>`;}
@@ -126,29 +149,29 @@ function applyPeriod(start,end){
   if(!state.model)return;
   try{state.summary=aggregate(state.model,start,end);$('periodStart').value=start;$('periodEnd').value=end;render();}catch(error){note(error.message,'error');}
 }
-function adopt(model,{restored=false}={}){
-  state.model=model;state.summary=aggregate(model);$('periodStart').value=model.start;$('periodEnd').value=model.end;
+function adopt(model,{restored=false,files={},meta={source:'local-upload'}}={}){
+  state.model=model;state.files=files;state.pendingFiles=null;state.cacheMeta={savedAt:new Date().toISOString(),...meta};state.summary=aggregate(model);$('periodStart').value=model.start;$('periodEnd').value=model.end;
   $('periodStart').min=$('periodEnd').min=model.start;$('periodStart').max=$('periodEnd').max=model.end;
   $('availablePeriod').textContent=`업로드 범위 ${model.start} ~ ${model.end} · 파일별 시작일은 집계 기준에서 확인`;
   for(const element of document.querySelectorAll('.period-card input,.period-card button'))element.disabled=false;
-  $('printBtn').disabled=false;render();note(restored?'이 브라우저에 보관한 로그를 복원했습니다.':'로그 분석 완료 · 원본 행 보존 · 외부 전송 없음','success');
+  $('printBtn').disabled=false;render();note(restored?'보관한 분석 자료와 원본 엑셀을 복원했습니다.':'Upload 완료 · 내 화면에서 확인한 뒤 Save로 공통 자료에 반영하세요.','success');
 }
 async function importFiles(files){
   if(state.busy)return;if(!files.length)return;
   if(files.length>6){note('최대 6종의 로그 파일을 한 번에 선택해 주세요.','error');return;}
-  const revision=++loadRevision;state.busy=true;$('logFiles').disabled=true;$('resetBtn').disabled=true;
+  const revision=++loadRevision;state.busy=true;refreshFileActions();
   try{
-    const datasets=[];
+    const datasets=[],originals={};
     for(const [index,file] of files.entries()){
       if(!/\.xlsx$/i.test(file.name))throw new Error('지원하는 형식은 .xlsx입니다. 원본은 변경하지 않습니다.');
       if(file.size>40*1024*1024)throw new Error(`${file.name}: 파일 한 개는 40MB 이하로 선택해 주세요.`);
       note(`${index+1}/${files.length} · ${file.name} 읽는 중…`);await new Promise(resolve=>setTimeout(resolve,0));
-      datasets.push(readDataset(await parseXlsx(file),file.name));
+      const data=readDataset(await parseXlsx(file),file.name);datasets.push(data);originals[data.kind]=file;
     }
     const model=createModel(datasets,state.staff);if(revision!==loadRevision)return;
-    adopt(model);if(state.remember)await persistData();
+    adopt(model,{files:originals,meta:{source:'local-upload'}});await persistData();
   }catch(error){if(revision===loadRevision)note(redactSecrets(error.message)+(state.model?' 기존 분석 데이터는 그대로 유지합니다.':''),'error');}
-  finally{state.busy=false;$('logFiles').disabled=false;$('resetBtn').disabled=false;$('logFiles').value='';}
+  finally{state.busy=false;refreshFileActions();$('logFiles').value='';}
 }
 
 function dialogRows({controls=true}={}){
@@ -175,7 +198,18 @@ function dialogScope(){
 }
 function renderDialog(){
   const d=state.dialog;if(!d)return;
-  if(d.criteria){$('dialogTitle').textContent='집계 기준과 데이터 범위';$('dialogBody').innerHTML=`<div class="criteria-list"><section><h3>고객 계정 이용과 실제 작업 주체</h3><p>데이터 작업 고객사는 고객 변경이력이 1행 이상인 고유 고객사입니다. 고객사+아이디로 계정을 구분하며, 관리자 활동은 고객 이용에 합산하지 않습니다. 직접·대리 작업자는 현재 원본만으로 확정하지 않습니다.</p></section><section><h3>대리로그인 연관성</h3><p>고객사와 고객사 계정의 아이디가 같은 대리로그인 기록을 업로드 전체 기간에서 찾아 참고로 연결합니다. 접속 종료·세션 ID가 없으므로 해당 작업이 대리 접속으로 수행됐다고 단정하거나 계정의 모든 작업을 제외하지 않습니다.</p></section><section><h3>로그인·재방문·작업일</h3><p>로그인 성공은 유형=로그인, 결과=성공인 행만 집계합니다. 재방문은 선택 기간 중 서로 다른 날짜에 2일 이상 로그인한 고객사입니다. 작업일은 고객사별 변경이력 날짜의 고유 수입니다. 조회·체류시간·전체 고객사 대비 이용률은 산출하지 않습니다.</p></section><section><h3>원본 행·오류·기간</h3><p>같은 값의 반복 행도 실제 중복 여부를 알 수 없어 삭제하지 않습니다. 원본 행 수는 클릭 수·실제 작업 수·고유 계측기 수가 아닙니다. 오류 상태가 빈 값을 미해결로 간주하지 않으며, 전체 요청 수가 없어 오류율도 산출하지 않습니다. 시간은 엑셀에 기록된 시각 그대로 해석합니다.</p></section><section><h3>개인정보와 보관</h3><p>새 분석 화면에는 원본 파일을 외부로 보내는 기능이 없습니다. 고객사명·직원명과 원문은 로그에 기록된 값으로 표시하며, API 키·토큰 등 인증정보는 계속 숨깁니다. 데이터 보관은 명시적으로 선택한 경우에만 이 브라우저의 별도 저장소를 사용합니다.</p></section><section><h3>업로드된 원본의 범위</h3><div class="coverage-box">${state.model?Object.values(state.model.sources).map(source=>`<div class="coverage-row"><strong>${source.label}</strong><span>${esc(source.fileName)}<br>${source.start||'기간 없음'} ~ ${source.end||'기간 없음'}</span><span>${fmt(source.rows.length)}행<br>일시 미확인 ${source.invalidDates}행</span></div>`).join(''):'아직 업로드한 파일이 없습니다.'}</div></section></div>`;return;}
+  if(d.criteria){
+    const sections=[
+      ['고객 계정 이용과 실제 작업 주체','데이터 작업 고객사는 고객 변경이력이 1행 이상인 고유 고객사입니다. 고객사+아이디로 계정을 구분하며, 관리자 활동은 고객 이용에 합산하지 않습니다. 직접·대리 작업자는 현재 원본만으로 확정하지 않습니다.'],
+      ['대리로그인 연관성','고객사와 고객사 계정의 아이디가 같은 대리로그인 기록을 업로드 전체 기간에서 찾아 참고로 연결합니다. 접속 종료·세션 ID가 없으므로 해당 작업이 대리 접속으로 수행됐다고 단정하거나 계정의 모든 작업을 제외하지 않습니다.'],
+      ['로그인·재방문·작업일','로그인 성공은 유형=로그인, 결과=성공인 행만 집계합니다. 재방문은 선택 기간 중 서로 다른 날짜에 2일 이상 로그인한 고객사입니다. 작업일은 변경이력 날짜의 고유 수입니다. 조회·체류시간·전체 고객사 대비 이용률은 산출하지 않습니다.'],
+      ['원본 행·오류·기간','같은 값의 반복 행도 실제 중복 여부를 알 수 없어 삭제하지 않습니다. 원본 행 수는 클릭 수·실제 작업 수·고유 계측기 수가 아닙니다. 오류 상태 공란을 미해결로 간주하지 않으며 전체 요청 수가 없어 오류율도 산출하지 않습니다. 시간은 엑셀에 기록된 시각 그대로 해석합니다.'],
+      ['Upload·Save·자료 복원','Upload는 내 화면에서 분석하고 원본 엑셀까지 자동 보관합니다. Save를 눌러 확인한 경우에만 GitHub 공개 저장소에 원본을 저장해 다른 사람과 공유합니다. 새로고침 시 내 작업을 복원하고 더 최신인 공통 자료를 확인합니다. Save 전 작업이나 배포 대기 중 최신 자료는 구버전 공통 자료로 자동 덮어쓰지 않습니다.'],
+      ['이름·인증정보·초기화','고객사명·직원명·계정은 실제 값으로 표시합니다. 화면의 API 키·토큰 등 인증정보는 가리며, 인증정보로 보이는 값이 발견된 원본은 Save 전에 정리를 안내합니다. GitHub 토큰은 본인 브라우저에만 보관합니다. 파일 초기화는 내 자료만 지우며 공통 파일과 기존 운영현황은 삭제하지 않습니다.']
+    ];
+    $('dialogTitle').textContent='집계 기준과 데이터 범위';
+    $('dialogBody').innerHTML=`<div class="criteria-list">${sections.map(([title,description])=>`<section><h3>${esc(title)}</h3><p>${esc(description)}</p></section>`).join('')}<section><h3>업로드된 원본의 범위</h3><div class="coverage-box">${state.model?Object.values(state.model.sources).map(source=>`<div class="coverage-row"><strong>${source.label}</strong><span>${esc(source.fileName)}<br>${source.start||'기간 없음'} ~ ${source.end||'기간 없음'}</span><span>${fmt(source.rows.length)}행<br>일시 미확인 ${source.invalidDates}행</span></div>`).join(''):'아직 업로드한 파일이 없습니다.'}</div></section></div>`;return;
+  }
   const source=state.model.sources[d.kind],isChange=['customerChanges','adminChanges'].includes(d.kind);$('dialogTitle').textContent=source.label+' · '+(d.detail?'행 상세':isChange?'변경 작업 상세':'원본 로그');
   $('detailDialog').classList.toggle('change-dialog',isChange);
   if(d.detail){
@@ -196,10 +230,63 @@ function renderDialog(){
 }
 
 async function cacheTransaction(mode,callback){
-  return new Promise((resolve,reject)=>{const request=indexedDB.open('cwiz-usage-analysis-v1',1);request.onupgradeneeded=()=>request.result.createObjectStore('analysis');request.onerror=()=>reject(request.error);request.onsuccess=()=>{const db=request.result;try{const transaction=db.transaction('analysis',mode);const query=callback(transaction.objectStore('analysis'));let value;query.onsuccess=()=>{value=query.result;};transaction.oncomplete=()=>{db.close();resolve(value);};transaction.onerror=transaction.onabort=()=>{db.close();reject(transaction.error||new Error('브라우저 저장이 중단됐습니다.'));};}catch(error){db.close();reject(error);}};});
+  return new Promise((resolve,reject)=>{
+    let db,transaction,done=false;
+    const finish=(error,value)=>{if(done)return;done=true;clearTimeout(timer);db?.close();error?reject(error):resolve(value);};
+    const timer=setTimeout(()=>{try{transaction?.abort();}catch(_){}finish(new Error('브라우저 보관 시간이 초과됐습니다.'));},15000);
+    let request;try{request=indexedDB.open('cwiz-usage-analysis-v1',1);}catch(error){finish(error);return;}
+    request.onupgradeneeded=()=>request.result.createObjectStore('analysis');request.onerror=()=>finish(request.error);request.onblocked=()=>finish(new Error('브라우저 보관 접근이 차단됐습니다.'));
+    request.onsuccess=()=>{db=request.result;if(done){db.close();return;}try{transaction=db.transaction('analysis',mode);const query=callback(transaction.objectStore('analysis'));let value;query.onsuccess=()=>{value=query.result;};transaction.oncomplete=()=>finish(null,value);transaction.onerror=transaction.onabort=()=>finish(transaction.error||new Error('브라우저 보관이 중단됐습니다.'));}catch(error){finish(error);}};
+  });
 }
-async function persistData(){if(!state.model)return;try{await cacheTransaction('readwrite',store=>store.put({schema:1,datasets:Object.values(state.model.sources),savedAt:new Date().toISOString()},'current'));}catch(_){note('분석은 완료됐지만 브라우저 보관에 실패했습니다. 현재 화면은 유지합니다.','error');}}
-async function clearStoredData(){try{await cacheTransaction('readwrite',store=>store.delete('current'));}catch(_){note('브라우저 보관 데이터를 삭제하지 못했습니다. 사이트 저장 권한을 확인해 주세요.','error');}}
+function storedNotice(){return state.cacheMeta?.source==='local-upload'?'Upload 완료 · 새로고침해도 복원됩니다. Save를 눌러야 다른 사람에게 공유됩니다.':state.cacheMeta?.source==='save-pending'?'Save 완료 · 공동 화면은 배포 후 반영됩니다. 방금 저장한 최신 자료는 유지합니다.':'팀 공통 자료를 불러왔습니다. 새로고침 시 최신 공통 자료를 확인합니다.';}
+async function persistData(){
+  if(!state.model)return false;
+  const model=state.model,payload={schema:2,datasets:Object.values(model.sources),files:state.files,...state.cacheMeta};
+  $('cacheState').textContent='내 브라우저에 자동 보관 중…';$('cacheState').dataset.state='saving';note('분석 자료와 원본 엑셀을 자동 보관하고 있습니다.');
+  try{await cacheQueue(()=>cacheTransaction('readwrite',store=>store.put(payload,'current')));if(state.model===model){$('cacheState').textContent='내 작업 자동 보관 완료';$('cacheState').dataset.state='saved';note(storedNotice(),'success');}return true;}
+  catch(_){if(state.model===model){$('cacheState').textContent='자동 보관 실패';$('cacheState').dataset.state='error';note('분석 화면은 유지하지만 이 브라우저의 자동 보관에 실패했습니다. 새로고침 전에 원본을 유지하거나 Save로 공통 저장해 주세요.','error');}return false;}
+}
+async function clearStoredData(){try{await cacheQueue(()=>cacheTransaction('readwrite',store=>store.delete('current')));return true;}catch(_){note('브라우저 보관 자료를 삭제하지 못했습니다. 현재 화면과 공통 자료는 유지합니다.','error');return false;}}
+async function loadShared({force=false}={}){
+  const revision=loadRevision;
+  try{
+    const manifest=await fetchManifest(sharedBase);if(revision!==loadRevision||state.busy||state.pendingFiles)return;
+    const decision=sharedDecision(state.model?state.cacheMeta:null,manifest,{force});
+    if(decision==='missing'){if(!state.model||force)note('공유된 로그가 아직 없습니다. 파일 선택 → Upload → Save 순서로 최초 공통 자료를 저장해 주세요.');return;}
+    if(decision==='same'){if(state.cacheMeta.source==='save-pending'){state.cacheMeta.source='server';refreshFileActions();await persistData();}return;}
+    if(decision!=='load')return;
+    note('저장된 팀 공통 로그를 불러오고 있습니다.');
+    const files=await fetchSnapshot(sharedBase,manifest),datasets=[];
+    for(const [kind,file] of Object.entries(files)){const data=readDataset(await parseXlsx(file),file.name);if(data.kind!==kind)throw new Error('공통 자료의 로그 종류와 파일 내용이 일치하지 않습니다.');datasets.push(data);}
+    if(revision!==loadRevision||state.busy||state.pendingFiles)return;
+    adopt(createModel(datasets,state.staff),{files,meta:{source:'server',revision:manifest.revision,contentUpdatedAt:manifest.updatedAt,savedAt:manifest.updatedAt}});state.uploadCollapsed=true;refreshFileActions();await persistData();
+  }catch(error){if(revision===loadRevision&&!state.busy&&!state.pendingFiles)note(redactSecrets(error.message||'공통 자료를 불러오지 못했습니다.')+(state.model?' 현재 자료는 유지합니다.':''),'error');}
+}
+function tokenValue(){try{return localStorage.getItem('kic_gh_token')||'';}catch(_){return '';}}
+function openToken(){if(state.busy)return;$('ghTokenInput').value=tokenValue();$('tokenDialog').showModal();}
+function confirmSave(){
+  if(state.busy||state.pendingFiles||!state.model)return;
+  if(Object.values(state.model.sources).some(source=>source.rows.some(row=>Object.values(row.raw).some(value=>redactSecrets(value)!==clean(value))))){note('원본 로그에 API 키·토큰 등 인증정보로 보이는 값이 있습니다. 해당 값을 정리한 엑셀을 다시 Upload한 뒤 Save해 주세요. 실제 값은 안내에 표시하지 않습니다.','error');return;}
+  if(!tokenValue()){openToken();return;}
+  const kinds=Object.keys(state.model.sources);if(kinds.some(kind=>!state.files[kind])){note('Save하려면 원본 엑셀을 다시 Upload해 주세요.','error');return;}
+  // Keep the confirmed snapshot stable if an automatic shared read was in flight.
+  loadRevision++;
+  $('saveSummary').textContent=`${state.model.end} 기준 · ${kinds.length}종 (${kinds.map(sourceLabel).join(', ')})을 공통 저장합니다.${kinds.length<6?' 선택하지 않은 종류는 이번 공통 분석에서 제외됩니다.':''}`;
+  $('saveProgress').textContent='';$('saveDialog').showModal();
+}
+async function saveShared(){
+  if(state.busy)return;state.busy=true;loadRevision++;refreshFileActions();let reloading=false;
+  for(const id of ['saveConfirm','saveCancel','saveClose'])$(id).disabled=true;
+  try{
+    const files=Object.fromEntries(Object.keys(state.model.sources).map(kind=>[kind,state.files[kind]]));
+    const result=await publishSnapshot(files,state.model.end,tokenValue(),{onProgress:message=>{$('saveProgress').textContent=message;}});
+    state.cacheMeta={source:'save-pending',revision:result.manifest.revision,contentUpdatedAt:result.manifest.updatedAt,savedAt:result.manifest.updatedAt};
+    const stored=await persistData();refreshFileActions();$('saveProgress').textContent='Save 완료 · 공동 화면 배포를 준비합니다.';
+    if(stored){reloading=true;setTimeout(()=>location.reload(),800);}else{$('saveDialog').close();note('GitHub 공통 저장은 완료했지만 브라우저 보관에 실패했습니다. 배포가 완료될 때까지 이 화면을 유지해 주세요.','error');}
+  }catch(error){$('saveProgress').textContent=redactSecrets(error.message||'공통 저장에 실패했습니다.');note($('saveProgress').textContent,'error');}
+  finally{if(!reloading){state.busy=false;refreshFileActions();for(const id of ['saveConfirm','saveCancel','saveClose'])$(id).disabled=false;}}
+}
 
 document.addEventListener('click',event=>{
   const target=event.target.closest('button,[role="button"]');if(!target)return;
@@ -243,13 +330,24 @@ document.addEventListener('input',event=>{
     else if(state.dialog){state.dialog.query=target.value;const cursor=target.selectionStart;renderDialog();$('dialogSearch')?.focus();$('dialogSearch')?.setSelectionRange(cursor,cursor);}
   },100);
 });
-$('logFiles').addEventListener('change',event=>importFiles([...event.target.files]));
+$('logFiles').addEventListener('change',event=>selectFiles([...event.target.files]));
+$('applyBtn').addEventListener('click',()=>importFiles(state.pendingFiles||Object.values(state.files)));
+$('saveBtn').addEventListener('click',confirmSave);
+$('saveConfirm').addEventListener('click',saveShared);
+for(const id of ['saveClose','saveCancel'])$(id).addEventListener('click',()=>{if(!state.busy)$('saveDialog').close();});
+$('saveDialog').addEventListener('cancel',event=>{if(state.busy)event.preventDefault();});
+$('ghTokenBtn').addEventListener('click',openToken);
+$('tokenClose').addEventListener('click',()=>$('tokenDialog').close());
+$('tokenSaveBtn').addEventListener('click',()=>{const value=$('ghTokenInput').value.trim();if(!value||/[\r\n\s]/.test(value)){note('유효한 GitHub 토큰을 입력해 주세요.','error');return;}try{localStorage.setItem('kic_gh_token',value);$('ghTokenInput').value='';$('tokenDialog').close();note('GitHub 토큰 설정 완료 · Save를 눌러 공통 저장할 수 있습니다.');}catch(_){note('브라우저에 토큰을 저장하지 못했습니다. 사이트 저장 권한을 확인해 주세요.','error');}});
+$('tokenClearBtn').addEventListener('click',()=>{try{localStorage.removeItem('kic_gh_token');$('ghTokenInput').value='';$('tokenDialog').close();note('이 브라우저의 GitHub 토큰을 삭제했습니다.');}catch(_){note('토큰을 삭제하지 못했습니다. 브라우저 저장 권한을 확인해 주세요.','error');}});
+$('toggleUpload').addEventListener('click',()=>{state.uploadCollapsed=!state.uploadCollapsed;refreshFileActions();});
+$('reportModeBtn').addEventListener('click',()=>{const on=document.body.classList.toggle('report-mode');$('reportModeBtn').querySelector('span').textContent=on?'편집 모드':'보고 모드';});
+$('reloadSharedBtn').addEventListener('click',()=>{if(state.busy)return;if((state.pendingFiles||state.cacheMeta?.source==='local-upload')&&!confirm('Save하지 않은 내 자료를 공통 자료로 바꿀까요? 공통 자료를 불러오지 못하면 현재 자료를 유지합니다.'))return;state.pendingFiles=null;loadRevision++;refreshFileActions();loadShared({force:true});});
 $('dropZone').addEventListener('click',()=>$('logFiles').click());
 for(const name of ['dragenter','dragover'])$('dropZone').addEventListener(name,event=>{event.preventDefault();$('dropZone').classList.add('over');});
-for(const name of ['dragleave','drop'])$('dropZone').addEventListener(name,event=>{event.preventDefault();$('dropZone').classList.remove('over');if(name==='drop')importFiles([...event.dataTransfer.files]);});
+for(const name of ['dragleave','drop'])$('dropZone').addEventListener(name,event=>{event.preventDefault();$('dropZone').classList.remove('over');if(name==='drop')selectFiles([...event.dataTransfer.files]);});
 $('queryBtn').addEventListener('click',()=>applyPeriod($('periodStart').value,$('periodEnd').value));
-$('rememberData').addEventListener('change',async event=>{state.remember=event.target.checked;if(state.remember)await persistData();else await clearStoredData();});
-$('resetBtn').addEventListener('click',async()=>{loadRevision++;state.model=null;state.summary=null;state.dialog=null;$('detailDialog').close();await clearStoredData();$('periodStart').value=$('periodEnd').value='';for(const element of document.querySelectorAll('.period-card input,.period-card button'))element.disabled=true;$('printBtn').disabled=true;$('availablePeriod').textContent='아직 로그가 없습니다.';$('selectionPeriod').textContent='';render();note('새 분석의 데이터만 초기화했습니다. 기존 운영현황 캐시는 변경하지 않았습니다.');});
+$('resetBtn').addEventListener('click',async()=>{if(state.busy)return;if(state.model&&!confirm('내 화면과 브라우저 보관 자료를 초기화할까요? GitHub 공통 자료와 원본 엑셀은 삭제하지 않습니다.'))return;loadRevision++;state.busy=true;refreshFileActions();if(!await clearStoredData()){state.busy=false;refreshFileActions();return;}state.model=null;state.summary=null;state.dialog=null;state.files={};state.pendingFiles=null;state.cacheMeta=null;state.uploadCollapsed=false;state.busy=false;$('detailDialog').close();$('periodStart').value=$('periodEnd').value='';for(const element of document.querySelectorAll('.period-card input,.period-card button'))element.disabled=true;$('printBtn').disabled=true;$('availablePeriod').textContent='아직 로그가 없습니다.';$('selectionPeriod').textContent='';$('cacheState').textContent='저장 자료 대기';$('cacheState').dataset.state='';render();note('내 화면의 자료만 초기화했습니다. GitHub 공통 자료와 기존 운영현황 캐시는 유지합니다.');});
 $('criteriaBtn').addEventListener('click',()=>{state.dialog={criteria:true};$('detailDialog').classList.remove('change-dialog');renderDialog();$('detailDialog').showModal();});
 $('dialogClose').addEventListener('click',()=>$('detailDialog').close());
 $('detailDialog').addEventListener('click',event=>{if(event.target===$('detailDialog')){const bounds=$('detailDialog').getBoundingClientRect();if(event.clientX<bounds.left||event.clientX>bounds.right||event.clientY<bounds.top||event.clientY>bounds.bottom)$('detailDialog').close();}});
@@ -258,7 +356,11 @@ $('printBtn').addEventListener('click',()=>{const previous=state.tab;state.tab='
 async function initialize(){
   const params=new URLSearchParams(location.search);if(params.get('tab')==='weekly'){location.replace('./legacy.html'+location.search);return;}
   render();document.documentElement.dataset.appReady='true';
-  try{const response=await fetch('../data/staff-branch-map.json',{cache:'no-cache'});if(response.ok){state.staff=(await response.json()).staff||{};if(state.model){state.model.staff=state.staff;state.summary=aggregate(state.model,state.summary.start,state.summary.end);render();}}}catch(_){}
-  try{const cached=await cacheTransaction('readonly',store=>store.get('current'));if(cached?.schema===1&&!loadRevision){adopt(createModel(cached.datasets,state.staff),{restored:true});state.remember=true;$('rememberData').checked=true;}}catch(_){note('이 브라우저의 보관 데이터를 읽지 못했습니다. 원본 파일을 다시 선택해 주세요.','error');}
+  try{const cached=await cacheTransaction('readonly',store=>store.get('current'));if([1,2].includes(cached?.schema)&&!loadRevision){
+    const files={};for(const [kind,file] of Object.entries(cached.files||{})){if(file instanceof Blob)files[kind]=file instanceof File?file:new File([file],cached.datasets.find(data=>data.kind===kind)?.fileName||kind+'.xlsx',{type:file.type});}
+    adopt(createModel(cached.datasets,state.staff),{restored:true,files,meta:{source:cached.source||'local-upload',revision:cached.revision||null,contentUpdatedAt:cached.contentUpdatedAt||null,savedAt:cached.savedAt||null}});state.uploadCollapsed=true;refreshFileActions();$('cacheState').textContent='내 작업 복원 완료';$('cacheState').dataset.state='saved';note('보관한 분석 자료를 복원했습니다. '+storedNotice(),'success');
+  }}catch(_){note('브라우저 자료를 복원하지 못했습니다. 공통 자료를 확인하거나 원본을 다시 Upload해 주세요.','error');}
+  loadShared();
+  try{const response=await fetch('../data/staff-branch-map.json',{cache:'no-cache',signal:AbortSignal.timeout(15000)});if(response.ok){state.staff=(await response.json()).staff||{};if(state.model){state.model.staff=state.staff;state.summary=aggregate(state.model,state.summary.start,state.summary.end);render();}}}catch(_){}
 }
 initialize();
