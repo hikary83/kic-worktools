@@ -7,7 +7,7 @@
 (function initKicSidebarModule() {
   'use strict';
 
-  const APP_VERSION = 'v2.8.9';
+  const APP_VERSION = 'v2.9.0';
   const SETTINGS_URL = 'https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit';
   const MENU_ITEMS = [
     { id: 'helpdesk', title: 'IT 헬프데스크', icon: '📈', href: 'index.html' },
@@ -19,7 +19,7 @@
     { id: 'marketer', title: '블로그 마케터', icon: '✍️', href: 'marketer.html' },
     {
       id: 'dashboard',
-      title: 'CWIZ 2.0 대시보드',
+      title: 'CWIZ 이용 분석',
       icon: '📊',
       href: 'dashboard/',
       target: '_blank'
