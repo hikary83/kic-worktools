@@ -134,7 +134,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.9.1', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.9.2', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 

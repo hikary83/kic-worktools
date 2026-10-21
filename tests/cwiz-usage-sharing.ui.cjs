@@ -63,7 +63,7 @@ const HEAD='a'.repeat(40),TREE='b'.repeat(40),NEW_TREE='d'.repeat(40),COMMIT='e'
     active=pending;
     const second=await makeContext();await second.page.goto(origin+'/dashboard/');await second.page.waitForFunction(()=>document.querySelectorAll('.source-chip.ready').length===6);await second.page.waitForFunction(()=>document.querySelector('#cacheState').dataset.state==='saved');
     assert.equal(await second.page.evaluate(()=>localStorage.getItem('kic_gh_token')),null);
-    assert.equal((await second.page.locator('.kpi').filter({hasText:'고객 변경이력'}).locator('.kpi-value').innerText()).replace(/\D/g,''),'3306');
+    assert.equal((await second.page.locator('.kpi').filter({hasText:'고객 변경이력'}).locator('.kpi-value').innerText()).replace(/\D/g,''),'2911');
     await second.page.reload();await second.page.waitForFunction(()=>document.querySelectorAll('.source-chip.ready').length===6);
     await upload(second.page,[paths[3]]);assert.equal(await second.page.locator('.source-chip.ready').count(),1);
     active={...active,manifest:{...active.manifest,revision:'newer-server-version',updatedAt:'2099-01-01T00:00:00Z'}};

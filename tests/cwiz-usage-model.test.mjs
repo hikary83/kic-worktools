@@ -1,7 +1,7 @@
 import test from 'node:test';
 import assert from 'node:assert/strict';
 import fs from 'node:fs';
-import {DEFINITIONS,readDataset,createModel,aggregate,attribution,isoTime,parseProxyAccount,weeklyTrend,accessStats,redactSecrets} from '../docs/dashboard/js/usage-model.mjs';
+import {DEFINITIONS,readDataset,createModel,aggregate,attribution,isoTime,parseProxyAccount,weeklyTrend,accessStats,redactSecrets,isAdminAccount,analysisRows} from '../docs/dashboard/js/usage-model.mjs';
 
 const change=['2026-10-20 09:00:00','예시 고객사','예시 사용자','demo@example.invalid','계측기 통합 대장','수정','예시 장비','설치 위치','A','B'];
 const proxy=['2026-10-20 08:00:00','예시 운영자','operator@example.invalid','예시 고객사','예시 사용자 (demo@example.invalid)','기능 확인','192.0.2.1'];
@@ -40,6 +40,54 @@ test('대리 계정의 이름(아이디)을 추출하고 불명확한 계정은 
 test('대리 이력 시점이 나중이어도 계정 참조일 뿐 작업 귀속은 확정하지 않는다',()=>{const m=createModel([customerChanges(),dataset('proxy',[['2026-10-22 12:00:00',...proxy.slice(1)]])]);assert.equal(attribution(m,m.sources.customerChanges.rows[0]).confirmedProxyAction,false);assert.equal(aggregate(m).period.customerChanges.length,3);});
 test('관리자 변경은 고객 이용 수에 합산하지 않는다',()=>{const admin=dataset('adminChanges',[['2026-10-21 10:00:00','예시 운영자','op','고객사 계측기 매핑','등록','대상','항목','','값']]);const s=aggregate(createModel([customerChanges(),admin]));assert.equal(s.period.customerChanges.length,3);assert.equal(s.period.adminChanges.length,1);assert.equal(s.changeCompanies,1);});
 test('관리자 접속은 고객사 수·고객 계정 수에 합산하지 않는다',()=>{const admin=dataset('adminAccess',[['2026-10-21 10:00:00','운영자','op','로그인','성공','192.0.2.1']]);const s=aggregate(createModel([customerAccess(),admin]));assert.equal(s.customerAccess.companies,1);assert.equal(s.customerAccess.users,1);assert.equal(s.adminAccess.successCount,1);});
+
+for(const id of ['operator@kic21.co.kr',' Operator@KIC21.CO.KR ','a.b+support@kic21.co.kr'])test('정확한 관리자 도메인 인식: '+id,()=>assert.equal(isAdminAccount(id),true));
+for(const id of ['',null,'예시 운영자','@kic21.co.kr','a@@kic21.co.kr','a b@kic21.co.kr','operator@sub.kic21.co.kr','operator@kic21.co.kr.example.invalid','kic21.co.kr@example.invalid','operator@notkic21.co.kr'])test('관리자 도메인으로 추정하지 않음: '+id,()=>assert.equal(isAdminAccount(id),false));
+const internalChange=(time='2026-10-20 12:00:00')=>[time,'지원만 받은 고객사','예시 운영자',' OP@KIC21.CO.KR ','계측기 통합 대장','수정','대상','항목','A','B'];
+test('고객 파일의 관리자 변경을 고객 KPI·계정·순위에서 빼고 지원 기록으로 보존한다',()=>{
+  const raw=dataset('customerChanges',[change,internalChange(),internalChange()]),snapshot=JSON.stringify(raw),m=createModel([raw]),s=aggregate(m);
+  assert.equal(s.period.customerChanges.length,1);assert.equal(s.period.supportChanges.length,2);
+  assert.equal(s.changeCompanies,1);assert.equal(s.changeUsers,1);assert.equal(s.topShare,1);assert.equal(s.customers.length,1);assert.equal(s.userRows.length,1);
+  assert.equal(s.operators.length,1);assert.equal(s.operators[0].supportLogs,2);assert.equal(s.operators[0].logs,0);assert.equal(s.operators[0].proxies,0);
+  assert.equal(s.has('supportChanges'),true);assert.equal(s.has('adminChanges'),false);assert.equal(s.has('supportAccess'),false);
+  assert.equal(JSON.stringify(raw),snapshot);assert.equal(raw.rows.length,s.period.customerChanges.length+s.period.supportChanges.length);
+  assert.equal(analysisRows(m,'customerChanges').length,1);assert.equal(analysisRows(m,'supportChanges').length,2);
+});
+test('같은 고객사의 고객 계정만 작업일·최근 이용·추이에 반영한다',()=>{
+  const manager=internalChange('2026-10-21 23:59:59');manager[1]=change[1];
+  const s=aggregate(createModel([dataset('customerChanges',[change,manager])]));
+  assert.equal(s.customers[0].activityDays.size,1);assert.equal(s.customers[0].logs,1);assert.equal(s.customers[0].latest,change[0]);
+  assert.equal(s.recurringChangeCompanies,0);assert.equal(weeklyTrend(s).reduce((sum,bin)=>sum+bin.logs,0),1);
+});
+test('고객 접속 파일의 관리자 로그인·실패·로그아웃을 고객 지표에서 제외한다',()=>{
+  const rows=[
+    ['2026-10-20 08:00:00','지원만 받은 고객사','운영자','op@kic21.co.kr','로그인','성공','192.0.2.1'],
+    ['2026-10-21 08:00:00','지원만 받은 고객사','운영자','op@kic21.co.kr','로그인','성공','192.0.2.1'],
+    ['2026-10-21 08:01:00','지원만 받은 고객사','운영자','op@kic21.co.kr','로그인','실패','192.0.2.1'],
+    ['2026-10-21 08:02:00','지원만 받은 고객사','운영자','op@kic21.co.kr','로그아웃','성공','192.0.2.1']];
+  const s=aggregate(createModel([dataset('customerAccess',rows)]));
+  assert.equal(s.customerAccess.attempts,0);assert.equal(s.customerAccess.companies,0);assert.equal(s.customerAccess.returning,0);assert.equal(s.userRows.length,0);
+  assert.equal(s.period.supportAccess.length,4);assert.equal(s.operators[0].supportAccesses,4);assert.equal(s.operators[0].proxies,0);
+  assert.equal(s.has('supportAccess'),true);assert.equal(s.has('supportChanges'),false);assert.equal(s.adminAccess.attempts,0);
+});
+test('관리자 지원만 있던 고객사는 고객 로그인 후 이용 목록에 작업 0행으로 남는다',()=>{
+  const manager=internalChange();manager[1]=change[1];const s=aggregate(createModel([dataset('customerChanges',[manager]),customerAccess()]));
+  assert.equal(s.changeCompanies,0);assert.equal(s.changeUsers,0);assert.equal(s.customers.length,1);assert.equal(s.customers[0].logs,0);assert.equal(s.customers[0].activityDays.size,0);assert.equal(s.userRows.length,1);
+});
+test('관리자 지원 기록에도 기간 필터·소속 연결·원본 행 번호를 유지한다',()=>{
+  const data=dataset('customerChanges',[internalChange(),internalChange('2026-10-21 23:59:59')]),m=createModel([data],{'예시운영자':'부산지사'}),s=aggregate(m,'2026-10-21','2026-10-21');
+  assert.equal(s.period.supportChanges.length,1);assert.equal(s.period.supportChanges[0].sourceRow,3);assert.equal(s.operators[0].branch,'부산지사');assert.equal(s.operators[0].supportLogs,1);
+  assert.equal(aggregate(m,'2026-10-22','2026-10-22').operators.length,0);
+});
+test('관리자 도메인 기록과 대리 세션 확정은 구분한다',()=>{
+  const m=createModel([dataset('customerChanges',[internalChange()]),dataset('proxy',[proxy])]),a=attribution(m,m.sources.customerChanges.rows[0]);
+  assert.equal(a.label,'관리자 계정의 고객사 지원 기록');assert.equal(a.confirmedProxyAction,false);assert.equal(a.confirmedCustomerAction,false);assert.equal(a.proxyReferences.length,0);
+});
+test('직원 이름이 같아도 고객 도메인·아이디 공란을 관리자로 바꾸지 않는다',()=>{
+  const named=[...change];named[2]='예시 운영자';const blank=[...named];blank[3]='';
+  const s=aggregate(createModel([dataset('customerChanges',[named,blank])],{'예시운영자':'서울본사'}));
+  assert.equal(s.period.customerChanges.length,2);assert.equal(s.period.supportChanges.length,0);assert.equal(s.changeUsers,1);assert.equal(s.operators.length,0);
+});
 test('로그아웃을 로그인 성공에 포함하지 않는다',()=>{const s=accessStats(customerAccess().rows);assert.equal(s.successCount,2);assert.equal(s.attempts,3);assert.equal(s.failureCount,1);});
 test('서로 다른 날짜의 성공 로그인만 재방문으로 집계한다',()=>assert.equal(accessStats(customerAccess().rows).returning,1));
 test('고객사 없는 로그인 실패를 특정 업체에 배정하지 않는다',()=>{const s=aggregate(createModel([customerAccess()]));assert.equal(s.customerAccess.unknownCompanyFailures,1);assert.equal(s.customers.length,1);});

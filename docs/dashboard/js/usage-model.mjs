@@ -11,6 +11,16 @@ export const clean = v => String(v ?? '').trim();
 export const headerKey = v => clean(v).replace(/[\s*\uFEFF]/g,'').toLowerCase();
 export const companyKey = v => clean(v).replace(/\s+/g,' ').toLocaleLowerCase('ko-KR');
 export const identityKey = v => clean(v).toLowerCase();
+export const isAdminAccount = id => /^[^@\s]+@kic21\.co\.kr$/.test(identityKey(id));
+const SUPPORT_SOURCES={supportChanges:'customerChanges',supportAccess:'customerAccess'};
+export const sourceKind = kind => Object.hasOwn(SUPPORT_SOURCES,kind)?SUPPORT_SOURCES[kind]:kind;
+// 원본·캐시는 그대로 두고, 모든 화면 집계와 상세 조회에 같은 분류를 적용합니다.
+export function analysisRows(model,kind) {
+  const rows=model.sources[sourceKind(kind)]?.rows||[];
+  if(Object.hasOwn(SUPPORT_SOURCES,kind))return rows.filter(row=>isAdminAccount(row.userId));
+  if(kind==='customerChanges'||kind==='customerAccess')return rows.filter(row=>!isAdminAccount(row.userId));
+  return rows;
+}
 export const accountKey = (company,id) => companyKey(company) && identityKey(id) ? `${companyKey(company)}|${identityKey(id)}` : '';
 export function isoTime(value) {
   const m=clean(value).match(/^(\d{4})[-/.](\d{1,2})[-/.](\d{1,2})(?:[T ](\d{1,2}):(\d{2})(?::(\d{2}))?)?/);
@@ -84,6 +94,7 @@ export function createModel(datasets,staff={}) {
 export function attribution(model,row) {
   if(row.kind==='adminChanges') return {label:'관리자 활동 기록',confirmedActor:row.user||row.userId,proxyReferences:[],confirmedCustomerAction:false,confirmedProxyAction:false};
   if(row.kind==='proxy') return {label:'대리 접속 시작 기록',confirmedActor:row.user||row.userId,proxyReferences:[],confirmedCustomerAction:false,confirmedProxyAction:false};
+  if(['customerChanges','customerAccess'].includes(row.kind)&&isAdminAccount(row.userId))return {label:row.kind==='customerChanges'?'관리자 계정의 고객사 지원 기록':'관리자 계정의 고객사 접속 기록',confirmedActor:row.user||row.userId,proxyReferences:[],confirmedCustomerAction:false,confirmedProxyAction:false};
   const references=row.kind==='customerChanges'?(model.proxyByAccount.get(accountKey(row.company,row.userId))||[]):[];
   return {label:'작업 주체 미확인',confirmedActor:'',proxyReferences:references,confirmedCustomerAction:false,confirmedProxyAction:false};
 }
@@ -102,7 +113,7 @@ export function accessStats(rows) {
 }
 export function aggregate(model,start=model.start,end=model.end) {
   if(!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||start>end) throw new Error('시작일과 종료일을 확인해 주세요.');
-  const period=Object.fromEntries(DEFINITIONS.map(def=>[def.id,inRange(model.sources[def.id]?.rows||[],start,end)]));
+  const period=Object.fromEntries([...DEFINITIONS.map(def=>def.id),...Object.keys(SUPPORT_SOURCES)].map(kind=>[kind,inRange(analysisRows(model,kind),start,end)]));
   const customerAccess=accessStats(period.customerAccess),adminAccess=accessStats(period.adminAccess);
   const groups=new Map(),users=new Map();
   const groupFor=row=>{
@@ -130,14 +141,18 @@ export function aggregate(model,start=model.start,end=model.end) {
   const userRows=[...users.values()].sort((a,b)=>b.activityDays.size-a.activityDays.size||b.logs-a.logs);
   const changeCompanies=counts(period.customerChanges,row=>companyKey(row.company));
   const operators=new Map();
-  for(const row of [...period.adminChanges,...period.proxy]) {
+  for(const row of [...period.adminChanges,...period.supportChanges,...period.supportAccess,...period.proxy]) {
     const key=identityKey(row.userId)||row.user;if(!key)continue;
-    if(!operators.has(key))operators.set(key,{key,user:row.user,userId:row.userId,branch:model.staff[clean(row.user).replace(/\s+/g,'').replace(/님$/,'')]||'미확인',logs:0,mapping:0,proxies:0,companies:new Set(),latest:''});
+    if(!operators.has(key))operators.set(key,{key,user:row.user,userId:row.userId,branch:model.staff[clean(row.user).replace(/\s+/g,'').replace(/님$/,'')]||'미확인',logs:0,mapping:0,supportLogs:0,supportAccesses:0,proxies:0,companies:new Set(),latest:''});
     const op=operators.get(key);op.latest=op.latest>row.timestamp?op.latest:row.timestamp;
-    if(row.kind==='adminChanges'){op.logs++;if(row.menu==='고객사 계측기 매핑')op.mapping++;}else{op.proxies++;if(row.company)op.companies.add(companyKey(row.company));}
+    if(row.kind==='adminChanges'){op.logs++;if(row.menu==='고객사 계측기 매핑')op.mapping++;}
+    else if(row.kind==='customerChanges')op.supportLogs++;
+    else if(row.kind==='customerAccess')op.supportAccesses++;
+    else op.proxies++;
+    if(row.company)op.companies.add(companyKey(row.company));
   }
-  return {start,end,period,customerAccess,adminAccess,customers,userRows,operators:[...operators.values()].sort((a,b)=>b.logs-a.logs||b.proxies-a.proxies),
-    has:id=>Boolean(model.sources[id]),changeCompanies:changeCompanies.length,changeUsers:new Set(period.customerChanges.map(row=>accountKey(row.company,row.userId)).filter(Boolean)).size,
+  return {start,end,period,customerAccess,adminAccess,customers,userRows,operators:[...operators.values()].sort((a,b)=>(b.logs+b.supportLogs)-(a.logs+a.supportLogs)||b.proxies-a.proxies||b.supportAccesses-a.supportAccesses),
+    has:id=>Boolean(model.sources[sourceKind(id)]),changeCompanies:changeCompanies.length,changeUsers:new Set(period.customerChanges.map(row=>accountKey(row.company,row.userId)).filter(Boolean)).size,
     recurringChangeCompanies:customers.filter(row=>row.activityDays.size>=2).length,topShare:period.customerChanges.length?(changeCompanies[0]?.count||0)/period.customerChanges.length:null,
     linkedAccounts:new Set(period.customerChanges.filter(row=>attribution(model,row).proxyReferences.length).map(row=>accountKey(row.company,row.userId))).size,
     proxyCompanies:new Set(period.proxy.map(row=>companyKey(row.company)).filter(Boolean)).size,
