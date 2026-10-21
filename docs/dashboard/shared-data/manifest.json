@@ -1,4 +1,44 @@
 {
   "schema": 1,
-  "files": {}
+  "revision": "4c6c7df0-5d92-415f-8ed6-6e5c75ba4e8b",
+  "basisDate": "2026-10-21",
+  "updatedAt": "2026-10-21T07:11:59.095Z",
+  "files": {
+    "adminChanges": {
+      "path": "admin-changes.xlsx",
+      "name": "관리자활동이력_2026-10-21.xlsx",
+      "size": 636439,
+      "sha256": "383a9a6e43d95e9124836972e35a07b7df5ca10c33593bcdb0c8e6891297f66d"
+    },
+    "proxy": {
+      "path": "proxy-logins.xlsx",
+      "name": "대리로그인이력_2026-10-21.xlsx",
+      "size": 12846,
+      "sha256": "744d654e7bf446bbc04cd1acc60a4990598b13f9a98831c99573e7014496d33e"
+    },
+    "errors": {
+      "path": "system-errors.xlsx",
+      "name": "시스템오류이력_2026-10-21.xlsx",
+      "size": 7849,
+      "sha256": "d2e91a44fd74b72e1af9585024a37622739a461b27c1d46a1aac481a9d791cf7"
+    },
+    "customerAccess": {
+      "path": "customer-access.xlsx",
+      "name": "보안접속이력_2026-10-21.xlsx",
+      "size": 25801,
+      "sha256": "d227a51795a875818f8744307d855a923fd870da3794b2b0ab93cc44767e02ec"
+    },
+    "customerChanges": {
+      "path": "customer-changes.xlsx",
+      "name": "데이터변경이력_2026-10-21.xlsx",
+      "size": 154756,
+      "sha256": "d63e0fb104a914bcd496d27c4eca69964a29f415ff2e065e82fecfeb09d24e79"
+    },
+    "adminAccess": {
+      "path": "admin-access.xlsx",
+      "name": "보안접속이력_2026-10-21 (1).xlsx",
+      "size": 58173,
+      "sha256": "c49c89b8f42119d9c6c4f38d8d479d4fa0da6b57be6950245e58a31c157590cb"
+    }
+  }
 }
