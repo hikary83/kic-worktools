@@ -1,0 +1,15 @@
+/* Section hints share the heading anchor so they stay within narrow screens. */
+.hd-section-title {position:relative;min-width:0}
+.hd-section-help {display:inline-flex;align-items:center;flex:none}
+.hd-section-help-button {display:inline-flex;align-items:center;justify-content:center;width:24px;height:24px;border:0;border-radius:50%;background:transparent;color:#94a3b8;cursor:help;font-size:13px}
+.hd-section-help-button:hover,.hd-section-help-button:focus-visible {color:#2563eb;background:#eff6ff;outline:2px solid transparent}
+.hd-section-help-button:focus-visible {outline-color:#60a5fa;outline-offset:2px}
+.hd-section-tooltip {box-sizing:border-box;position:absolute;left:0;bottom:calc(100% + 8px);z-index:60;width:320px;max-width:calc(100vw - 64px);padding:11px 13px;border:1px solid #334155;border-radius:10px;background:#1e293b;color:#f8fafc;box-shadow:0 8px 24px #0f172a29;font-size:12px;font-weight:500;line-height:1.7;text-align:left;white-space:normal;visibility:hidden;opacity:0;pointer-events:none}
+.hd-section-help:hover .hd-section-tooltip,.hd-section-help:focus-within .hd-section-tooltip {visibility:visible;opacity:1;pointer-events:auto}
+.hd-section-help.hd-help-dismissed .hd-section-tooltip {visibility:hidden;opacity:0;pointer-events:none}
+.hd-progress-status-counts {display:flex;flex-wrap:wrap;gap:6px;margin-top:8px;font-size:11px;font-weight:600;color:#64748b}
+.hd-progress-status-counts span {padding:3px 8px;border:1px solid #e2e8f0;border-radius:7px;background:#f8fafc;white-space:nowrap}
+.dark .hd-section-help-button:hover,.dark .hd-section-help-button:focus-visible {color:#7dd3fc;background:#0c4a6e}
+.dark .hd-section-tooltip {background:#0f172a;border-color:#475569}
+.dark .hd-progress-status-counts {color:#cbd5e1}
+.dark .hd-progress-status-counts span {border-color:#424242;background:#262626}

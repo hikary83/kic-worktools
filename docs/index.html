@@ -30,10 +30,11 @@
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="css/kic-theme.css" rel="stylesheet">
+  <link href="css/helpdesk-sections.css?v=2.9.3" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.9.2"></script>
-  <script src="js/kic-sidebar.js?v=2.9.2"></script>
+  <script src="js/config.js?v=2.9.3"></script>
+  <script src="js/kic-sidebar.js?v=2.9.3"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -194,37 +195,56 @@
           </div>
         </div>
 
-        <!-- 섹션 1: 기간 내 진행 중 -->
+        <!-- 섹션 1: 기간 내 접수 확인 -->
         <div>
-          <h3 class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-amber-400 pl-3 mb-4 flex items-center gap-2">
-            <span>🚀 조회 기간 내 이슈 - 진행 중</span>
+          <h3 class="hd-section-title text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-amber-400 pl-3 mb-4 flex flex-wrap items-center gap-2">
+            <span>📥 조회 기간 내 이슈 - 접수 확인</span>
+            <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="접수 확인 상태 안내" aria-describedby="tooltip-intake-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-intake-current" class="hd-section-tooltip" role="tooltip">상태: 접수대기<br>조회 기간 내 접수대기 건을 표시합니다. 상태가 비어 있거나 알 수 없는 미완료 건도 확인 누락을 막기 위해 이곳에 표시합니다.</span></span>
             <span class="text-xs bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-pending-current">0건</span>
           </h3>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="pending-current-container"></div>
         </div>
 
-        <!-- 섹션 2: 기간 내 완료 -->
+        <!-- 섹션 2: 기간 내 진행 관리 (기본 접힘) -->
+        <div>
+          <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-blue-400 pl-3 mb-4 flex items-center justify-between gap-2">
+            <div class="min-w-0 flex-1">
+              <h3 class="hd-section-title flex flex-wrap items-center gap-2">
+                <span>🚀 조회 기간 내 이슈 - 진행 관리</span>
+                <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="진행 관리 상태 안내" aria-describedby="tooltip-progress-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-progress-current" class="hd-section-tooltip" role="tooltip">상태: 검토중·예정·처리중<br>조회 기간 내 해당 상태의 이슈를 표시합니다. 기본은 접힌 상태이며 펼쳐서 내용을 확인할 수 있습니다. 이 영역에 표시된다고 별도로 읽음 처리되지는 않습니다.</span></span>
+                <span class="text-xs bg-blue-100 dark:bg-sky-950/60 text-blue-700 dark:text-sky-300 border border-blue-200/60 dark:border-sky-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-progress-current">0건</span>
+              </h3>
+              <div id="progress-current-status-counts" class="hd-progress-status-counts" aria-label="진행 관리 상태별 건수" aria-live="polite"></div>
+            </div>
+            <button id="btn-toggle-progress" type="button" onclick="toggleSection('progress-current-container', 'btn-toggle-progress')" aria-controls="progress-current-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
+          </div>
+          <div id="progress-current-container" class="hidden"></div>
+        </div>
+
+        <!-- 섹션 3: 기간 내 완료 -->
         <div>
           <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-emerald-500 pl-3 mb-4 flex items-center justify-between gap-2">
-            <h3 class="flex items-center gap-2">
+            <h3 class="hd-section-title min-w-0 flex-1 flex flex-wrap items-center gap-2">
               <span>✅ 조회 기간 내 이슈 - 완료</span>
+              <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="완료 영역 상태 안내" aria-describedby="tooltip-done-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-done-current" class="hd-section-tooltip" role="tooltip">상태: 완료·반려<br>조회 기간 내 완료와 반려 건을 기존 집계 기준에 따라 함께 표시합니다.</span></span>
               <span class="text-xs bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-done-current">0건</span>
             </h3>
-            <button id="btn-toggle-done" onclick="toggleSection('done-current-container', 'btn-toggle-done')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
+            <button id="btn-toggle-done" type="button" onclick="toggleSection('done-current-container', 'btn-toggle-done')" aria-controls="done-current-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
           </div>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="done-current-container" class="hidden"></div>
         </div>
 
-        <!-- 섹션 3: 과거 누적 -->
+        <!-- 섹션 4: 과거 누적 -->
         <div class="pt-6 border-t border-slate-200 dark:border-[#424242]">
           <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-rose-500 pl-3 mb-4 flex items-center justify-between gap-2">
-            <h3 class="flex items-center gap-2">
+            <h3 class="hd-section-title min-w-0 flex-1 flex flex-wrap items-center gap-2">
               <span>⚠️ 이월된 미처리 건</span>
+              <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="이월 영역 상태 안내" aria-describedby="tooltip-past"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-past" class="hd-section-tooltip" role="tooltip">상태: 접수대기·검토중·예정·처리중·반려<br>조회 시작일 이전의 미완료·반려 헬프데스크 이슈와 기간에 관계없는 미완료 분기 요청을 표시합니다. 숨김 반려 건은 기존 표시 설정을 따릅니다.</span></span>
               <span class="text-xs bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-past">0건</span>
             </h3>
-            <button id="btn-toggle-past" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors">펼치기</button>
+            <button id="btn-toggle-past" type="button" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" aria-controls="pending-past-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
           </div>
           <!-- 칸반 보드가 렌더링될 컨테이너 -->
           <div id="pending-past-container" class="hidden"></div>
@@ -976,8 +996,9 @@
       // 기존 사용자가 펼쳐둔 상태(UI State)를 완벽 보존
       const isDoneHidden = document.getElementById('done-current-container') ? document.getElementById('done-current-container').classList.contains('hidden') : true;
       const isPastHidden = document.getElementById('pending-past-container') ? document.getElementById('pending-past-container').classList.contains('hidden') : true;
+      const isProgressHidden = document.getElementById('progress-current-container') ? document.getElementById('progress-current-container').classList.contains('hidden') : true;
 
-      renderIssueSections(stats, isCached, isCached ? null : { isDoneHidden, isPastHidden });
+      renderIssueSections(stats, isCached, isCached ? null : { isDoneHidden, isPastHidden, isProgressHidden });
       updateCharts(stats);
     }
 
@@ -987,6 +1008,8 @@
       if (!container || !button) return;
       const isHidden = container.classList.toggle('hidden');
       button.innerText = isHidden ? '펼치기' : '접기';
+      button.setAttribute('aria-controls', containerId);
+      button.setAttribute('aria-expanded', String(!isHidden));
     }
 
     function collapseSection(containerId, buttonId) {
@@ -995,6 +1018,8 @@
       if (!container || !button) return;
       container.classList.add('hidden');
       button.innerText = '펼치기';
+      button.setAttribute('aria-controls', containerId);
+      button.setAttribute('aria-expanded', 'false');
     }
 
     function showToast(message, type = 'success') {
@@ -1060,9 +1085,36 @@
         return (items || []).filter(item => matchesGlobalSearch(item, q));
     }
 
+    function splitCurrentIssues(items) {
+        const intake = [], progress = [];
+        const statusCounts = { '검토중': 0, '예정': 0, '처리중': 0 };
+        (items || []).forEach(item => {
+            const status = String(item.status || '').trim();
+            if (Object.prototype.hasOwnProperty.call(statusCounts, status)) {
+                progress.push(item);
+                statusCounts[status]++;
+            } else {
+                // 상태 미기재·미등록 값도 누락시키거나 읽음으로 간주하지 않습니다.
+                intake.push(item);
+            }
+        });
+        return { intake, progress, statusCounts };
+    }
+
+    function renderProgressStatusCounts(statusCounts) {
+        const container = document.getElementById('progress-current-status-counts');
+        container.innerHTML = '';
+        Object.keys(statusCounts).forEach(status => {
+            const badge = document.createElement('span');
+            badge.textContent = `${status} ${statusCounts[status]}건`;
+            container.appendChild(badge);
+        });
+    }
+
     function renderIssueSections(stats, shouldCollapseFoldableSections, statePreserve = null) {
         if (!stats) return;
         const pendingCurrent = filterIssuesByGlobalSearch(stats.pendingCurrent || []);
+        const { intake, progress, statusCounts } = splitCurrentIssues(pendingCurrent);
         const completedCurrent = filterIssuesByGlobalSearch(stats.completedCurrent || []);
         const pastBoardItemsOriginal = stats.pastKanbanItems || stats.pendingPast || [];
         const pastBoardItems = filterIssuesByGlobalSearch(pastBoardItemsOriginal);
@@ -1070,26 +1122,34 @@
         const resultCount = pendingCurrent.length + completedCurrent.length + pastBoardItems.length;
         const originalCount = (stats.pendingCurrent || []).length + (stats.completedCurrent || []).length + pastBoardItemsOriginal.length;
 
-        document.getElementById('count-pending-current').innerText = `${pendingCurrent.length}건`;
+        document.getElementById('count-pending-current').innerText = `${intake.length}건`;
+        document.getElementById('count-progress-current').innerText = `${progress.length}건`;
+        renderProgressStatusCounts(statusCounts);
         document.getElementById('count-done-current').innerText = `${completedCurrent.length}건`;
         document.getElementById('count-past').innerText = `${pastBoardItems.length}건`;
 
-        renderCardsGroupedByType('pending-current-container', pendingCurrent, isSearching ? '검색 결과가 없습니다.' : '진행 중 이슈 없음');
+        renderCardsGroupedByType('pending-current-container', intake, isSearching ? '검색 결과가 없습니다.' : '접수 확인할 이슈가 없습니다.');
+        renderCardsGroupedByType('progress-current-container', progress, isSearching ? '검색 결과가 없습니다.' : '진행 관리할 이슈가 없습니다.');
         renderCardsGroupedByType('done-current-container', completedCurrent, isSearching ? '검색 결과가 없습니다.' : '완료 이슈 없음');
         renderKanbanBoard('pending-past-container', pastBoardItems, isSearching ? '검색 결과가 없습니다.' : '이월/불가 관리 대상 없음');
 
         updateGlobalSearchUi(resultCount, originalCount);
 
         if (statePreserve) {
+          if (statePreserve.isProgressHidden !== false) collapseSection('progress-current-container', 'btn-toggle-progress');
+          else expandSection('progress-current-container', 'btn-toggle-progress');
+
           if (statePreserve.isDoneHidden) collapseSection('done-current-container', 'btn-toggle-done');
           else expandSection('done-current-container', 'btn-toggle-done');
 
           if (statePreserve.isPastHidden) collapseSection('pending-past-container', 'btn-toggle-past');
           else expandSection('pending-past-container', 'btn-toggle-past');
         } else if (shouldCollapseFoldableSections && !isSearching) {
+          collapseSection('progress-current-container', 'btn-toggle-progress');
           collapseSection('done-current-container', 'btn-toggle-done');
           collapseSection('pending-past-container', 'btn-toggle-past');
         } else if (isSearching) {
+          expandSection('progress-current-container', 'btn-toggle-progress');
           expandSection('done-current-container', 'btn-toggle-done');
           expandSection('pending-past-container', 'btn-toggle-past');
         }
@@ -1320,6 +1380,8 @@
       if (!container || !button) return;
       container.classList.remove('hidden');
       button.innerText = '접기';
+      button.setAttribute('aria-controls', containerId);
+      button.setAttribute('aria-expanded', 'true');
     }
 
     function getIssueType(item) {
@@ -3075,8 +3137,15 @@
       });
     }
 
+    ['pointerover', 'focusin'].forEach(eventName => document.addEventListener(eventName, e => {
+      e.target.closest?.('.hd-section-help')?.classList.remove('hd-help-dismissed');
+    }));
     document.addEventListener('keydown', e => {
-      if (e.key === 'Escape' || e.key === 'Esc') closeAllActiveModals();
+      if (e.key === 'Escape' || e.key === 'Esc') {
+        document.querySelectorAll('.hd-section-help').forEach(help => help.classList.add('hd-help-dismissed'));
+        if (document.activeElement?.classList.contains('hd-section-help-button')) document.activeElement.blur();
+        closeAllActiveModals();
+      }
       const editor = document.getElementById('editModal');
       if (e.key !== 'Tab' || editor.classList.contains('hidden')) return;
       const focusables = [...editor.querySelectorAll('button:not(:disabled), input:not(:disabled):not([type="hidden"]), select:not(:disabled), textarea:not(:disabled), a[href]')].filter(element => element.getClientRects().length);
