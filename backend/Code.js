@@ -348,14 +348,6 @@ function handleStatusChange(sheet, rowIdx, statusValue) {
   }
 }
 
-function onSelectionChange(e) {
-  if (!e) return;
-  const sheet = e.source.getActiveSheet();
-  if (sheet.getName() !== getMainSheet().getName()) return;
-  const row = e.range.getRow();
-  if (row >= 3) sheet.getRange("p1").setValue(row);
-}
-
 // 실행 로그와 응답에 같은 요청 ID/처리 시간만 남깁니다. 업무 본문·인증 정보는 기록하지 않습니다.
 let activeApiDiagnostic = null;
 
