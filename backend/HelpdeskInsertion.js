@@ -62,11 +62,10 @@ function hdInsertSnapshot_(sheet, dateText) {
   });
   if (day.length > HD_INSERT_MAX_DAY) throw new Error('하루 200건을 넘는 일자는 중간 등록을 지원하지 않습니다.');
   day.sort(function(a, b) { return a.seq - b.seq; });
-  for (let i = 1; i < day.length; i++) {
-    if (day[i].time <= day[i - 1].time) throw new Error('기존 번호와 접수 시간 순서가 다릅니다. 먼저 순서를 확인해 주세요.');
-  }
+  const timeOrderWarning = day.some(function(row, index) { return index > 0 && row.time <= day[index - 1].time; }) ?
+    '일부 기존 번호와 접수 시간 순서가 다릅니다. 목록은 비교할 수 있으며, 중간 등록 시 선택 위치의 앞뒤 시간을 별도로 확인합니다.' : '';
   const revision = helpdeskIdentityRevision_(sheet);
-  return { date: dateText, prefix: prefix, sheetId: sheet.getSheetId(), rows: day, allValues: values, revision: revision,
+  return { date: dateText, prefix: prefix, sheetId: sheet.getSheetId(), rows: day, allValues: values, revision: revision, timeOrderWarning: timeOrderWarning,
     fingerprint: hdInsertHash_({ revision: revision, rows: day.map(function(row) { return [row.rowIndex, row.values]; }) }) };
 }
 function hdInsertPublicDay_(snapshot) {
@@ -124,7 +123,7 @@ function compareHelpdeskListCapture(data) {
   const snapshot = hdInsertSnapshot_(sheet, date), existing = hdInsertPublicDay_(snapshot);
   const rows = hdNormalizeListRows_(data.rows);
   assertHelpdeskIdentity_(sheet, snapshot.revision);
-  return { date: date, rows: hdCompareList_(rows, existing, date), existing: existing, fingerprint: snapshot.fingerprint,
+  return { date: date, rows: hdCompareList_(rows, existing, date), existing: existing, fingerprint: snapshot.fingerprint, timeOrderWarning: snapshot.timeOrderWarning,
     warnings: ['캡처의 시간은 게시 시각입니다. 등록 시 사용할 정렬용 시간과 별개이며, 본문·URL은 추정하지 않습니다.'] };
 }
 function analyzeHelpdeskListCapture(data) {
@@ -162,6 +161,7 @@ function hdBuildInsertionPlan_(snapshot, afterId, counter) {
   const olderIndex = afterId ? rows.findIndex(function(row) { return row.id === afterId; }) : -1;
   if (afterId && olderIndex < 0) throw new Error('삽입 위치가 변경됐습니다. 다시 비교해 주세요.');
   const older = olderIndex >= 0 ? rows[olderIndex] : null, newer = rows[olderIndex + 1] || null;
+  if (older && newer && older.time >= newer.time) throw new Error('선택한 앞뒤 번호의 접수 시간 순서가 다릅니다. 기존 시간을 임의로 바꾸지 않으므로 삽입 위치를 다시 확인해 주세요.');
   let seq = older ? older.seq + 1 : 1;
   if (!newer) seq = Math.max(seq, Number(counter || 0) + 1);
   const shifted = newer && newer.seq === seq ? rows.filter(function(row) { return row.seq >= seq; }) : [];

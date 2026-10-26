@@ -93,7 +93,7 @@
   function acceptComparison(result) {
     if(!result||!Array.isArray(result.rows)||!Array.isArray(result.existing)||!result.fingerprint)throw Error('목록 비교 결과가 올바르지 않습니다. 다시 분석해 주세요.');
     state.rows=result.rows;state.existing=result.existing;state.fingerprint=result.fingerprint;state.selected=null;state.needsCompare=false;state.filter='missing';
-    render();status(`원문·답글 ${result.rows.length}행 비교 완료 · 누락 의심 ${result.rows.filter(row=>row.kind==='missing').length}건. 캡처에 보이는 범위만 확인한 결과입니다.`);
+    render();status(`원문·답글 ${result.rows.length}행 비교 완료 · 누락 의심 ${result.rows.filter(row=>row.kind==='missing').length}건. 캡처에 보이는 범위만 확인한 결과입니다.`+(result.timeOrderWarning?'\n'+result.timeOrderWarning:''));
   }
   async function compare() {
     if(state.busy)return;
