@@ -20,7 +20,7 @@
     const modal = document.createElement('dialog');
     modal.id = 'hd-missing-dialog'; modal.className = 'hd-missing-dialog'; modal.setAttribute('aria-labelledby','hd-missing-heading');
     modal.innerHTML = `<header class="hd-missing-head"><div><h2 id="hd-missing-heading"><i class="fas fa-list-check" aria-hidden="true"></i> 목록 캡처 누락 점검</h2><p>처리 상태와 무관하게 등록 여부를 비교합니다. 제목·접수일이 다른 기존 건은 확인 후보로 표시하며, Jira에 영향이 없는 경우에만 중간 등록합니다.</p></div><button type="button" data-close aria-label="누락 점검 닫기">✕</button></header>
-      <div class="hd-missing-body"><div class="hd-missing-controls"><label>등록 준비 기준일<input type="date" id="hd-missing-date" readonly></label><button type="button" data-files><i class="fas fa-image" aria-hidden="true"></i> 목록 이미지 첨부</button><button type="button" id="hd-missing-analyze" class="hd-missing-primary">분석·대조</button><button type="button" id="hd-missing-compare">기존 결과 다시 비교</button></div>
+      <div class="hd-missing-body"><div class="hd-missing-controls"><label>등록 준비 기준일<input type="date" id="hd-missing-date" readonly></label><button type="button" data-files><i class="fas fa-image" aria-hidden="true"></i> 목록 이미지 첨부</button><button type="button" id="hd-missing-analyze" class="hd-missing-primary" disabled>분석·대조</button><button type="button" id="hd-missing-clear" disabled>캡처 초기화</button><button type="button" id="hd-missing-compare" disabled>기존 결과 다시 비교</button></div>
       <input type="file" id="hd-missing-files" accept="image/png,image/jpeg,image/webp" multiple hidden>
       <p class="hd-missing-meta"><button type="button" id="hd-missing-recover">등록 결과 재확인</button> 응답이 끊겼거나 다시 접속한 경우, 저장 표식만 확인합니다. 행을 다시 등록하지 않습니다.</p>
       <div class="hd-missing-drop" id="hd-missing-drop" tabindex="0">목록 캡처를 여기에 끌어놓거나 Ctrl+V로 붙여넣으세요. 최대 3장 · Gemini 분석에 사용되며 이미지 파일은 서버에 보관하지 않습니다.<div id="hd-missing-thumbs" class="hd-missing-thumbs"></div></div>
@@ -44,8 +44,9 @@
     modal.querySelector('[data-files]').onclick=()=>byId('hd-missing-files').click();
     modal.addEventListener('cancel',event=>{event.preventDefault();close();});
     modal.addEventListener('click',event=>{if(event.target===modal){const r=modal.getBoundingClientRect();if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)close();}});
-    byId('hd-missing-files').onchange=event=>readFiles(event.target.files);
+    byId('hd-missing-files').onchange=event=>{const files=Array.from(event.target.files);event.target.value='';readFiles(files);};
     byId('hd-missing-analyze').onclick=analyze;
+    byId('hd-missing-clear').onclick=()=>removeListImages();
     byId('hd-missing-compare').onclick=compare;
     byId('hd-missing-recover').onclick=recover;
     byId('hd-missing-prepare').onclick=prepare;
@@ -65,7 +66,11 @@
   }
   function setBusy(value) {
     state.busy=value;
-    ['hd-missing-analyze','hd-missing-compare','hd-missing-recover','hd-missing-date','hd-missing-files'].forEach(id=>byId(id).disabled=value);
+    ['hd-missing-recover','hd-missing-date','hd-missing-files'].forEach(id=>byId(id).disabled=value);
+    byId('hd-missing-analyze').disabled=value||!state.images.length;
+    byId('hd-missing-clear').disabled=value||!state.images.length;
+    byId('hd-missing-compare').disabled=value||!state.rows.length;
+    byId('hd-missing-thumbs').querySelectorAll('button').forEach(button=>button.disabled=value);
     byId('hd-missing-prepare').disabled=value||!byId('hd-missing-confirm').checked;
     byId('hd-missing-dialog').querySelector('[data-files]').disabled=value;
     byId('hd-missing-dialog').querySelectorAll('[data-close]').forEach(button=>button.disabled=state.writing||state.marking);
@@ -108,13 +113,33 @@
     const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(img.naturalWidth*scale));canvas.height=Math.max(1,Math.round(img.naturalHeight*scale));const ctx=canvas.getContext('2d');ctx.fillStyle='#fff';ctx.fillRect(0,0,canvas.width,canvas.height);ctx.drawImage(img,0,0,canvas.width,canvas.height);
     return {data:canvas.toDataURL('image/jpeg',.92),mimeType:'image/jpeg'};
   }
+  function renderListImages() {
+    byId('hd-missing-thumbs').replaceChildren(...state.images.map((item,index)=>{
+      const box=document.createElement('div'),img=document.createElement('img'),remove=document.createElement('button');
+      box.className='hd-missing-thumb';img.src=item.data;img.alt='목록 캡처 '+(index+1);
+      remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','목록 캡처 '+(index+1)+' 삭제');remove.title='목록 이미지 삭제';remove.disabled=state.busy;
+      remove.onclick=()=>removeListImages(index);box.append(img,remove);return box;
+    }));
+  }
+  function resetListResults() {
+    rememberDraft();invalidateInline();state.rows=[];state.existing=[];state.fingerprint='';state.selected=null;state.filter='missing';state.needsCompare=true;state.autoPositionSupported=false;state.draftKey='';state.postImages=[];
+    byId('hd-missing-files').value='';byId('hd-missing-post-files').value='';byId('hd-missing-block').hidden=true;renderPostImages();render();
+  }
+  function removeListImages(index) {
+    if(state.busy)return;
+    if(index!==undefined&&(!Number.isInteger(index)||index<0||index>=state.images.length))return;
+    state.generation++;state.images=index===undefined?[]:state.images.filter((_,i)=>i!==index);
+    resetListResults();renderListImages();setBusy(false);
+    status(state.images.length?'목록 이미지를 삭제하고 이전 비교 결과를 초기화했습니다. 남은 '+state.images.length+'장으로 분석·대조를 다시 눌러 주세요.':'목록 캡처와 비교 결과를 초기화했습니다. 새 이미지를 첨부하거나 붙여넣어 주세요.');
+    const buttons=byId('hd-missing-thumbs').querySelectorAll('button');
+    (buttons[Math.min(index||0,buttons.length-1)]||byId('hd-missing-dialog').querySelector('[data-files]')).focus({preventScroll:true});
+  }
   async function readFiles(files) {
     if(state.busy)return;
     const items=Array.from(files||[]);if(!items.length)return;
     if(items.length>3){status('목록 캡처는 최대 3장까지 첨부할 수 있습니다.',true);return;}
     const generation=++state.generation;setBusy(true);status('목록 이미지를 준비 중입니다...');
-    try{const images=await Promise.all(items.map(optimize));if(generation!==state.generation)return;rememberDraft();resetInsertion();state.images=images;state.rows=[];state.selected=null;state.fingerprint='';state.needsCompare=true;
-      byId('hd-missing-thumbs').replaceChildren(...images.map((image,index)=>{const img=document.createElement('img');img.src=image.data;img.alt='목록 캡처 '+(index+1);return img;}));render();setBusy(false);await analyze();
+    try{const images=await Promise.all(items.map(optimize));if(generation!==state.generation)return;state.images=images;resetListResults();renderListImages();setBusy(false);await analyze();
     }catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
   }
   async function analyze() {

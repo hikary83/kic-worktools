@@ -14,14 +14,14 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
 (async()=>{
   const server=http.createServer((req,res)=>{const target=path.resolve(root,'.'+new URL(req.url,'http://local').pathname);if(!target.startsWith(root+path.sep)){res.writeHead(404);res.end();return;}try{let body=fs.readFileSync(target);if(target.endsWith('index.html')&&!process.env.KIC_MISSING_VISUAL)body=body.toString().replace('</head>',basicStyles+'</head>');res.setHeader('Content-Type',target.endsWith('.js')?'application/javascript':target.endsWith('.css')?'text/css':target.endsWith('.json')?'application/json':'text/html;charset=utf-8');res.end(body);}catch(_){res.writeHead(404);res.end();}});
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin='http://127.0.0.1:'+server.address().port;
-  let browser,legacyCompare=false,failConfirmation=false;const calls=[],errors=[];
+  let browser,legacyCompare=false,failConfirmation=false,listAnalysisGate=null;const calls=[],errors=[];
   try{
     browser=await chromium.launch({channel:'msedge',headless:true});const context=await browser.newContext({viewport:{width:1440,height:1100}});
     await context.addInitScript(()=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2026-10-23T09:00:00+09:00']));}static now(){return NativeDate.parse('2026-10-23T09:00:00+09:00');}};});
     await context.route('**/*',async route=>{const request=route.request(),url=new URL(request.url());
       if(url.hostname==='script.google.com'){
         const body=request.method()==='POST'?JSON.parse(request.postData()):null,action=body?.action||url.searchParams.get('action'),data=body?.data||{};
-        calls.push({action,data,method:request.method()});const result=failConfirmation&&action==='setCaptureConfirmed'?{success:false,error:'synthetic confirmation failure'}:f.call(action,data);
+        calls.push({action,data,method:request.method()});if(action==='analyzeListCapture'&&listAnalysisGate)await listAnalysisGate;const result=failConfirmation&&action==='setCaptureConfirmed'?{success:false,error:'synthetic confirmation failure'}:f.call(action,data);
         if(legacyCompare&&['analyzeListCapture','compareListCapture'].includes(action)&&result.data)delete result.data.autoPositionSupported;
         if(result.diagnostics){result.diagnostics.requestId=body?.requestId||url.searchParams.get('requestId');result.diagnostics.method=request.method();}
         return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify(result)});
@@ -54,6 +54,10 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.locator('[data-row="5"]').click();await page.locator('[data-row="1"]').click();assert.equal(await page.locator('#hd-missing-post-thumbs img').count(),1);assert.equal(await page.locator('#hd-missing-details').inputValue(),'사용자가 먼저 입력한 본문');assert(await page.locator('#hd-missing-editor').evaluate(el=>el.previousElementSibling.querySelector('[data-row]')?.dataset.row==='1'));
     console.log('PASS 선택 행 바로 아래 폼, 게시글 이미지 첨부·실제 분석 경로·기존 본문 보존·후보 전환 시 이미지/입력 유지');
     if(process.env.KIC_MISSING_VISUAL){
+      await page.locator('.hd-missing-body').evaluate(el=>el.scrollTop=0);await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-reset-desktop.png')});
+      const thumbnail=await page.locator('#hd-missing-thumbs img').boundingBox(),remove=await page.getByRole('button',{name:'목록 캡처 1 삭제',exact:true}).boundingBox();assert(Math.abs(thumbnail.y-remove.y)<=2);assert(Math.abs(thumbnail.x+thumbnail.width-remove.x-remove.width)<=2);
+      await page.setViewportSize({width:390,height:844});await page.locator('.hd-missing-body').evaluate(el=>el.scrollTop=0);await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-reset-mobile.png')});
+      await page.setViewportSize({width:1440,height:1100});await page.locator('#hd-missing-editor').scrollIntoViewIfNeeded();
       await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-desktop.png')});
       await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-mobile.png')});
       const box=await page.locator('#hd-missing-dialog').boundingBox();assert(box.x>=0&&box.x+box.width<=390);assert(await page.locator('#hd-missing-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
@@ -119,5 +123,26 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.setViewportSize({width:390,height:844});assert(await page.locator('#hd-missing-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));await page.keyboard.press('Escape');assert.equal(await page.locator('#hd-missing-dialog').isVisible(),false);
     assert(calls.filter(x=>['analyzeListCapture','compareListCapture','previewIssueInsertion','insertIssue','setCaptureConfirmed','analyzeCapture'].includes(x.action)).every(x=>x.method==='POST'));
     assert.deepEqual(errors,[]);console.log('PASS 기존 추출 결과로 재비교·중복 후보 제거·모바일·Escape·신규 API의 POST 전용. 외부 AI/Jira/운영 시트 호출 없음.');
+    legacyCompare=false;f.state.aiRows=[{title:'삭제 확인용 원문',requester:'예시 새 직원',date:'2026-10-21',time:'14:00',isReply:false,uncertain:false}];
+    await page.setViewportSize({width:1440,height:1100});await page.getByRole('button',{name:'목록 캡처 누락 점검',exact:true}).click();await page.locator('#hd-missing-clear').click();
+    assert.equal(await page.locator('#hd-missing-analyze').isDisabled(),true);assert.equal(await page.locator('#hd-missing-compare').isDisabled(),true);
+    const listFiles=[{name:'delete-list.png',mimeType:'image/png',buffer:image},{name:'delete-list-2.png',mimeType:'image/png',buffer:image}];
+    await page.locator('#hd-missing-files').setInputFiles(listFiles);await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('비교 완료'));
+    assert.equal(await page.locator('#hd-missing-thumbs img').count(),2);assert.equal(await page.locator('#hd-missing-files').inputValue(),'');
+    await page.locator('[data-row="0"]').click();await page.locator('#hd-missing-details').fill('이미지 삭제 후에도 보존할 입력');await page.locator('#hd-missing-branch').selectOption('서울본사');await page.locator('#hd-missing-confirm').check();await page.locator('#hd-missing-prepare').click();await page.locator('#hd-missing-preview').waitFor();await page.locator('#hd-insertion-approve').check();
+    assert.equal(await page.locator('#hd-missing-submit').isDisabled(),false);
+    const analysisBeforeDelete=calls.filter(item=>item.action==='analyzeListCapture').length,propsBeforeDelete=[...f.state.props],batchesBeforeDelete=f.state.batches.length;
+    await page.getByRole('button',{name:'목록 캡처 1 삭제',exact:true}).click();
+    assert.equal(await page.locator('#hd-missing-thumbs img').count(),1);assert.equal(await page.locator('#hd-missing-list [data-row]').count(),0);assert.equal(await page.locator('#hd-missing-preview').isVisible(),false);assert.equal(await page.locator('#hd-missing-editor').isVisible(),false);assert.equal(await page.locator('#hd-missing-submit').isDisabled(),true);assert.equal(await page.evaluate(()=>HelpdeskMissingCheck.insertion()),null);
+    assert.equal(calls.filter(item=>item.action==='analyzeListCapture').length,analysisBeforeDelete);assert.equal(await page.locator('#hd-missing-compare').isDisabled(),true);
+    let finishAnalysis;listAnalysisGate=new Promise(resolve=>finishAnalysis=resolve);
+    try{await page.locator('#hd-missing-analyze').click();assert.equal(await page.getByRole('button',{name:'목록 캡처 1 삭제',exact:true}).isDisabled(),true);assert.equal(await page.locator('#hd-missing-clear').isDisabled(),true);}finally{listAnalysisGate=null;finishAnalysis();}
+    await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('비교 완료'));assert.equal(calls.filter(item=>item.action==='analyzeListCapture').at(-1).data.images.length,1);
+    await page.locator('[data-row="0"]').click();assert.equal(await page.locator('#hd-missing-details').inputValue(),'이미지 삭제 후에도 보존할 입력');
+    await page.locator('#hd-missing-clear').click();assert.equal(await page.locator('#hd-missing-thumbs img').count(),0);assert.equal(await page.locator('#hd-missing-list [data-row]').count(),0);assert.equal(await page.locator('#hd-missing-clear').isDisabled(),true);assert.equal(await page.locator('#hd-missing-analyze').isDisabled(),true);
+    await page.locator('#hd-missing-files').setInputFiles(listFiles[0]);await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('비교 완료'));assert.equal(await page.locator('#hd-missing-thumbs img').count(),1);
+    await page.getByRole('button',{name:'목록 캡처 1 삭제',exact:true}).click();assert.equal(await page.locator('#hd-missing-thumbs img').count(),0);assert.equal(await page.locator('#hd-missing-analyze').isDisabled(),true);assert.equal(await page.locator('#hd-missing-compare').isDisabled(),true);
+    assert.deepEqual([...f.state.props],propsBeforeDelete);assert.equal(f.state.batches.length,batchesBeforeDelete);assert.deepEqual(errors,[]);
+    console.log('PASS 목록 이미지 개별 삭제·전체 초기화·잔여 이미지 재분석·동일 파일 재첨부·오래된 등록 승인 무효화·입력/팀 설정 보존·분석 중 삭제 차단');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error.stack);process.exitCode=1;});

@@ -90,7 +90,7 @@ async function main() {
     const captureBox=await panel.boundingBox();assert.ok(captureBox.x>=15&&captureBox.x+captureBox.width<=360&&captureBox.y+captureBox.height<=740);
     await panel.getByRole('button',{name:'진단 로그 복사',exact:true}).click();
     const captureLog=JSON.parse(await page.evaluate(()=>navigator.clipboard.readText()));
-    assert.equal(captureLog.version,'v2.10.1');assert.equal(captureLog.records.at(-1).server.ai.attemptCount,2);
+    assert.equal(captureLog.version,'v2.10.2');assert.equal(captureLog.records.at(-1).server.ai.attemptCount,2);
     assert.equal(captureLog.records.at(-1).server.ai.fallbackUsed,true);assert.equal(captureLog.records.at(-1).server.ai.attempts[1].upstreamMs,10980);
     assert.doesNotMatch(JSON.stringify(captureLog),/secret-title|secret-error|secret-image/);
     await page.reload();assert.equal(await page.evaluate(()=>getGASDiagnostics().at(-1).server.ai.attemptCount),2);
