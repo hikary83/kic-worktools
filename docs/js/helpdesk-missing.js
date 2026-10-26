@@ -2,11 +2,22 @@
 (function () {
   'use strict';
   const state = { images: [], rows: [], existing: [], fingerprint: '', selected: null, filter: 'missing', generation: 0,
-    busy: false, writing: false, marking: false, insertion: null, needsCompare: false, focus: null, drafts: {}, draftKey: '', autoPositionSupported: false, postImages: [] };
+    busy: false, writing: false, marking: false, insertion: null, needsCompare: false, focus: null, drafts: {}, draftKey: '', autoPositionSupported: false, postImages: [],
+    links: {} }; // 행 key → 담당자가 ‘등록 확인’으로 연결한 같은 날짜 기존 이슈. 이번 화면의 위치 기준점으로만 사용합니다.
   const byId = id => document.getElementById(id);
   const escape = value => String(value == null ? '' : value).replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
   const labels = { missing: '누락 의심', review: '등록 후보 확인', registered: '등록 일치', excluded: '등록 확인 제외', reply: '답글 제외', otherDate: '다른 날짜' };
   const localDate = () => { const d=new Date();return [d.getFullYear(),String(d.getMonth()+1).padStart(2,'0'),String(d.getDate()).padStart(2,'0')].join('-'); };
+  const identity = row => JSON.stringify([row.title,row.requester,row.date,row.time]);
+  // 펼친 행은 폼에서 정정한 작성일시를 기준으로 등록 확인 가능 여부를 판단합니다.
+  const stampOf = row => state.selected===row.key&&byId('hd-missing-source-date')?{date:byId('hd-missing-source-date').value||row.date,time:byId('hd-missing-source-time').value||row.time}:{date:row.date,time:row.time};
+  // 같은 날짜 후보가 하나뿐일 때만 ‘등록 확인’을 그 이슈와의 연결로 봅니다.
+  const linkCandidate = row => { if(row.kind!=='review')return '';const same=(row.related||[]).filter(item=>item.date?.slice(0,10)===row.date);return same.length===1?same[0].id:''; };
+  function candidateHtml(item) {
+    const basis=item.basis,head=`<div>등록 후보: ${escape(item.id)} · 접수일 ${escape(item.date?.slice(0,10))}${basis?(basis.sameDate?' (같은 날짜)':' (다른 날짜)'):''} · ${escape(item.title)}</div>`;
+    if(!basis)return head;
+    return head+`<div class="hd-missing-basis">작성자 ${escape(item.requester||'-')} ${basis.sameRequester?'일치':'다름'} · ${basis.titleSame?'제목 일치':`제목 차이: 캡처 “${escape(basis.captureTitlePart)}” ↔ 등록 “${escape(basis.registeredTitlePart)}”`}</div>`;
+  }
   function apiError(error) {
     const message = error && error.message || String(error);
     return /Invalid post action|is not defined/.test(message) ? '업무 API에 누락 점검 기능이 아직 배포되지 않았습니다. 백엔드 재배포 후 사용할 수 있습니다.' : message;
@@ -23,7 +34,7 @@
       <div class="hd-missing-body"><div class="hd-missing-controls"><label>등록 준비 기준일<input type="date" id="hd-missing-date" readonly></label><button type="button" data-files><i class="fas fa-image" aria-hidden="true"></i> 목록 이미지 첨부</button><button type="button" id="hd-missing-analyze" class="hd-missing-primary" disabled>분석·대조</button><button type="button" id="hd-missing-clear" disabled>캡처 초기화</button><button type="button" id="hd-missing-compare" disabled>기존 결과 다시 비교</button></div>
       <input type="file" id="hd-missing-files" accept="image/png,image/jpeg,image/webp" multiple hidden>
       <p class="hd-missing-meta"><button type="button" id="hd-missing-recover">등록 결과 재확인</button> 응답이 끊겼거나 다시 접속한 경우, 저장 표식만 확인합니다. 행을 다시 등록하지 않습니다.</p>
-      <div class="hd-missing-drop" id="hd-missing-drop" tabindex="0">목록 캡처를 여기에 끌어놓거나 Ctrl+V로 붙여넣으세요. 최대 3장 · Gemini 분석에 사용되며 이미지 파일은 서버에 보관하지 않습니다.<div id="hd-missing-thumbs" class="hd-missing-thumbs"></div></div>
+      <div class="hd-missing-drop" id="hd-missing-drop" tabindex="0">목록 캡처를 여기에 끌어놓거나 Ctrl+V로 붙여넣으세요. 여러 페이지는 이어서 추가하면 최대 3장까지 함께 분석합니다 · Gemini 분석에 사용되며 이미지 파일은 서버에 보관하지 않습니다.<div id="hd-missing-thumbs" class="hd-missing-thumbs"></div></div>
       <div id="hd-missing-status" class="hd-missing-status" role="status" aria-live="polite"></div><div class="hd-missing-note">처리 상태와 무관하게 등록 여부를 비교합니다. 시간만 보이면 오늘 날짜(한국시간), 날짜·시간이 보이면 원문 작성일시를 사용합니다. 후보를 펼쳐 필요한 내용을 입력하면 작성시각 기준으로 삽입 위치를 확인합니다. 저장 정렬 시간은 앞뒤 사이값으로 유지하고 원문 작성시각은 별도로 보존합니다.</div>
       <div class="hd-missing-tabs" id="hd-missing-tabs" aria-label="비교 결과 분류"></div><div id="hd-missing-list" class="hd-missing-list"></div>
       <p class="hd-missing-meta">이미 등록된 원문은 ‘등록 확인’으로 누락 점검에서 제외할 수 있습니다. 팀 공통으로 유지되며 ‘등록 확인 제외’ 탭에서 해제할 수 있습니다. 실제 이슈 처리 상태는 바뀌지 않습니다.</p>
@@ -56,7 +67,9 @@
     byId('hd-missing-post-clear').onclick=()=>{state.postImages=[];renderPostImages();rememberDraft();invalidateInline();byId('hd-missing-post-status').textContent='게시글 캡처를 초기화했습니다.';};
     byId('hd-missing-submit').onclick=()=>submit(inlineForm(),byId('hd-missing-submit'));
     byId('hd-insertion-approve').onchange=()=>{byId('hd-missing-submit').disabled=state.busy||state.writing||!state.insertion||!byId('hd-insertion-approve').checked;};
-    byId('hd-missing-editor').querySelectorAll('input:not([type=checkbox]),select,textarea').forEach(field=>field.addEventListener('input',()=>{rememberDraft();resetInsertion();byId('hd-missing-confirm').checked=false;byId('hd-missing-prepare').disabled=true;}));
+    byId('hd-missing-editor').querySelectorAll('input:not([type=checkbox]),select,textarea').forEach(field=>field.addEventListener('input',()=>{rememberDraft();resetInsertion();byId('hd-missing-confirm').checked=false;byId('hd-missing-prepare').disabled=true;
+      const row=state.rows.find(item=>item.key===state.selected),button=row&&byId('hd-missing-list').querySelector('[data-confirm-row="'+CSS.escape(String(row.key))+'"]');
+      if(button){const stamp=stampOf(row);button.disabled=state.busy||state.needsCompare||!stamp.date||!stamp.time;}}));
     byId('hd-missing-confirm').onchange=()=>{byId('hd-missing-prepare').disabled=state.busy||!byId('hd-missing-confirm').checked;};
     const drop=byId('hd-missing-drop');
     drop.addEventListener('dragover',event=>event.preventDefault());
@@ -82,15 +95,15 @@
   function renderList() {
     const editor=byId('hd-missing-editor'),list=byId('hd-missing-list');if(list.contains(editor))byId('hd-missing-editor-dock').append(editor);
     const shown=state.rows.filter(row=>state.filter==='all'||row.kind===state.filter);
-    list.innerHTML=shown.length?shown.map(row=>`<div class="hd-missing-row ${state.selected===row.key?'is-selected':''}"><span><span class="hd-missing-badge ${escape(row.kind)}">${labels[row.kind]||'확인 필요'}</span></span><div><strong>${escape(row.title||'제목 인식 확인 필요')}</strong><div class="hd-missing-meta"></div>${['review','excluded'].includes(row.kind)?`<div class="hd-missing-meta">${escape(row.reason)}</div>`:''}${row.kind==='review'&&row.related?.length?`<div class="hd-missing-related">${row.related.map(item=>`<div>등록 후보: ${escape(item.id)} · ${escape(item.date?.slice(0,10))} · ${escape(item.title)}</div>`).join('')}${row.relatedCount>row.related.length?`<div>외 ${row.relatedCount-row.related.length}건</div>`:''}</div>`:''}</div><div class="hd-missing-position hd-missing-meta">${escape(row.matches?.join(', ')||'작성시각 기준 자동 계산')}</div><div class="hd-missing-row-actions"><button type="button" data-row="${escape(row.key)}" ${state.busy||state.needsCompare||['registered','excluded','reply','otherDate'].includes(row.kind)?'disabled':''}>${row.kind==='registered'?'등록 일치':row.kind==='excluded'?'등록 확인됨':state.selected===row.key?'접기':'입력 펼치기'}</button>${['missing','review'].includes(row.kind)?`<button type="button" data-confirm-row="${escape(row.key)}" title="이미 등록된 원문으로 확인하고 누락 점검에서만 제외합니다" ${state.busy||state.needsCompare||!row.date?'disabled':''}>등록 확인</button>`:row.kind==='excluded'?`<button type="button" data-restore-row="${escape(row.key)}" ${state.busy?'disabled':''}>제외 해제</button>`:''}</div></div>`).join(''):`<div class="hd-missing-empty">${state.rows.length?'이 분류에 해당하는 항목이 없습니다.':'목록 캡처를 첨부하면 누락 후보를 표시합니다.'}</div>`;
+    list.innerHTML=shown.length?shown.map(row=>`<div class="hd-missing-row ${state.selected===row.key?'is-selected':''}"><span><span class="hd-missing-badge ${escape(row.kind)}">${labels[row.kind]||'확인 필요'}</span></span><div><strong>${escape(row.title||'제목 인식 확인 필요')}</strong><div class="hd-missing-meta"></div>${['review','excluded'].includes(row.kind)?`<div class="hd-missing-meta">${escape(row.reason)}</div>`:''}${row.kind==='review'&&row.related?.length?`<div class="hd-missing-related">${row.related.map(candidateHtml).join('')}${row.relatedCount>row.related.length?`<div>외 ${row.relatedCount-row.related.length}건</div>`:''}</div>`:''}</div><div class="hd-missing-position hd-missing-meta">${escape(row.matches?.join(', ')||'작성시각 기준 자동 계산')}</div><div class="hd-missing-row-actions"><button type="button" data-row="${escape(row.key)}" ${state.busy||state.needsCompare||['registered','excluded','reply','otherDate'].includes(row.kind)?'disabled':''}>${row.kind==='registered'?'등록 일치':row.kind==='excluded'?'등록 확인됨':state.selected===row.key?'접기':'입력 펼치기'}</button>${['missing','review'].includes(row.kind)?`<button type="button" data-confirm-row="${escape(row.key)}" title="${linkCandidate(row)?'이미 등록된 원문('+escape(linkCandidate(row))+')으로 확인하고 누락 점검에서만 제외합니다. 이번 화면에서는 이 이슈를 삽입 위치 기준점으로도 사용합니다.':'이미 등록된 원문으로 확인하고 누락 점검에서만 제외합니다'}" ${state.busy||state.needsCompare||!stampOf(row).date?'disabled':''}>${linkCandidate(row)?'등록 확인 · '+escape(linkCandidate(row))+'와 동일':'등록 확인'}</button>`:row.kind==='excluded'?`<button type="button" data-restore-row="${escape(row.key)}" ${state.busy?'disabled':''}>제외 해제</button>`:''}</div></div>`).join(''):`<div class="hd-missing-empty">${state.rows.length?'이 분류에 해당하는 항목이 없습니다.':'목록 캡처를 첨부하면 누락 후보를 표시합니다.'}</div>`;
     byId('hd-missing-list').querySelectorAll('[data-row]').forEach(button=>button.onclick=()=>selectRow(button.dataset.row));
     list.querySelectorAll('[data-confirm-row]').forEach(button=>button.onclick=()=>setConfirmed(button.dataset.confirmRow,true));
     list.querySelectorAll('[data-restore-row]').forEach(button=>button.onclick=()=>setConfirmed(button.dataset.restoreRow,false));
     byId('hd-missing-list').querySelectorAll('[data-row]').forEach(button=>{
       const row=state.rows.find(item=>item.key===button.dataset.row),meta=button.closest('.hd-missing-row').querySelector('strong + .hd-missing-meta');
-      meta.textContent=`${row.requester||'요청자 확인 필요'} · ${row.date||'날짜 확인 필요'} ${row.time||'시각 미표시'}`;
-      const confirmButton=button.closest('.hd-missing-row').querySelector('[data-confirm-row]');
-      if(confirmButton&&(!row.date||!row.time)){confirmButton.disabled=true;confirmButton.title='원문 작성일시를 확인한 뒤 등록 확인할 수 있습니다.';}
+      meta.textContent=`${row.requester||'요청자 확인 필요'} · ${row.date||'날짜 확인 필요'} ${row.time||'시각 미표시'}`+(state.links[row.key]?` · 위치 기준점 연결: ${state.links[row.key]}`:'');
+      const confirmButton=button.closest('.hd-missing-row').querySelector('[data-confirm-row]'),stamp=stampOf(row);
+      if(confirmButton&&(!stamp.date||!stamp.time)){confirmButton.disabled=true;confirmButton.title='원문 작성일시를 확인한 뒤 등록 확인할 수 있습니다. 펼친 항목에서 정정한 값도 사용할 수 있습니다.';}
       if(['missing','review'].includes(row.kind))button.closest('.hd-missing-row').querySelector('.hd-missing-position').textContent='작성시각 기준 자동 계산';
       const note=document.createElement('div');note.className='hd-missing-meta';note.textContent=(row.dateSource==='today'?'시간만 표시 → 오늘(한국시간)':row.dateSource==='year-assumed'?'원문 월일 + 올해 연도':row.dateSource==='visible'?'원문 날짜':'작성일시 확인 필요')+(row.dateWarning?' · '+row.dateWarning:'');meta.after(note);
     });
@@ -122,7 +135,7 @@
     }));
   }
   function resetListResults() {
-    rememberDraft();invalidateInline();state.rows=[];state.existing=[];state.fingerprint='';state.selected=null;state.filter='missing';state.needsCompare=true;state.autoPositionSupported=false;state.draftKey='';state.postImages=[];
+    rememberDraft();invalidateInline();state.rows=[];state.existing=[];state.fingerprint='';state.selected=null;state.filter='missing';state.needsCompare=true;state.autoPositionSupported=false;state.draftKey='';state.postImages=[];state.links={};
     byId('hd-missing-files').value='';byId('hd-missing-post-files').value='';byId('hd-missing-block').hidden=true;renderPostImages();render();
   }
   function removeListImages(index) {
@@ -137,15 +150,17 @@
   async function readFiles(files) {
     if(state.busy)return;
     const items=Array.from(files||[]);if(!items.length)return;
-    if(items.length>3){status('목록 캡처는 최대 3장까지 첨부할 수 있습니다.',true);return;}
+    // 여러 페이지를 한 장씩 붙여넣을 수 있도록 기존 이미지에 이어 붙입니다. 교체는 ×·캡처 초기화로 합니다.
+    if(items.length+state.images.length>3){status(`목록 캡처는 최대 3장입니다. 현재 ${state.images.length}장이 첨부돼 있습니다. 썸네일의 ×로 삭제하거나 캡처 초기화 후 추가해 주세요.`,true);return;}
     const generation=++state.generation;setBusy(true);status('목록 이미지를 준비 중입니다...');
-    try{const images=await Promise.all(items.map(optimize));if(generation!==state.generation)return;state.images=images;resetListResults();renderListImages();setBusy(false);await analyze();
+    try{const images=await Promise.all(items.map(optimize));if(generation!==state.generation)return;state.images=state.images.concat(images);resetListResults();renderListImages();setBusy(false);await analyze();
     }catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
   }
   async function analyze() {
     if(state.busy)return;
     if(!state.images.length||!byId('hd-missing-date').value){status('비교할 날짜와 목록 이미지를 확인해 주세요.',true);return;}
-    rememberDraft();resetInsertion();const generation=++state.generation;setBusy(true);status('목록의 원문 작성일시·답글을 확인하고 처리 상태와 무관하게 등록 건과 대조 중입니다...');
+    // 새로 분석하면 행 순서가 바뀔 수 있어 이전 연결(행 key 기준)을 쓰지 않습니다.
+    rememberDraft();resetInsertion();state.links={};const generation=++state.generation;setBusy(true);status('목록의 원문 작성일시·답글을 확인하고 처리 상태와 무관하게 등록 건과 대조 중입니다...');
     try{const result=await callGASApi('analyzeListCapture',{receiptDate:byId('hd-missing-date').value,images:state.images});if(generation!==state.generation)return;acceptComparison(result);}
     catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
   }
@@ -164,20 +179,35 @@
   async function compare() {
     if(state.busy)return;
     if(!state.rows.length){status('먼저 목록 캡처를 분석해 주세요.',true);return;}
-    rememberDraft();resetInsertion();const generation=++state.generation;setBusy(true);status('이미지 재분석 없이 원문 작성일시를 유지하며 최신 등록 목록으로 비교 중입니다...');
-    try{const result=await callGASApi('compareListCapture',{receiptDate:byId('hd-missing-date').value,rows:state.rows});if(generation===state.generation)acceptComparison(result);}
+    rememberDraft();resetInsertion();const selected=state.selected,oldKey=state.draftKey;applyCorrection();const generation=++state.generation;setBusy(true);status('이미지 재분석 없이 원문 작성일시(정정값 포함)를 유지하며 최신 등록 목록으로 비교 중입니다...');
+    try{const result=await callGASApi('compareListCapture',{receiptDate:byId('hd-missing-date').value,rows:state.rows});if(generation===state.generation){acceptComparison(result);rekeyDraft(selected,oldKey);}}
     catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
   }
   async function recover() {
     if(state.busy)return;
     const generation=++state.generation;setBusy(true);status('행을 다시 등록하지 않고 이전 작업의 저장 표식을 확인 중입니다...');
     try{const answer=await callGASApi('checkIssueInsertion');if(generation!==state.generation)return;
-      if(answer.recovered){state.needsCompare=true;state.selected=null;state.fingerprint='';render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
+      if(answer.recovered){state.needsCompare=true;state.selected=null;state.fingerprint='';state.links={};render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
       else status(answer.message||'확인 대기 중인 중간 등록이 없습니다.');
     }catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
   }
   const formFields={branch:'branch',requester:'requester',dev:'dev',system:'system',type:'type',priority:'priority',menu:'menu',sourceLink:'source-link',jiraLink:'jira-link',title:'title',details:'details'};
   function invalidateInline() {resetInsertion();byId('hd-missing-confirm').checked=false;byId('hd-missing-prepare').disabled=true;}
+  // 펼친 행에서 정정한 제목·작성자·작성일시·원문 링크를 이후 재비교·등록 확인·위치 계산에 같은 값으로 씁니다.
+  function applyCorrection() {
+    const row=state.rows.find(item=>item.key===state.selected);if(!row||!byId('hd-missing-source-date'))return;
+    const form=inlineForm(),clock=byId('hd-missing-source-time').value;
+    const next={...row,title:form.title||row.title,requester:form.requester||row.requester,sourceLink:form.sourceLink||row.sourceLink||'',
+      rawDate:form.receiptDate&&form.receiptDate!==row.date?form.receiptDate:row.rawDate,rawTime:clock&&clock!==row.time?clock:row.rawTime};
+    if(['title','requester','sourceLink','rawDate','rawTime'].some(name=>next[name]!==row[name]))state.rows=state.rows.map(item=>item.key===row.key?next:item);
+  }
+  // 정정으로 행 식별값이 바뀌어도 입력 초안을 잃지 않도록 옮깁니다.
+  function rekeyDraft(key,oldKey) {
+    const current=state.rows.find(item=>item.key===key);if(!current||!oldKey)return '';const next=identity(current);
+    if(next!==oldKey&&state.drafts[oldKey]){state.drafts[next]=state.drafts[oldKey];delete state.drafts[oldKey];}
+    return next;
+  }
+  const withLinks = rows => rows.map(item=>state.links[item.key]?{...item,linkedIssueId:state.links[item.key]}:item);
   function renderPostImages() {
     byId('hd-missing-post-thumbs').replaceChildren(...state.postImages.map((item,index)=>{
       const box=document.createElement('div'),img=document.createElement('img'),remove=document.createElement('button');box.className='hd-missing-post-thumb';img.src=item.data;img.alt='게시글 캡처 '+(index+1);remove.type='button';remove.textContent='×';remove.setAttribute('aria-label','게시글 캡처 '+(index+1)+' 삭제');remove.onclick=()=>{if(state.busy)return;state.postImages.splice(index,1);renderPostImages();rememberDraft();invalidateInline();};box.append(img,remove);return box;
@@ -201,20 +231,23 @@
       });
       if(data.receiptDate&&/^\d{4}-\d{2}-\d{2}$/.test(data.receiptDate)&&(!before.receiptDate||(before.receiptDate===row.date&&['today','unknown'].includes(row.dateSource))))byId('hd-missing-source-date').value=data.receiptDate;
       await loadHelpdeskStaffBranchMap();if(generation!==state.generation)return;if(!byId('hd-missing-branch').value){const branch=getHelpdeskBranchByStaffName(byId('hd-missing-requester').value);if(branch)byId('hd-missing-branch').value=branch;}
-      rememberDraft();invalidateInline();const form=inlineForm(),clock=byId('hd-missing-source-time').value;
-      state.rows=state.rows.map(item=>item.key===selected?{...item,title:form.title,requester:form.requester,sourceLink:form.sourceLink,
-        rawDate:form.receiptDate&&form.receiptDate!==item.date?form.receiptDate:item.rawDate,rawTime:clock&&clock!==item.time?clock:item.rawTime}:item);
+      rememberDraft();invalidateInline();const oldKey=state.draftKey;applyCorrection();
       const result=await callGASApi('compareListCapture',{receiptDate:byId('hd-missing-date').value,rows:state.rows});if(generation!==state.generation)return;
       acceptComparison(result);const current=state.rows.find(item=>item.key===selected);
-      if(current){const oldDraft=state.drafts[state.draftKey];state.draftKey=JSON.stringify([current.title,current.requester,current.date,current.time]);if(oldDraft)state.drafts[state.draftKey]=oldDraft;}
+      if(current)state.draftKey=rekeyDraft(selected,oldKey)||state.draftKey;
       if(current&&!['registered','excluded','reply'].includes(current.kind)){state.selected=selected;render();}
       byId('hd-missing-post-status').textContent='자동 입력 완료 · 이미 입력한 상세 내용·링크는 유지했습니다. 요청자·지사·작성일시를 확인해 주세요.'+(Array.isArray(data.warnings)&&data.warnings.length?' '+data.warnings.slice(0,3).join(' / ').slice(0,600):'');
       if(current&&['registered','excluded'].includes(current.kind))status('게시글의 원문 링크·제목으로 기존 등록이 확인돼 누락 의심에서 분리했습니다. 등록 일치/제외 탭에서 확인할 수 있습니다.');
     }catch(error){if(generation===state.generation)byId('hd-missing-post-status').textContent='게시글 분석 또는 등록 재확인 실패: '+apiError(error);}finally{if(generation===state.generation)setBusy(false);}
   }
   async function setConfirmed(key,confirmed) {
-    if(state.busy)return;const row=state.rows.find(item=>item.key===key);if(!row)return;rememberDraft();resetInsertion();const generation=++state.generation;state.marking=true;setBusy(true);status(confirmed?'실제 이슈 상태를 바꾸지 않고 팀 공통 등록 확인을 저장 중입니다...':'팀 공통 등록 확인 제외를 해제하고 재비교 중입니다...');
-    try{const result=await callGASApi('setCaptureConfirmed',{receiptDate:byId('hd-missing-date').value,row,rows:state.rows,confirmed});if(generation!==state.generation)return;acceptComparison(result);status(confirmed?'등록 확인 완료 · 누락 의심에서 제외했습니다. 팀 공통으로 유지되며 등록 확인 제외 탭에서 해제할 수 있습니다. 실제 처리 상태는 바뀌지 않았습니다.':'제외를 해제했습니다. 최신 등록 정보로 다시 분류했습니다.');}
+    if(state.busy||!state.rows.some(item=>item.key===key))return;rememberDraft();resetInsertion();
+    const wasSelected=state.selected===key,oldKey=state.draftKey;if(wasSelected)applyCorrection();
+    const row=state.rows.find(item=>item.key===key),link=confirmed?linkCandidate(row):'';
+    const generation=++state.generation;state.marking=true;setBusy(true);status(confirmed?'실제 이슈 상태를 바꾸지 않고 팀 공통 등록 확인을 저장 중입니다...':'팀 공통 등록 확인 제외를 해제하고 재비교 중입니다...');
+    try{const result=await callGASApi('setCaptureConfirmed',{receiptDate:byId('hd-missing-date').value,row,rows:state.rows,confirmed});if(generation!==state.generation)return;acceptComparison(result);if(wasSelected)rekeyDraft(key,oldKey);
+      if(confirmed&&link&&state.rows.find(item=>item.key===key)?.kind==='excluded')state.links[key]=link;else if(!confirmed)delete state.links[key];render();
+      status(confirmed?'등록 확인 완료 · 누락 의심에서 제외했습니다. 팀 공통으로 유지되며 등록 확인 제외 탭에서 해제할 수 있습니다. 실제 처리 상태는 바뀌지 않았습니다.'+(state.links[key]?' 이번 화면에서는 '+state.links[key]+'를 삽입 위치 기준점으로 사용합니다.':''):'제외를 해제했습니다. 최신 등록 정보로 다시 분류했습니다.');}
     catch(error){if(generation===state.generation)status('등록 확인 저장 여부를 확인하지 못했습니다. 기존 결과 다시 비교로 확인해 주세요. '+apiError(error),true);}finally{state.marking=false;if(generation===state.generation)setBusy(false);}
   }
   function inlineForm() {
@@ -247,11 +280,12 @@
     const invalid=Array.from(byId('hd-missing-editor').querySelectorAll('input:not([type=checkbox]),select,textarea')).find(field=>!field.checkValidity());if(invalid){invalid.reportValidity();return;}
     if(!byId('hd-missing-confirm').checked){status('원문 작성일시와 필수 내용을 확인하고 확인란에 체크해 주세요.',true);return;
     }
-    rememberDraft();resetInsertion();const form=inlineForm(),sourceTime=byId('hd-missing-source-time').value;
+    rememberDraft();resetInsertion();const oldKey=state.draftKey;applyCorrection();const form=inlineForm(),sourceTime=byId('hd-missing-source-time').value;
     const generation=++state.generation;setBusy(true);status('원문 작성시각으로 위치를 계산하고 Jira 연결·참조를 확인 중입니다...');byId('hd-missing-block').hidden=true;
     try{
       if(byId('hd-missing-date').value!==form.receiptDate){const current=await callGASApi('compareListCapture',{receiptDate:form.receiptDate,rows:state.rows});if(generation!==state.generation)return;state.rows=current.rows;state.existing=current.existing;state.fingerprint=current.fingerprint;byId('hd-missing-date').value=form.receiptDate;}
-      const candidate={receiptDate:form.receiptDate,title:form.title,requester:form.requester,sourceLink:form.sourceLink,fingerprint:state.fingerprint,originalConfirmed:true,autoPosition:true,sourceDate:form.receiptDate,sourceTime,captureRows:state.rows,captureRow:state.rows.find(item=>item.key===state.selected)};
+      state.draftKey=rekeyDraft(state.selected,oldKey)||state.draftKey;
+      const candidate={receiptDate:form.receiptDate,title:form.title,requester:form.requester,sourceLink:form.sourceLink,fingerprint:state.fingerprint,originalConfirmed:true,autoPosition:true,sourceDate:form.receiptDate,sourceTime,captureRows:withLinks(state.rows),captureRow:state.rows.find(item=>item.key===state.selected)};
       const preview=await callGASApi('previewIssueInsertion',candidate);if(generation!==state.generation)return;
       if(!preview||preview.allowed!==true){const message=(preview&&preview.reason||'안전 여부를 확인하지 못해 등록할 수 없습니다.')+(preview?.blockedIds?.length?'\n영향 번호: '+preview.blockedIds.join(', '):'')+(preview?.jiraKeys?.length?'\nJira: '+preview.jiraKeys.join(', '):'');byId('hd-missing-block').hidden=false;byId('hd-missing-block').textContent=message;status('등록 준비를 중단했습니다. 펼침 영역의 안내를 확인해 주세요.',true);return;}
       if(!preview.token||!preview.id||!preview.receiptTime||!preview.originalPostedAt)throw Error('원문 시각이 포함된 중간 등록 미리보기를 확인하지 못했습니다. 업무 API 배포 상태를 확인해 주세요.');
@@ -286,7 +320,8 @@
     if(form.receiptDate!==insertion.date){showToast('중간 등록 날짜는 바꿀 수 없습니다. 점검을 다시 진행해 주세요.','error');return;}
     state.writing=true;setBusy(true);setButtonSaving(button,true,'확인·등록 중...');showToast('중복·Jira 연결을 다시 확인한 후 중간 등록합니다.','info');
     try{const result=await callGASApi('insertIssue',{token:insertion.token,renumberConfirmed:true,form});
-      state.writing=false;delete state.drafts[state.draftKey];state.draftKey='';resetInsertion();state.needsCompare=true;state.selected=null;state.fingerprint='';render();
+      // 번호가 바뀌었으므로 이전 연결 번호는 기준점으로 쓰지 않습니다.
+      state.writing=false;delete state.drafts[state.draftKey];state.draftKey='';state.links={};resetInsertion();state.needsCompare=true;state.selected=null;state.fingerprint='';render();
       try{applyResult(form,result);}catch(_){markDashboardServerChange();loadData(true);}
       showToast(`중간 등록 완료: ${result.id}. 번호가 변경된 화면은 새로 조회해 주세요.`);status('등록 완료. 다음 후보를 처리하려면 기존 결과 다시 비교를 눌러 주세요.');
     }catch(error){showToast('중간 등록 실패: '+apiError(error)+'\n자동 재등록하지 않습니다. 결과가 불명확하면 입력 내용을 유지한 채 같은 등록으로 재확인해 주세요.','error');markDashboardServerChange();loadData(true);}

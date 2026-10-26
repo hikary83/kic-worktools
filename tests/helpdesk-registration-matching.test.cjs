@@ -61,3 +61,13 @@ test('클라이언트가 이전 후보/상태 값을 보내도 원본 시트로 
   const f=fixture([record(1,'저장된 원문',{status:'완료'})]);
   const row=compare(f,[original('전혀 다른 원문',{kind:'registered',related:[{id:'IT-000000-999'}],status:'완료'})]).rows[0];assert.equal(row.kind,'missing');assert.equal(row.related.length,0);assert.equal(f.state.batches.length,0);
 });
+test('등록 후보는 작성자 일치 여부·같은 날짜 여부·제목에서 다른 부분을 근거로 보여 준다',()=>{
+  const f=fixture([record(1,'내부교정 성적서 필증출력이 교정일에 맞춰서 나오지 않습니다.'),record(2,'같은 제목 다른 작성자 요청 건입니다',{requester:'다른 직원'})]);
+  const rows=compare(f,[original('내부교정 성적서 필증출력이 교정에일에 맞춰서 나오지 않습니다.'),original('같은 제목 다른 작성자 요청 건입니다')]).rows;
+  assert.equal(rows[0].kind,'review');const typo=rows[0].related[0].basis;
+  assert.equal(rows[0].related[0].id,'IT-261023-001');assert.equal(typo.sameDate,true);assert.equal(typo.sameRequester,true);assert.equal(typo.titleSame,false);
+  assert.match(typo.captureTitlePart,/교정에일에/);assert.match(typo.registeredTitlePart,/교정일에/);assert.doesNotMatch(typo.registeredTitlePart,/교정에일에/);
+  assert.equal(rows[1].kind,'review');assert.match(rows[1].reason,/작성자 값이 다릅니다/);
+  assert.equal(rows[1].related[0].requester,'다른 직원');assert.equal(rows[1].related[0].basis.titleSame,true);assert.equal(rows[1].related[0].basis.sameRequester,false);
+  assert.equal(f.state.batches.length,0);
+});

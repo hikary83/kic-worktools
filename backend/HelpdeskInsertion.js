@@ -116,11 +116,12 @@ function hdCaptureStamp_(dateValue, timeValue, referenceDate) {
   const rawDate = hdInsertText_(dateValue, 80), rawTime = hdInsertText_(timeValue, 40);
   let dateText = rawDate.normalize('NFKC').replace(/년|월/g, '-').replace(/일/g, '').replace(/\s*([.\/-])\s*/g, '$1').replace(/\.$/, '');
   let clock = rawTime.normalize('NFKC'), source = 'visible', warning = '', date = '';
-  if (!dateText && /^\d{4}[.\/-]/.test(clock)) { dateText = clock; clock = ''; }
-  const full = dateText.match(/^(\d{4})[.\/-](\d{1,2})[.\/-](\d{1,2})(?:[. T]+(.+))?$/);
-  const short = dateText.match(/^(\d{1,2})[.\/-](\d{1,2})(?:[. T]+(.+))?$/);
+  if (!dateText && /^\d{2,4}[.\/-]\d{1,2}[.\/-]\d{1,2}/.test(clock)) { dateText = clock; clock = ''; }
+  // 하이웍스 목록은 26-10-25처럼 두 자리 연도를 표시합니다. 연·월·일 세 부분이면 20YY로 읽고 월·일로 해석하지 않습니다.
+  const full = dateText.match(/^(\d{4}|\d{2})[.\/-](\d{1,2})[.\/-](\d{1,2})(?:[. T]+(.+))?$/);
+  const short = full ? null : dateText.match(/^(\d{1,2})[.\/-](\d{1,2})(?:[. T]+(.+))?$/);
   if (full || short) {
-    const parts = full ? [full[1], full[2], full[3]] : [today.slice(0, 4), short[1], short[2]];
+    const parts = full ? [full[1].length === 2 ? '20' + full[1] : full[1], full[2], full[3]] : [today.slice(0, 4), short[1], short[2]];
     if (!clock) clock = full ? full[4] || '' : short[3] || '';
     const proposed = parts.map(function(value, i) { return String(value).padStart(i ? 2 : 4, '0'); }).join('-');
     try { date = hdInsertDate_(proposed); } catch (_) { warning = '원문 날짜를 확인해 주세요.'; }
@@ -153,6 +154,16 @@ function hdNormalizeListRows_(input, referenceDate) {
       uncertain: row.uncertain !== false, sourceLink: hdInsertPostSource_(row.sourceLink) }, stamp);
   });
 }
+function hdCandidateBasis_(row, item) {
+  // 후보를 보여준 근거만 설명합니다. 판정·삽입 기준에는 사용하지 않습니다.
+  const a = hdInsertText_(row.title), b = hdInsertText_(item.title), titleSame = hdInsertTitle_(a) === hdInsertTitle_(b);
+  let start = 0, end = 0;
+  while (start < a.length && start < b.length && a[start] === b[start]) start++;
+  while (end < a.length - start && end < b.length - start && a[a.length - 1 - end] === b[b.length - 1 - end]) end++;
+  const part = function(text) { return titleSame ? '' : text.slice(Math.max(0, start - 6), text.length - end + 6).slice(0, 60); };
+  return { sameDate: item.date.slice(0, 10) === row.date, sameRequester: !!row.requester && hdInsertTitle_(item.requester) === hdInsertTitle_(row.requester),
+    titleSame: titleSame, captureTitlePart: part(a), registeredTitlePart: part(b) };
+}
 function hdCompareList_(rows, existing, dateText, otherDays) {
   const pool = existing.concat(otherDays || []);
   const originals = rows.filter(function(row) { return row.isReply === false; });
@@ -172,9 +183,12 @@ function hdCompareList_(rows, existing, dateText, otherDays) {
     else if (sourceMatches.length === 1) { kind = 'registered'; reason = '원문 게시글 링크가 이미 등록된 이슈와 일치합니다. 처리 상태·제목·접수일 차이와 무관하게 등록 사실을 확인했습니다.'; }
     else if (sourceMatches.length > 1) { kind = 'review'; reason = '같은 원문 링크가 여러 이슈에 등록돼 있습니다. 기존 등록 건을 확인해 주세요.'; }
     else if (!row.date) { kind = 'review'; reason = '원문 작성일시를 확인해 주세요. 비교 기준일로 원문 날짜를 임의 변경하지 않습니다.'; }
-    else if (!row.title || !row.requester || row.uncertain || row.isReply !== false || repeated || matches.length > 1 || (matches.length && exact.length !== 1)) {
-      kind = 'review'; reason = '제목·작성자·원문 구분이 불확실하거나 같은 제목이 있습니다. 캡처와 원문을 확인해 주세요.';
-    } else if (exact.length === 1) { kind = 'registered'; reason = '처리 상태와 무관하게 원문 작성일의 제목·작성자가 일치하는 등록 건입니다. 동일 제목의 별도 요청인지 원문도 확인해 주세요.'; }
+    else if (!row.title || !row.requester || row.uncertain || row.isReply !== false) {
+      kind = 'review'; reason = '제목·작성자 또는 원문/답글 구분의 인식이 불확실합니다. 캡처와 원문을 확인해 주세요.';
+    } else if (repeated) { kind = 'review'; reason = '같은 날짜·제목의 원문이 캡처에 여러 건 있습니다. 별도 요청인지 원문을 확인해 주세요.'; }
+    else if (matches.length > 1) { kind = 'review'; reason = '같은 날짜·제목의 등록 건이 여러 개입니다. 어느 건과 같은 원문인지 확인해 주세요.'; }
+    else if (matches.length && exact.length !== 1) { kind = 'review'; reason = '같은 날짜·제목의 등록 건이 있으나 작성자 값이 다릅니다. 기존 작성자와 원문을 확인해 주세요.'; }
+    else if (exact.length === 1) { kind = 'registered'; reason = '처리 상태와 무관하게 원문 작성일의 제목·작성자가 일치하는 등록 건입니다. 동일 제목의 별도 요청인지 원문도 확인해 주세요.'; }
     else if (related.length) {
       kind = 'review';
       reason = related.some(function(item) { return item.date.slice(0, 10) === row.date; }) ?
@@ -197,7 +211,7 @@ function hdCompareList_(rows, existing, dateText, otherDays) {
     const newerIndex = existing.findIndex(function(item) { return item.id === newer; });
     const positionKnown = row.date === dateText && !!older && !!newer && newerIndex === olderIndex + 1;
     return Object.assign({}, row, { kind: kind, reason: reason, matches: (sourceMatches.length ? sourceMatches : matches).map(function(item) { return item.id; }),
-      related: related.slice(0, 5).map(function(item) { return { id: item.id, title: item.title, date: item.date }; }), relatedCount: related.length,
+      related: related.slice(0, 5).map(function(item) { return { id: item.id, title: item.title, date: item.date, requester: item.requester, basis: hdCandidateBasis_(row, item) }; }), relatedCount: related.length,
       suggestedAfterId: positionKnown ? older : null, positionKnown: positionKnown });
   });
 }
@@ -297,16 +311,28 @@ function hdInferInsertionByTime_(snapshot, data) {
   const stamp = hdCaptureStamp_(data.sourceDate, data.sourceTime);
   if (stamp.date !== snapshot.date || !stamp.time) throw new Error('원문 작성 날짜와 시간을 확인해 주세요. 작성시각 없이 삽입 위치를 추정하지 않습니다.');
   const originalTime = new Date(stamp.date + 'T' + stamp.time + (stamp.time.length === 5 ? ':00' : '') + '+09:00').getTime();
-  const existing = hdInsertPublicDay_(snapshot), clocks = {};
-  hdNormalizeListRows_(data.captureRows || []).forEach(function(row) {
-    if (row.isReply !== false || row.uncertain || row.date !== snapshot.date || !row.time || !row.requester) return;
-    const found = existing.filter(function(item) { return hdInsertTitle_(item.title) === hdInsertTitle_(row.title) && hdInsertTitle_(item.requester) === hdInsertTitle_(row.requester); });
+  const existing = hdInsertPublicDay_(snapshot), clocks = {}, rawRows = Array.isArray(data.captureRows) ? data.captureRows : [];
+  hdNormalizeListRows_(rawRows).forEach(function(row, index) {
+    // 담당자가 ‘등록 확인’으로 연결한 기존 이슈는 같은 날짜이고 제목이 같거나 한 글자 차이일 때만 기준점으로 씁니다.
+    const linked = /^IT-\d{6}-\d{3,}$/.test(String(rawRows[index] && rawRows[index].linkedIssueId || '')) ? String(rawRows[index].linkedIssueId) : '';
+    if (row.isReply === true || row.date !== snapshot.date || !row.time || (!linked && (row.isReply !== false || row.uncertain || !row.requester))) return;
+    const found = linked ? existing.filter(function(item) { return item.id === linked; }) :
+      existing.filter(function(item) { return hdInsertTitle_(item.title) === hdInsertTitle_(row.title) && hdInsertTitle_(item.requester) === hdInsertTitle_(row.requester); });
+    if (linked && (found.length !== 1 || !hdInsertSimilarTitle_(row.title, found[0].title))) {
+      throw new Error('등록 확인으로 연결한 ' + linked + '이(가) 같은 날짜·제목의 원문과 맞지 않습니다. 기존 결과 다시 비교 후 연결을 다시 확인해 주세요.');
+    }
     if (found.length !== 1) return;
     const value = new Date(row.date + 'T' + row.time + (row.time.length === 5 ? ':00' : '') + '+09:00').getTime();
     if (clocks[found[0].id] !== undefined && clocks[found[0].id] !== value) throw new Error('같은 등록 건의 원문 작성시각이 서로 다르게 인식됐습니다. 목록 캡처를 확인해 주세요.');
     clocks[found[0].id] = value;
   });
   const timeline = snapshot.rows.map(function(row, index) { return { id: row.id, index: index, time: clocks[row.id] }; }).filter(function(row) { return row.time !== undefined; });
+  // 막힌 경우 작성시각을 확인하지 못한 기존 번호를 알려 줍니다. 그 시각을 추정해 채우지는 않습니다.
+  const unresolved = function(from, to) {
+    const list = snapshot.rows.slice(from, to).filter(function(row) { return clocks[row.id] === undefined; });
+    return list.slice(0, 5).map(function(row) { return row.id + ' 「' + hdInsertText_(row.values[8], 30) + '」'; }).join(', ') + (list.length > 5 ? ' 외 ' + (list.length - 5) + '건' : '');
+  };
+  const guide = ' 이 원문이 보이도록 목록 캡처를 추가하거나, 등록 후보로 표시된 행이면 ‘등록 확인’으로 기존 이슈와 연결한 뒤 다시 확인해 주세요. 확인되지 않은 시각으로 위치를 추정하지 않습니다.';
   let afterId = '', basis = 'capture';
   if (timeline.length) {
     if (timeline.some(function(row) { return row.time === originalTime; })) throw new Error('작성시각이 같은 등록 건이 있어 시간만으로 삽입 순서를 확정할 수 없습니다. 원문 시각·순서를 확인해 주세요.');
@@ -315,9 +341,11 @@ function hdInferInsertionByTime_(snapshot, data) {
     if (older && newer && newer.index === older.index + 1) afterId = older.id;
     else if (older && !newer && older.index === snapshot.rows.length - 1) afterId = older.id;
     else if (!older && newer && newer.index === 0) afterId = '';
-    else throw new Error('원문 시각의 앞뒤 사이에 시각을 확인하지 못한 기존 건이 있습니다. 앞뒤 원문이 더 보이도록 목록 캡처를 추가해 주세요.');
+    else if (older && newer && newer.index < older.index) throw new Error('기존 번호 순서와 원문 작성시각 순서가 다릅니다(' + older.id + ' · ' + newer.id + '). 시트와 원문을 확인해 주세요. 위치를 자동으로 정하지 않습니다.');
+    else throw new Error('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ' +
+      (older && newer ? unresolved(older.index + 1, newer.index) : older ? unresolved(older.index + 1) : unresolved(0, newer.index)) + '.' + guide);
   } else if (snapshot.rows.length) {
-    throw new Error('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 앞뒤 등록 원문이 포함된 목록 캡처를 추가해 주세요.');
+    throw new Error('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 이 날짜의 기존 ' + snapshot.rows.length + '건: ' + unresolved(0) + '.' + guide);
   } else basis = 'empty-day';
   return { afterId: afterId, originalTime: originalTime, originalPrecision: stamp.time.length === 8 ? 'second' : 'minute', positionBasis: basis };
 }

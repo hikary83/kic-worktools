@@ -56,3 +56,36 @@ test('연결된 Jira 번호가 이동하는 자동 위치는 기존과 동일하
 test('원문 시각을 포함한 원자적 저장도 응답 유실 시 표식으로 한 번만 복구한다',()=>{
   const f=fixture(),p=automatic(f);f.state.writeMode='after-timeout';assert.throws(()=>f.insert(p.token),/timeout/);const result=f.context.checkHelpdeskInsertion();assert.equal(result.recovered,true);assert.equal(result.result.originalPostedAt,p.originalPostedAt);assert.equal(f.state.batches.length,1);
 });
+test('하이웍스 두 자리 연도(26-10-25)는 원문 날짜로 읽고 월·일로 오해하지 않는다',()=>{
+  const f=fixture();f.state.now=Date.parse('2026-10-26T02:58:00Z');
+  for(const [date,time] of [['26-10-25','17:39'],['26-10-25 17:39',''],['','26-10-25 17:39'],['26.10.25','17:39'],['26/10/25','오후 5:39']]){
+    const r=f.context.hdCaptureStamp_(date,time);assert.equal(r.date,'2026-10-25');assert.equal(r.time,'17:39');assert.equal(r.dateSource,'visible');assert.equal(r.dateWarning,'');
+  }
+  const short=f.context.hdCaptureStamp_('10.23','16:17');assert.equal(short.date,'2026-10-23');assert.equal(short.dateSource,'year-assumed');
+  assert.equal(f.context.hdCaptureStamp_('26-13-25','17:39').date,'');
+});
+test('두 자리 연도로 표시된 과거 원문도 해당 날짜의 등록 건과 대조하고 시간만 보인 행은 오늘로 비교한다',()=>{
+  const f=fixture([record(1,'지난 원문',{date:'2026-10-23',status:'완료'})]);f.state.now=Date.parse('2026-10-26T02:58:00Z');
+  const rows=[{title:'지난 원문',requester:'예시 직원',date:'26-10-23',time:'16:34',isReply:false,uncertain:false},{title:'오늘 원문',requester:'예시 직원',date:'',time:'09:08',isReply:false,uncertain:false}];
+  const r=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-26',rows});
+  assert.deepEqual(Array.from(r.rows,x=>x.kind),['registered','missing']);assert.deepEqual(Array.from(r.rows,x=>x.date),['2026-10-23','2026-10-26']);
+  const again=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:r.rows});assert.deepEqual(Array.from(again.rows,x=>x.date),['2026-10-23','2026-10-26']);
+});
+const linkedDay=()=>fixture([record(3,'견적서 출력 버튼 오류 확인 요청'),record(2,'교정필증 발행 일자 표시 오류 문의'),record(1,'사용자 권한 추가 신청 드립니다')]);
+const linkedRows=(link)=>[source('견적서 출력 버튼 오류 확인 요청','15:00'),source('누락 원문','14:30'),source('교정필증 발행 일자의 표시 오류 문의','14:00',link?{linkedIssueId:link}:{}),source('사용자 권한 추가 신청 드립니다','13:00')];
+test('기준점이 부족하면 작성시각을 확인하지 못한 기존 번호와 해결 방법을 알려 준다',()=>{
+  const f=linkedDay();
+  assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows()}),error=>/IT-261023-002 「교정필증 발행 일자 표시 오류 문의」/.test(error.message)&&/등록 확인/.test(error.message)&&!/IT-261023-001/.test(error.message));
+  assert.throws(()=>automatic(fixture(),'09:15',{captureRows:[]}),error=>/정렬 시간과 원문 시각을 섞어/.test(error.message)&&/IT-261023-001/.test(error.message));
+  assert.equal(f.state.batches.length,0);
+});
+test('담당자가 등록 확인으로 연결한 같은 날짜·한 글자 차이 기존 건은 위치 기준점으로 쓴다',()=>{
+  const f=linkedDay(),p=f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows('IT-261023-002')});
+  assert.equal(p.allowed,true);assert.equal(p.id,'IT-261023-003');assert.equal(p.older,'IT-261023-002');assert.equal(p.newer,'IT-261023-003');assert.equal(p.originalPostedAt,'2026-10-23 14:30');assert.equal(f.state.batches.length,0);
+});
+test('제목이 맞지 않는 기존 번호로 연결하면 기준점으로 쓰지 않고 차단한다',()=>{
+  const f=linkedDay();
+  assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows('IT-261023-003')}),/연결한 IT-261023-003/);
+  assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows('IT-261023-009')}),/연결한 IT-261023-009/);
+  assert.equal(f.state.batches.length,0);
+});

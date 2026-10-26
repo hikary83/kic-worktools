@@ -144,5 +144,42 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.getByRole('button',{name:'목록 캡처 1 삭제',exact:true}).click();assert.equal(await page.locator('#hd-missing-thumbs img').count(),0);assert.equal(await page.locator('#hd-missing-analyze').isDisabled(),true);assert.equal(await page.locator('#hd-missing-compare').isDisabled(),true);
     assert.deepEqual([...f.state.props],propsBeforeDelete);assert.equal(f.state.batches.length,batchesBeforeDelete);assert.deepEqual(errors,[]);
     console.log('PASS 목록 이미지 개별 삭제·전체 초기화·잔여 이미지 재분석·동일 파일 재첨부·오래된 등록 승인 무효화·입력/팀 설정 보존·분석 중 삭제 차단');
+    // v2.10.3: 누적 첨부·후보 근거·정정값 반영·등록 확인 연결 기준점
+    f.state.jiraIssues=[];f.state.jiraWarnings=[];f.state.jiraFailure=false;f.state.rows.push(record(1,'교정필증 발행 일자 표시 오류 문의',{date:'2026-10-20'}));
+    f.state.aiRows=[{title:'날짜 정정 필요 원문',requester:'예시 새 직원',date:'알수없음',time:'',isReply:false,uncertain:false},
+      {title:'교정필증 발행 일자의 표시 오류 문의',requester:'예시 직원',date:'26-10-20',time:'14:00',isReply:false,uncertain:false},
+      {title:'누락된 별도 요청 원문입니다',requester:'예시 새 직원',date:'26-10-20',time:'14:30',isReply:false,uncertain:false}];
+    const propsBeforeLink=[...f.state.props],batchesBeforeLink=f.state.batches.length,analyses=()=>calls.filter(item=>item.action==='analyzeListCapture').length;
+    const waitAnalyses=async count=>{for(let i=0;i<200&&analyses()<count;i++)await page.waitForTimeout(25);await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('비교 완료'));};
+    assert.equal(await page.locator('#hd-missing-thumbs img').count(),0);let before=analyses();
+    await page.locator('#hd-missing-files').setInputFiles({name:'page-1.png',mimeType:'image/png',buffer:image});await waitAnalyses(before+1);
+    await page.locator('#hd-missing-files').setInputFiles({name:'page-2.png',mimeType:'image/png',buffer:image});await waitAnalyses(before+2);
+    assert.equal(await page.locator('#hd-missing-thumbs img').count(),2);assert.equal(calls.filter(item=>item.action==='analyzeListCapture').at(-1).data.images.length,2);
+    await page.locator('#hd-missing-files').setInputFiles([{name:'page-3.png',mimeType:'image/png',buffer:image},{name:'page-4.png',mimeType:'image/png',buffer:image}]);
+    await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('최대 3장'));assert.equal(await page.locator('#hd-missing-thumbs img').count(),2);assert.equal(analyses(),before+2);
+    await page.locator('#hd-missing-files').setInputFiles({name:'page-3.png',mimeType:'image/png',buffer:image});await waitAnalyses(before+3);assert.equal(await page.locator('#hd-missing-thumbs img').count(),3);
+    await page.locator('#hd-missing-tabs [data-filter="review"]').click();
+    const typoText=await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText);assert.match(typoText,/IT-261020-001/);assert.match(typoText,/작성자 예시 직원 일치/);assert.match(typoText,/제목 차이: 캡처 “[^”]*일자의 표시[^”]*” ↔ 등록 “[^”]*일자 표시[^”]*”/);
+    assert.match(await page.locator('[data-confirm-row="1"]').innerText(),/IT-261020-001와 동일/);assert.equal(await page.locator('[data-confirm-row="0"]').isDisabled(),true);
+    await page.locator('#hd-missing-tabs [data-filter="missing"]').click();await page.locator('[data-row="2"]').click();
+    await page.locator('#hd-missing-branch').selectOption('서울본사');await page.locator('#hd-missing-details').fill('연결 기준점 확인용 본문');await page.locator('#hd-missing-confirm').check();await page.locator('#hd-missing-prepare').click();
+    await page.waitForFunction(()=>!document.querySelector('#hd-missing-block').hidden&&document.querySelector('#hd-missing-block').innerText.includes('IT-261020-001'));
+    assert.match(await page.locator('#hd-missing-block').innerText(),/등록 확인/);assert.equal(await page.locator('#hd-missing-preview').isVisible(),false);
+    await page.locator('#hd-missing-tabs [data-filter="review"]').click();await page.locator('[data-confirm-row="1"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('삽입 위치 기준점'));
+    await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();assert.match(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/위치 기준점 연결: IT-261020-001/);
+    await page.locator('#hd-missing-tabs [data-filter="missing"]').click();await page.locator('[data-row="2"]').click();assert.equal(await page.locator('#hd-missing-details').inputValue(),'연결 기준점 확인용 본문');
+    await page.locator('#hd-missing-confirm').check();await page.locator('#hd-missing-prepare').click();await page.locator('#hd-missing-preview').waitFor();
+    const linkedPreview=calls.filter(item=>item.action==='previewIssueInsertion').at(-1).data;assert.equal(linkedPreview.captureRows[1].linkedIssueId,'IT-261020-001');assert.equal(linkedPreview.captureRows[2].linkedIssueId,undefined);
+    assert.match(await page.locator('#hd-missing-preview-text').innerText(),/IT-261020-002/);assert.equal(f.state.batches.length,batchesBeforeLink);
+    await page.locator('#hd-missing-tabs [data-filter="review"]').click();await page.locator('[data-row="0"]').click();assert.equal(await page.locator('[data-confirm-row="0"]').isDisabled(),true);
+    await page.locator('#hd-missing-source-date').fill('2026-10-20');await page.locator('#hd-missing-source-time').fill('15:00');assert.equal(await page.locator('[data-confirm-row="0"]').isDisabled(),false);
+    await page.locator('[data-confirm-row="0"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('등록 확인 완료'));
+    const corrected=calls.filter(item=>item.action==='setCaptureConfirmed').at(-1).data.row;assert.equal(corrected.rawDate,'2026-10-20');assert.equal(corrected.rawTime,'15:00');
+    await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();await page.locator('[data-restore-row="0"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('제외를 해제'));
+    await page.locator('#hd-missing-tabs [data-filter="all"]').click();assert.match(await page.locator('[data-row="0"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/2026-10-20 15:00/);
+    await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();await page.locator('[data-restore-row="1"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('제외를 해제'));
+    await page.locator('#hd-missing-tabs [data-filter="all"]').click();assert.doesNotMatch(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/위치 기준점 연결/);
+    assert.deepEqual([...f.state.props],propsBeforeLink);assert.equal(f.state.batches.length,batchesBeforeLink);assert.deepEqual(errors,[]);
+    console.log('PASS 목록 이미지 누적 첨부·3장 초과 차단, 후보 근거(작성자·제목 차이) 표시, 정정한 작성일시로 등록 확인, 기준점 부족 안내 후 등록 확인 연결로 위치 계산, 등록·번호 변경 없음');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error.stack);process.exitCode=1;});
