@@ -4,13 +4,13 @@ const {fixture,record}=require('./fixtures/helpdesk-insertion-fixture.cjs');
 test('원문·답글·다른 날짜·불확실한 행을 구분하고 제목 숫자를 보존한다',()=>{
   const f=fixture(),rows=[{title:'등록 3',requester:'예시 직원',isReply:false,uncertain:false},{title:'중간 누락 원문',requester:'예시 새 직원',isReply:false,uncertain:false},
     {title:'등록 1',requester:'예시 직원',isReply:false,uncertain:false},{title:'[완료] 답글',isReply:true,uncertain:false},{title:'과거 글',requester:'직원',date:'2026-10-22',isReply:false,uncertain:false},{title:'제목 잘림',isReply:null}];
-  const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows});
-  assert.deepEqual(Array.from(result.rows,x=>x.kind),['registered','missing','registered','reply','otherDate','review']);
+  const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:rows.map(row=>({date:'2026-10-23',...row}))});
+  assert.deepEqual(Array.from(result.rows,x=>x.kind),['registered','missing','registered','reply','missing','review']);
   assert.equal(result.rows[1].positionKnown,false); // 001~003 사이에 기존 002도 있으므로 자동 위치 확정 금지
   assert.equal(f.state.batches.length,0);assert.notEqual(f.context.hdInsertTitle_('26014889-13'),f.context.hdInsertTitle_('26014889-14'));
 });
 test('앞뒤 원문이 서로 이웃할 때만 삽입 위치를 추천한다',()=>{
-  const f=fixture([record(2),record(1)]);const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:[{title:'등록 2',requester:'예시 직원',isReply:false,uncertain:false},{title:'누락',requester:'새 직원',isReply:false,uncertain:false},{title:'등록 1',requester:'예시 직원',isReply:false,uncertain:false}]});
+  const f=fixture([record(2),record(1)]);const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:[{title:'등록 2',requester:'예시 직원',isReply:false,uncertain:false},{title:'누락',requester:'새 직원',isReply:false,uncertain:false},{title:'등록 1',requester:'예시 직원',isReply:false,uncertain:false}].map(row=>({date:'2026-10-23',...row}))});
   assert.equal(result.rows[1].suggestedAfterId,'IT-261023-001');assert.equal(result.rows[1].positionKnown,true);
 });
 test('같은 제목의 다른 작성자·반복 원문은 등록 확정 대신 확인 필요로 남긴다',()=>{
@@ -143,7 +143,7 @@ test('저장 API 권한은 행 쓰기 없이 점검하고 접근 실패 시 등�
 
 test('과거 접수 시간이 순번과 달라도 누락 대조는 가능하고 실제 삽입 위치만 검증한다',()=>{
   const rows=[record(3),record(2),record(1)];rows[0][2]=new Date('2026-10-23T08:00:00+09:00');const f=fixture(rows);
-  const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:[{title:'등록 2',requester:'예시 직원',isReply:false,uncertain:false}]});
+  const result=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:[{title:'등록 2',date:'2026-10-23',requester:'예시 직원',isReply:false,uncertain:false}]});
   assert.equal(result.rows[0].kind,'registered');assert.match(result.timeOrderWarning,/일부 기존 번호/);assert.equal(f.state.batches.length,0);
   const p=f.preview('IT-261023-001');assert.equal(p.allowed,true);assert.equal(p.receiptTime,'2026-10-23 09:05');
   assert.throws(()=>f.preview('IT-261023-002'),/선택한 앞뒤/);assert.equal(f.state.batches.length,0);

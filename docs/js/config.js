@@ -35,6 +35,8 @@ const GAS_DIAGNOSTIC_KEY = 'kic_api_diagnostics_v1';
 const GAS_DIAGNOSTIC_ACTIONS = new Set(['getDashboardData', 'getDevelopers', 'saveDevelopers', 'getBlogPostPlans', 'analyzeCapture', 'generateReply', 'addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded', 'generateGeminiReport', 'generateBlogContent', 'generateBlogAssets', 'generateBlogMoreAssets', 'generateBlogImage', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
 const GAS_WRITE_ACTIONS = new Set(['addIssue', 'insertIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'saveDevelopers', 'applyJiraSync', 'setJiraSyncExcluded', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
 ['analyzeListCapture', 'compareListCapture', 'previewIssueInsertion', 'insertIssue', 'checkIssueInsertion'].forEach(action => GAS_DIAGNOSTIC_ACTIONS.add(action));
+GAS_DIAGNOSTIC_ACTIONS.add('setCaptureConfirmed');
+GAS_WRITE_ACTIONS.add('setCaptureConfirmed');
 GAS_WRITE_ACTIONS.add('checkIssueInsertion');
 let gasDiagnosticRecords = [];
 
@@ -136,7 +138,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.10.0', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.10.1', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 

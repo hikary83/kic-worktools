@@ -106,7 +106,7 @@ test('JSON 형태 인증 정보와 기본 인증 토큰도 숨긴다', async () 
     return true;
   });
 });
-for (const action of ['analyzeCapture', 'generateReply', 'addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded']) {
+for (const action of ['analyzeCapture', 'generateReply', 'addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded', 'setCaptureConfirmed']) {
   test(action + ' 실패 시 추가 GET/쓰기 재시도를 하지 않는다', async () => {
     const f = setup([response({ success: false, error: 'Test server failure' })]);
     await failure(f, /Test server failure/, 'API_EXECUTION_ERROR', action);

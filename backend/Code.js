@@ -491,7 +491,7 @@ function doPost(e) {
     if (/^kic-[a-z0-9-]{10,70}$/.test(String(payload.requestId || ''))) activeApiDiagnostic.requestId = payload.requestId;
     const action = payload.action;
     activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
-    if (action === 'addIssue' || action === 'updateIssue' || action === 'insertIssue') activeApiDiagnostic.writeStarted = false;
+    if (action === 'addIssue' || action === 'updateIssue' || action === 'insertIssue' || action === 'setCaptureConfirmed') activeApiDiagnostic.writeStarted = false;
     markApiDiagnosticStage('action_execute');
     const data = payload.data || {};
     if (typeof assertHelpdeskIdentity_ === 'function' && ['updateIssue', 'updateStatus', 'updateHidden'].indexOf(action) !== -1 && data.sourceType !== SOURCE_TYPE_QUARTER) {
@@ -517,6 +517,8 @@ function doPost(e) {
       result = { success: true, data: analyzeHelpdeskListCapture(data) };
     } else if (action === 'compareListCapture') {
       result = { success: true, data: compareHelpdeskListCapture(data) };
+    } else if (action === 'setCaptureConfirmed') {
+      result = { success: true, data: setHelpdeskCaptureConfirmed(data) };
     } else if (action === 'previewIssueInsertion') {
       result = { success: true, data: previewHelpdeskInsertion(data) };
     } else if (action === 'insertIssue') {
