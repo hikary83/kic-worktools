@@ -31,13 +31,15 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="css/kic-theme.css" rel="stylesheet">
   <link href="css/helpdesk-sections.css?v=2.9.3" rel="stylesheet">
+  <link href="css/helpdesk-missing.css?v=2.10.0" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.9.3"></script>
-  <script src="js/kic-sidebar.js?v=2.9.3"></script>
+  <script src="js/config.js?v=2.10.0"></script>
+  <script src="js/kic-sidebar.js?v=2.10.0"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
+  <script src="js/helpdesk-missing.js?v=2.10.0" defer></script>
 </head>
 <body class="relative bg-[#F7F7F8] dark:bg-[#212121] text-slate-900 dark:text-[#ECECEC] transition-colors duration-200">
 
@@ -99,6 +101,7 @@
           <button onclick="openAddModal()" class="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-sky-950/60 text-blue-600 dark:text-sky-400 border border-blue-100 dark:border-sky-800/60 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white transition-colors shadow-sm" title="새 이슈 등록"><i class="fas fa-plus"></i></button>
           <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors shadow-sm" title="구글 시트 열기"><i class="fas fa-file-excel"></i></a>
           <button onclick="openHelpdeskJiraSync()" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-sm" title="Jira 싱크 확인" aria-label="Jira 싱크 확인"><i class="fas fa-sync-alt"></i></button>
+          <button type="button" onclick="openHelpdeskMissingCheck()" class="w-9 h-9 flex items-center justify-center bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded-xl hover:bg-teal-600 hover:text-white transition-colors shadow-sm" title="목록 캡처 누락 점검·중간 등록" aria-label="목록 캡처 누락 점검"><i class="fas fa-list-check" aria-hidden="true"></i></button>
         </div>
       </div>
     </div>
@@ -342,6 +345,7 @@
         <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
       </div>
       <div class="p-6 space-y-5">
+        <div id="add-insertion-notice" class="hd-missing-note" hidden></div>
         <!-- [v16] 게시판 캡처 자동 이관 -->
         <div class="rounded-2xl border border-blue-200 dark:border-sky-800/80 bg-blue-50/60 dark:bg-sky-950/30 p-4" id="add-capture-panel">
           <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
@@ -861,6 +865,11 @@
     }
 
     async function runServerFunction(functionName, ...args) {
+      function identityData(data) {
+        if (Object.prototype.hasOwnProperty.call(data, 'identityRevision')) return data;
+        const item = window.allIssuesMap && window.allIssuesMap[data.id];
+        return item && item.identityRevision ? { ...data, identityRevision: item.identityRevision } : data;
+      }
       try {
         if (functionName === 'getDashboardData') {
           return await callGASApi('getDashboardData', { startDate: args[0], endDate: args[1] }, args[2]);
@@ -875,13 +884,15 @@
           return await callGASApi('addIssue', args[0]);
         }
         if (functionName === 'updateIssueFromDashboard') {
-          return await callGASApi('updateIssue', args[0]);
+          return await callGASApi('updateIssue', identityData(args[0]));
         }
         if (functionName === 'updateIssueStatusFromDashboard') {
-          return await callGASApi('updateStatus', { id: args[0], status: args[1], sourceType: args[2] });
+          const data = { id: args[0], status: args[1], sourceType: args[2] };
+          if (args[3] !== undefined) data.identityRevision = args[3];
+          return await callGASApi('updateStatus', identityData(data));
         }
         if (functionName === 'updateIssueHiddenFromDashboard') {
-          return await callGASApi('updateHidden', { id: args[0], hiddenYn: args[1], sourceType: args[2] });
+          return await callGASApi('updateHidden', identityData({ id: args[0], hiddenYn: args[1], sourceType: args[2] }));
         }
         if (functionName === 'analyzeHelpdeskCapture') {
           return await callGASApi('analyzeCapture', args[0]);
@@ -1338,6 +1349,7 @@
         const dateText = (result && result.date) ? result.date : ((data.receiptDate || getLocalDateString(new Date())) + ' 09:00');
         return {
             id: issueId,
+            identityRevision: Number(result && result.identityRevision || 0),
             sourceType: 'helpdesk',
             sourceLabel: '헬프',
             date: dateText,
@@ -1681,6 +1693,7 @@
         card.className = 'kanban-card kic-card-interactive p-4 transition-all group cursor-grab active:cursor-grabbing';
         card.draggable = true;
         card.dataset.issueId = item.id;
+        card.dataset.identityRevision = String(item.identityRevision || 0);
         card.dataset.sourceType = item.sourceType || 'helpdesk';
         card.ondragstart = handleKanbanDragStart;
         card.ondragend = handleKanbanDragEnd;
@@ -1768,7 +1781,7 @@
     document.addEventListener('dragover', handleKanbanAutoScroll, true);
 
     function handleKanbanDragStart(event) {
-      const payload = { id: event.currentTarget.dataset.issueId, sourceType: event.currentTarget.dataset.sourceType || 'helpdesk' };
+      const payload = { id: event.currentTarget.dataset.issueId, sourceType: event.currentTarget.dataset.sourceType || 'helpdesk', identityRevision: Number(event.currentTarget.dataset.identityRevision || 0) };
       event.dataTransfer.setData('text/plain', JSON.stringify(payload));
       event.dataTransfer.effectAllowed = 'move';
       showKanbanFloatingDoneDropzone();
@@ -1877,7 +1890,7 @@
 
       const doneMessage = newStatus === '완료' ? '완료 처리 중...' : `상태를 '${newStatus}'로 변경 중...`;
       showToast(`${issueId} ${doneMessage}`, 'info');
-      runServerFunction('updateIssueStatusFromDashboard', issueId, newStatus, sourceType).then(() => {
+      runServerFunction('updateIssueStatusFromDashboard', issueId, newStatus, sourceType, dragPayload.identityRevision).then(() => {
         showToast(newStatus === '완료' ? `${issueId} 완료 처리되었습니다. 이월 목록에서 제외됩니다.` : `${issueId} 상태가 '${newStatus}'로 변경되었습니다.`);
         applyLocalKanbanStatusChange(issueId, newStatus, sourceType);
       }).catch(e => {
@@ -2546,6 +2559,7 @@
         if (!item || helpdeskEditContext?.saving || helpdeskEditContext?.closing) return false;
         helpdeskEditContext = { id, waitForSave: options.waitForSave === true, onClose: options.onClose, saving: false, closing: false };
         document.getElementById('edit-id').value = item.id;
+        document.getElementById('edit-id').dataset.identityRevision = String(item.identityRevision || 0);
         document.getElementById('edit-source-type').value = item.sourceType || 'helpdesk';
         document.getElementById('edit-id-display').innerHTML = item.sourceType === 'quarter'
           ? `${escapeHtml(item.id)} <span class="ml-1 text-[10px] text-indigo-700 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
@@ -2730,6 +2744,7 @@
         const saveButton = (typeof event !== 'undefined' && event.currentTarget) ? event.currentTarget : null;
         const jiraLinkedFlag = document.getElementById('edit-jira-linked').checked ? 'Y' : '';
         const data = { id: document.getElementById('edit-id').value, sourceType: document.getElementById('edit-source-type').value || 'helpdesk', title: document.getElementById('edit-title').value, details: document.getElementById('edit-details').value, dev: document.getElementById('edit-dev').value, status: document.getElementById('edit-status').value, actionContent: document.getElementById('edit-action').value, remark: document.getElementById('edit-remark').value, sourceLink: document.getElementById('edit-source-link').value, jiraLink: document.getElementById('edit-jira-link').value, jiraLinkedFlag, jiraLinked: jiraLinkedFlag };
+        data.identityRevision = Number(document.getElementById('edit-id').dataset.identityRevision || 0);
         const existing = window.allIssuesMap[data.id] || { id: data.id, sourceType: data.sourceType, sourceLabel: data.sourceType === 'quarter' ? '분기' : '헬프', date: getLocalDateString(new Date()) + ' 09:00' };
         const updatedIssue = {
             ...existing,
@@ -2957,7 +2972,9 @@
         const branchElement = document.getElementById('add-branch');
         const branchBeforeAnalysis = branchElement ? branchElement.value : '';
 
-        if (data.receiptDate) { document.getElementById('add-date').value = data.receiptDate; filled.push('add-date'); }
+        const insertion = window.HelpdeskMissingCheck && window.HelpdeskMissingCheck.insertion();
+        if (insertion) document.getElementById('add-date').value = insertion.date;
+        else if (data.receiptDate) { document.getElementById('add-date').value = data.receiptDate; filled.push('add-date'); }
         if (data.requester) { document.getElementById('add-requester').value = data.requester; filled.push('add-requester'); }
 
         // 등록자 이름 기준표를 우선하고, 매칭되지 않을 때만 캡처에서 판독한 지사를 보조로 사용합니다.
@@ -3070,6 +3087,7 @@
     });
 
     function openAddModal() {
+        if (window.HelpdeskMissingCheck) window.HelpdeskMissingCheck.resetInsertion();
         ['add-branch', 'add-requester', 'add-dev', 'add-system', 'add-type', 'add-menu', 'add-source-link', 'add-jira-link', 'add-title', 'add-details'].forEach(id => {
             const el = document.getElementById(id);
             if(el) el.value = '';
@@ -3085,7 +3103,10 @@
         setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('addModalContent').classList.remove('scale-95'); }, 10);
     }
     
-    function closeAddModal() { document.getElementById('addModal').classList.add('opacity-0'); document.getElementById('addModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('addModal').classList.add('hidden'), 300); }
+    function closeAddModal() {
+        if (window.HelpdeskMissingCheck && !window.HelpdeskMissingCheck.closeRegistration()) return;
+        document.getElementById('addModal').classList.add('opacity-0'); document.getElementById('addModalContent').classList.add('scale-95'); setTimeout(() => document.getElementById('addModal').classList.add('hidden'), 300);
+    }
     function submitAddForm() {
         const saveButton = (typeof event !== 'undefined' && event.currentTarget) ? event.currentTarget : null;
         const date = document.getElementById('add-date').value;
@@ -3095,6 +3116,10 @@
         if(!date || !branch || !title || !details) return showToast('필수 항목(*)을 모두 입력하세요.', 'error');
         const menu = document.getElementById('add-menu').value;
         const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details };
+        if (window.HelpdeskMissingCheck && window.HelpdeskMissingCheck.insertion()) {
+            window.HelpdeskMissingCheck.submit(data, saveButton);
+            return;
+        }
         showToast('신규 이슈 등록 중...', 'info');
         setButtonSaving(saveButton, true, '등록중...');
         runServerFunction('addIssueFromDashboard', data).then(result => {
@@ -3126,6 +3151,10 @@
 
     // ✨ ESC 키 및 바깥 배경 클릭 시 모달 즉시 닫기
     function closeAllActiveModals() {
+      if (window.HelpdeskMissingCheck) {
+        if (window.HelpdeskMissingCheck.saving()) return;
+        window.HelpdeskMissingCheck.close();
+      }
       const modals = [
         { id: 'addModal', close: closeAddModal },
         { id: 'editModal', close: closeEditModal },

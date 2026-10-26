@@ -94,6 +94,13 @@ function getHelpdeskJiraSyncIssues_(data) {
       const payload = { jql: jql, fields: fields, maxResults: 100 };
       if (nextPageToken) payload.nextPageToken = nextPageToken;
       const page = helpdeskJiraRequest_(config, '/rest/api/3/search/jql', payload);
+      if (data.requireComplete === true && (!Array.isArray(page.issues) ||
+          (page.isLast !== true && (typeof page.nextPageToken !== 'string' || !page.nextPageToken || page.nextPageToken === nextPageToken)))) {
+        throw new Error('Jira 검색 응답의 완전성을 확인하지 못했습니다.');
+      }
+      if (data.requireComplete === true && page.issues.some(function(issue) {
+        return !issue || !/^[A-Z][A-Z0-9_]*-\d+$/.test(String(issue.key || '')) || !issue.fields || typeof issue.fields !== 'object';
+      })) throw new Error('Jira 검색 결과의 형식을 확인하지 못했습니다.');
       (page.issues || []).forEach(function(issue) {
         issues[issue.key] = normalizeHelpdeskSyncIssue_(issue, config.baseUrl);
       });

@@ -93,11 +93,14 @@ function requireHelpdeskSyncPreview_(token) {
   if (!raw) throw new Error('변경안 유효시간이 지났습니다. 다시 조회해 주세요.');
   const context = JSON.parse(raw);
   if (Date.now() >= context.expiresAt) throw new Error('변경안 유효시간이 지났습니다. 다시 조회해 주세요.');
+  if (typeof assertHelpdeskIdentity_ === 'function') assertHelpdeskIdentity_(getMainSheet(), context.identityRevision);
   return context;
 }
 
 function previewHelpdeskJiraSync() {
   const sheet = getMainSheet();
+  const identityRevision = typeof helpdeskIdentityRevision_ === 'function' ? helpdeskIdentityRevision_(sheet) : 0;
+  if (typeof assertHelpdeskInsertionIdle_ === 'function') assertHelpdeskInsertionIdle_(sheet);
   const excluded = helpdeskSyncExcludedIds_(sheet.getSheetId());
   const count = Math.max(0, sheet.getLastRow() - START_ROW + 1);
   // 미리보기에서 시트/헤더를 변경하지 않습니다.
@@ -143,7 +146,8 @@ function previewHelpdeskJiraSync() {
     records.slice(offset, offset + 100).forEach(function(row) { entries[helpdeskSyncCacheKey_(token, row.id)] = JSON.stringify(row); });
     cache.putAll(entries, HELPDESK_JIRA_SYNC_TTL);
   }
-  cache.put(helpdeskSyncCacheKey_(token), JSON.stringify({ sheetId: sheet.getSheetId(), expiresAt: expiresAt }), HELPDESK_JIRA_SYNC_TTL);
+  if (typeof assertHelpdeskIdentity_ === 'function') assertHelpdeskIdentity_(sheet, identityRevision);
+  cache.put(helpdeskSyncCacheKey_(token), JSON.stringify({ sheetId: sheet.getSheetId(), expiresAt: expiresAt, identityRevision: identityRevision }), HELPDESK_JIRA_SYNC_TTL);
   return { token: token, expiresAt: expiresAt, rows: records.map(helpdeskSyncPublicRow_), warnings: result.warnings || [], exclusionSupported: true };
 }
 

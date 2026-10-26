@@ -33,7 +33,9 @@ function createGASApiError(message, code, httpStatus) {
 // 진단 기록은 최대 40건/24시간 보관합니다. 본문·이미지·직원 이름·오류 원문은 저장하지 않습니다.
 const GAS_DIAGNOSTIC_KEY = 'kic_api_diagnostics_v1';
 const GAS_DIAGNOSTIC_ACTIONS = new Set(['getDashboardData', 'getDevelopers', 'saveDevelopers', 'getBlogPostPlans', 'analyzeCapture', 'generateReply', 'addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'previewJiraSync', 'lookupJiraSync', 'applyJiraSync', 'setJiraSyncExcluded', 'generateGeminiReport', 'generateBlogContent', 'generateBlogAssets', 'generateBlogMoreAssets', 'generateBlogImage', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
-const GAS_WRITE_ACTIONS = new Set(['addIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'saveDevelopers', 'applyJiraSync', 'setJiraSyncExcluded', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
+const GAS_WRITE_ACTIONS = new Set(['addIssue', 'insertIssue', 'updateIssue', 'updateStatus', 'updateHidden', 'saveDevelopers', 'applyJiraSync', 'setJiraSyncExcluded', 'updateBlogPostStatus', 'updateBlogPostUrl', 'deleteBlogPostPlan', 'addBlogPostPlan', 'migrateBlogPostingSheet']);
+['analyzeListCapture', 'compareListCapture', 'previewIssueInsertion', 'insertIssue', 'checkIssueInsertion'].forEach(action => GAS_DIAGNOSTIC_ACTIONS.add(action));
+GAS_WRITE_ACTIONS.add('checkIssueInsertion');
 let gasDiagnosticRecords = [];
 
 function safeGASResponseAddress(value) {
@@ -134,7 +136,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.9.3', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.10.0', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 
@@ -154,11 +156,11 @@ function showGASDiagnosticNotice(record) {
     panel.querySelector('[data-close]').onclick = () => { panel.hidden = true; };
     document.body.appendChild(panel);
   }
-  const names = { addIssue: '신규 등록', updateIssue: '이슈 수정', analyzeCapture: '캡처 분석', generateReply: '답변 생성', getDashboardData: '목록 조회' };
+  const names = { addIssue: '신규 등록', insertIssue: '중간 등록', analyzeListCapture: '목록 캡처 분석', compareListCapture: '누락 대조', previewIssueInsertion: '삽입·Jira 확인', updateIssue: '이슈 수정', analyzeCapture: '캡처 분석', generateReply: '답변 생성', getDashboardData: '목록 조회' };
   const failed = record.outcome === 'failure';
   panel.querySelector('[data-summary]').textContent = (names[record.action] || '서버 요청') + (failed ? ' 실패' : ' 지연 후 완료') + ' · ' + (record.httpStatus ? 'HTTP ' + record.httpStatus + ' · ' : '') + (record.elapsedMs / 1000).toFixed(1) + '초';
   panel.querySelector('[data-note]').textContent = failed && GAS_WRITE_ACTIONS.has(record.action) ? '응답 실패만으로 저장 여부를 단정할 수 없습니다. 목록을 확인한 뒤 다시 시도해 주세요.' : '로그를 복사해 보내주면 실패 단계와 지연 시간을 확인할 수 있어요.';
-  const ai = record.action === 'analyzeCapture' ? safeGASCaptureDiagnostic(record.server && record.server.ai) : null;
+  const ai = ['analyzeCapture', 'analyzeListCapture'].includes(record.action) ? safeGASCaptureDiagnostic(record.server && record.server.ai) : null;
   const aiInfo = panel.querySelector('[data-ai]');
   aiInfo.hidden = !ai;
   aiInfo.textContent = ai ? (ai.selectedModel ? '사용 모델: ' + ai.selectedModel : '분석 성공 모델 없음')

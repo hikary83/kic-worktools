@@ -253,6 +253,7 @@ function getMaxIssueSequenceForPrefix(sheet, prefix) {
 }
 
 function reserveIssueIdentity(sheet, dateStr) {
+  if (typeof assertHelpdeskInsertionIdle_ === 'function') assertHelpdeskInsertionIdle_(sheet);
   const safeDateStr = (dateStr || Utilities.formatDate(new Date(), TIMEZONE, 'yyyy-MM-dd')).toString().trim();
   const baseDate = new Date(safeDateStr + 'T09:00:00+09:00');
   if (isNaN(baseDate.getTime())) throw new Error('접수 일자가 올바르지 않습니다.');
@@ -376,7 +377,7 @@ function apiDiagnosticWriteStarted() {
 // 캡처 모델의 시도 결과만 기록합니다. 외부 응답 원문·프롬프트·사진·키는 받지 않습니다.
 function beginCaptureApiDiagnostic() {
   try {
-    if (activeApiDiagnostic && activeApiDiagnostic.action === 'analyzeCapture') {
+    if (activeApiDiagnostic && ['analyzeCapture', 'analyzeListCapture'].indexOf(activeApiDiagnostic.action) !== -1) {
       activeApiDiagnostic.ai = { task: 'capture', selectedModel: '', attempts: [] };
     }
   } catch (_) { /* 진단 때문에 분석 동작이 실패하지 않도록 합니다. */ }
@@ -476,6 +477,7 @@ function doGet(e) {
 }
 
 function doPost(e) {
+  let identityMutationLock = null;
   try {
     beginApiDiagnostic('POST');
     let rawData = '';
@@ -489,9 +491,15 @@ function doPost(e) {
     if (/^kic-[a-z0-9-]{10,70}$/.test(String(payload.requestId || ''))) activeApiDiagnostic.requestId = payload.requestId;
     const action = payload.action;
     activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
-    if (action === 'addIssue' || action === 'updateIssue') activeApiDiagnostic.writeStarted = false;
+    if (action === 'addIssue' || action === 'updateIssue' || action === 'insertIssue') activeApiDiagnostic.writeStarted = false;
     markApiDiagnosticStage('action_execute');
     const data = payload.data || {};
+    if (typeof assertHelpdeskIdentity_ === 'function' && ['updateIssue', 'updateStatus', 'updateHidden'].indexOf(action) !== -1 && data.sourceType !== SOURCE_TYPE_QUARTER) {
+      identityMutationLock = LockService.getScriptLock();
+      markApiDiagnosticStage('lock_wait'); identityMutationLock.waitLock(10000);
+      markApiDiagnosticStage('identity_verify');
+      assertHelpdeskIdentity_(getMainSheet(), data.identityRevision);
+    }
     let result = { success: false, error: 'Invalid post action' };
 
     if (action === 'getDashboardData') {
@@ -505,6 +513,16 @@ function doPost(e) {
       result = { success: true, data: applyHelpdeskJiraSync(data) };
     } else if (action === 'setJiraSyncExcluded') {
       result = { success: true, data: setHelpdeskJiraSyncExcluded(data) };
+    } else if (action === 'analyzeListCapture') {
+      result = { success: true, data: analyzeHelpdeskListCapture(data) };
+    } else if (action === 'compareListCapture') {
+      result = { success: true, data: compareHelpdeskListCapture(data) };
+    } else if (action === 'previewIssueInsertion') {
+      result = { success: true, data: previewHelpdeskInsertion(data) };
+    } else if (action === 'insertIssue') {
+      result = { success: true, data: insertHelpdeskIssue(data) };
+    } else if (action === 'checkIssueInsertion') {
+      result = { success: true, data: checkHelpdeskInsertion(data) };
     } else if (action === 'addIssue') {
       const stats = addIssueFromDashboard(data);
       result = { success: true, data: stats };
@@ -570,6 +588,7 @@ function doPost(e) {
     const code = activeApiDiagnostic && activeApiDiagnostic.stage === 'lock_wait' ? 'ISSUE_LOCK_WAIT_FAILED' : 'API_EXECUTION_ERROR';
     return finishApiDiagnostic({ success: false, code: code, error: error.toString() });
   } finally {
+    if (identityMutationLock) identityMutationLock.releaseLock();
     activeApiDiagnostic = null;
   }
 }
@@ -806,7 +825,7 @@ function analyzeHelpdeskCapture(payload) {
   return { success: true, data: normalized };
 }
 
-function callGeminiJsonFastFromServer(contents) {
+function callGeminiJsonFastFromServer(contents, options) {
   const apiKey = PropertiesService.getScriptProperties().getProperty(GEMINI_API_KEY_PROPERTY);
   if (!apiKey) throw new Error('Gemini API 키가 설정되어 있지 않습니다. 스프레드시트 메뉴에서 "🚀 KIC 헬프데스크 > 🔐 Gemini API 키 설정"을 먼저 실행하세요.');
 
@@ -818,7 +837,7 @@ function callGeminiJsonFastFromServer(contents) {
     const url = 'https://generativelanguage.googleapis.com/' + GEMINI_API_VERSION + '/models/' + model + ':generateContent?key=' + encodeURIComponent(apiKey);
     // 본문(details)은 최대 4,000자까지 받으므로 한글 장문 게시글도 잘리지 않도록 여유를 둡니다.
     const generationConfig = {
-      maxOutputTokens: 4096,
+      maxOutputTokens: options && options.maxOutputTokens === 8192 ? 8192 : 4096,
       responseMimeType: 'application/json'
     };
 
@@ -1129,6 +1148,8 @@ function requestGeminiWithContinuation(url, basePayload, originalContents) {
 function getDashboardData(startDateStr, endDateStr) {
   markApiDiagnosticStage('sheet_open');
   const sheet = getMainSheet();
+  const identityRevision = typeof helpdeskIdentityRevision_ === 'function' ? helpdeskIdentityRevision_(sheet) : 0;
+  if (typeof assertHelpdeskInsertionIdle_ === 'function') assertHelpdeskInsertionIdle_(sheet);
   const lastRow = sheet.getLastRow();
 
   let stats = {
@@ -1178,6 +1199,7 @@ function getDashboardData(startDateStr, endDateStr) {
       if (end && receiptDate > end) inDateRange = false;
 
       const issueObj = buildDashboardIssueObject(row, SOURCE_TYPE_HELPDESK);
+      issueObj.identityRevision = identityRevision;
       const status = issueObj.status;
       const isPending = (status !== "완료" && status !== "반려");
 
@@ -1248,6 +1270,7 @@ function getDashboardData(startDateStr, endDateStr) {
     stats.developers = [];
   }
 
+  if (typeof assertHelpdeskIdentity_ === 'function') assertHelpdeskIdentity_(sheet, identityRevision);
   return stats;
 }
 
@@ -1267,6 +1290,7 @@ function addIssueFromDashboard(formData) {
   lock.waitLock(10000);
   try {
     markApiDiagnosticStage('issue_identity');
+    if (typeof assertHelpdeskInsertionIdle_ === 'function') assertHelpdeskInsertionIdle_(sheet);
     const identity = reserveIssueIdentity(sheet, formData.receiptDate);
     markApiDiagnosticStage('insert_position');
     const targetRow = findInsertRowForIssueDate(sheet, identity.date);
@@ -1305,6 +1329,7 @@ function addIssueFromDashboard(formData) {
     return {
       success: true,
       id: identity.id,
+      identityRevision: typeof helpdeskIdentityRevision_ === 'function' ? helpdeskIdentityRevision_(sheet) : 0,
       date: Utilities.formatDate(identity.date, TIMEZONE, 'yyyy-MM-dd HH:mm')
     };
   } catch (error) {
