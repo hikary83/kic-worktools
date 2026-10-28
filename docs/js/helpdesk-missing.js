@@ -185,11 +185,12 @@
   }
   async function recover() {
     if(state.busy)return;
-    const generation=++state.generation;setBusy(true);status('행을 다시 등록하지 않고 이전 작업의 저장 표식을 확인 중입니다...');
+    const generation=++state.generation;setBusy(true);status('행을 다시 등록하지 않고 이전 작업의 저장 표식을 확인 중입니다...');let recoveredId='';
     try{const answer=await callGASApi('checkIssueInsertion');if(generation!==state.generation)return;
-      if(answer.recovered){state.needsCompare=true;state.selected=null;state.fingerprint='';state.links={};render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
+      if(answer.recovered){recoveredId=answer.result.id;state.needsCompare=true;state.selected=null;state.fingerprint='';state.links={};render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
       else status(answer.message||'확인 대기 중인 중간 등록이 없습니다.');
     }catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
+    if(recoveredId&&generation===state.generation)await refreshAfterChange('저장 확인 완료('+recoveredId+')');
   }
   const formFields={branch:'branch',requester:'requester',dev:'dev',system:'system',type:'type',priority:'priority',menu:'menu',sourceLink:'source-link',jiraLink:'jira-link',title:'title',details:'details'};
   function invalidateInline() {resetInsertion();byId('hd-missing-confirm').checked=false;byId('hd-missing-prepare').disabled=true;}
@@ -318,14 +319,21 @@
     const insertion=state.insertion;
     if(insertion.formSignature!==JSON.stringify({form,sourceTime:byId('hd-missing-source-time').value})){resetInsertion();showToast('입력 내용이 변경됐습니다. 위치·Jira 확인을 다시 진행해 주세요.','error');return;}
     if(form.receiptDate!==insertion.date){showToast('중간 등록 날짜는 바꿀 수 없습니다. 점검을 다시 진행해 주세요.','error');return;}
-    state.writing=true;setBusy(true);setButtonSaving(button,true,'확인·등록 중...');showToast('중복·Jira 연결을 다시 확인한 후 중간 등록합니다.','info');
-    try{const result=await callGASApi('insertIssue',{token:insertion.token,renumberConfirmed:true,form});
+    state.writing=true;setBusy(true);setButtonSaving(button,true,'확인·등록 중...');showToast('중복·Jira 연결을 다시 확인한 후 중간 등록합니다.','info');let savedId='';
+    try{const result=await callGASApi('insertIssue',{token:insertion.token,renumberConfirmed:true,form});savedId=result&&result.id||'등록';
       // 번호가 바뀌었으므로 이전 연결 번호는 기준점으로 쓰지 않습니다.
       state.writing=false;delete state.drafts[state.draftKey];state.draftKey='';state.links={};resetInsertion();state.needsCompare=true;state.selected=null;state.fingerprint='';render();
       try{applyResult(form,result);}catch(_){markDashboardServerChange();loadData(true);}
       showToast(`중간 등록 완료: ${result.id}. 번호가 변경된 화면은 새로 조회해 주세요.`);status('등록 완료. 다음 후보를 처리하려면 기존 결과 다시 비교를 눌러 주세요.');
     }catch(error){showToast('중간 등록 실패: '+apiError(error)+'\n자동 재등록하지 않습니다. 결과가 불명확하면 입력 내용을 유지한 채 같은 등록으로 재확인해 주세요.','error');markDashboardServerChange();loadData(true);}
     finally{state.writing=false;setButtonSaving(button,false);setBusy(false);}
+    if(savedId)await refreshAfterChange('중간 등록 완료('+savedId+')');
+  }
+  // 등록·복구 뒤에는 방금 등록한 건이 누락 목록에 남지 않도록 최신 등록 목록으로 바로 다시 비교합니다.
+  async function refreshAfterChange(prefix) {
+    if(!state.rows.length||!byId('hd-missing-dialog')?.open)return;
+    await compare();
+    if(!state.needsCompare)status(prefix+' · 최신 등록 목록으로 다시 비교했습니다.\n'+byId('hd-missing-status').textContent);
   }
   function close() {
     if(!byId('hd-missing-dialog')?.open)return;
@@ -334,6 +342,8 @@
   window.openHelpdeskMissingCheck=function(){mount();if(state.writing)return;state.focus=document.activeElement;
     if(!byId('hd-missing-date').value){const start=byId('startDate').value,end=byId('endDate').value;byId('hd-missing-date').value=start&&start===end?start:localDate();}
     byId('hd-missing-dialog').showModal();render();byId('hd-missing-date').focus();
+    // 창을 닫은 사이 메인 화면이나 다른 PC에서 등록한 건도 반영되도록 이전 결과는 다시 비교합니다.
+    if(state.rows.length&&!state.busy)compare();
   };
   window.HelpdeskMissingCheck={insertion:()=>state.insertion,saving:()=>state.writing||state.marking,resetInsertion,closeRegistration,submit,close};
 })();

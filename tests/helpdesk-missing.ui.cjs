@@ -88,7 +88,12 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await other.waitForFunction(()=>document.querySelector('#toast').innerText.includes('번호가 변경'));
     assert.equal(f.state.rows.find(x=>x[0]==='IT-261023-003')[8],'중간에 누락된 요청 <확인>');assert.equal(f.state.rows.find(x=>x[0]==='IT-261023-004')[8],'최신 등록 원문');
     console.log('PASS 확인 후 실제 서버 로직의 번호 재배치·시간 사이값 저장·다른 PC 오래된 편집창 보호');
-    assert.equal(await page.locator('#hd-missing-list [data-row="1"]').isDisabled(),true);await page.locator('#hd-missing-compare').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('누락 의심 1건'));assert.equal(calls.filter(x=>x.action==='analyzeListCapture').length,1);
+    // 등록 직후 직접 누르지 않아도 최신 등록 목록으로 다시 비교해 방금 등록한 건이 누락 의심에서 빠져야 합니다(저장 시 등록 확인도 함께 기록).
+    await page.waitForFunction(()=>{const text=document.querySelector('#hd-missing-status').innerText;return text.includes('중간 등록 완료(IT-261023-003) · 최신 등록 목록으로 다시 비교했습니다')&&text.includes('누락 의심 1건');});
+    await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();assert.equal(await page.locator('#hd-missing-list [data-row="1"]').isDisabled(),true);assert.match(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/등록 확인 제외/);await page.locator('#hd-missing-tabs [data-filter="missing"]').click();
+    const comparesBeforeReopen=calls.filter(x=>x.action==='compareListCapture').length;await page.keyboard.press('Escape');await page.getByRole('button',{name:'목록 캡처 누락 점검',exact:true}).click();
+    for(let i=0;i<200&&calls.filter(x=>x.action==='compareListCapture').length===comparesBeforeReopen;i++)await page.waitForTimeout(25);assert.equal(calls.filter(x=>x.action==='compareListCapture').length,comparesBeforeReopen+1);
+    await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('누락 의심 1건'));assert.equal(calls.filter(x=>x.action==='analyzeListCapture').length,1);
     const relatedTitle='지난 접수 제목 <img src=x onerror=alert(1)>';
     f.state.rows.push(record(1,relatedTitle,{date:'2026-10-22',status:'완료'}));f.state.rows.find(x=>x[8]==='최신 등록 원문')[11]='완료';
     f.state.aiRows=[{title:'최신 등록 원문.',requester:'예시 직원',time:'15:00',isReply:false,uncertain:false},{title:relatedTitle,requester:'예시 직원',time:'12:00',isReply:false,uncertain:false},{title:'첫 등록 원문',requester:'예시 직원',time:'13:00',isReply:false,uncertain:false}];
