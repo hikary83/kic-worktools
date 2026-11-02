@@ -30,9 +30,18 @@ test('같은 캡처의 여러 날짜는 각각 원문 날짜의 등록 여부를
   const r=f.context.compareHelpdeskListCapture({receiptDate:'2026-10-23',rows:[source('지난 원문','16:17',{date:'2026-10-22'}),source('오늘 원문','09:08')]});
   assert.deepEqual(Array.from(r.rows,x=>x.kind),['registered','registered']);assert.deepEqual(Array.from(r.rows,x=>x.date),['2026-10-22','2026-10-23']);assert.equal(f.state.batches.length,0);
 });
-test('원문 14:30으로 앞뒤 14:00~15:00 사이를 자동 선택하되 정렬 시각은 기존 사이값이다',()=>{
-  const f=fixture(),p=automatic(f);assert.equal(p.id,'IT-261023-003');assert.equal(p.older,'IT-261023-002');assert.equal(p.newer,'IT-261023-003');assert.equal(p.receiptTime,'2026-10-23 09:15');assert.equal(p.originalPostedAt,'2026-10-23 14:30');assert.equal(p.positionBasis,'capture');assert.equal(f.state.batches.length,0);
-  const result=f.insert(p.token);assert.equal(result.originalPostedAt,'2026-10-23 14:30');const note=[...f.state.notes.values()].find(n=>n.includes('원문 작성일시'));assert.match(note,/2026-10-23 14:30$/);assert.equal(f.state.rows.find(row=>row[0]===result.id)[2].toISOString(),'2026-10-23T00:15:00.000Z');
+test('원문 14:30으로 앞뒤를 자동 선택하고 접수일시는 원문 작성시각, 원문 시각이 확인된 같은 날 기존 건 접수일시도 실제 시각으로 맞춘다',()=>{
+  const f=fixture(),p=automatic(f);assert.equal(p.id,'IT-261023-003');assert.equal(p.older,'IT-261023-002');assert.equal(p.newer,'IT-261023-003');
+  assert.equal(p.receiptTime,'2026-10-23 14:30');assert.equal(p.originalPostedAt,'2026-10-23 14:30');assert.equal(p.positionBasis,'capture');assert.equal(p.actualTime,true);
+  assert.deepEqual(JSON.parse(JSON.stringify(p.timeFixes)),[{id:'IT-261023-001',from:'09:00',to:'13:00'},{id:'IT-261023-002',from:'09:10',to:'14:00'},{id:'IT-261023-003',from:'09:20',to:'15:00'}]);
+  assert.equal(f.state.batches.length,0);assert.equal(f.state.rows[2][2].toISOString(),'2026-10-23T00:00:00.000Z');
+  const result=f.insert(p.token);assert.equal(result.originalPostedAt,'2026-10-23 14:30');assert.equal(result.date,'2026-10-23 14:30');
+  assert.deepEqual(JSON.parse(JSON.stringify(result.receiptTimesCorrected)),[{id:'IT-261023-001',from:'09:00',to:'13:00'},{id:'IT-261023-002',from:'09:10',to:'14:00'},{id:'IT-261023-004',from:'09:20',to:'15:00'}]);
+  assert.deepEqual(f.state.rows.map(row=>[row[0],row[8],row[2].toISOString()]),[['IT-261023-004','등록 3','2026-10-23T06:00:00.000Z'],['IT-261023-003','중간 누락 원문','2026-10-23T05:30:00.000Z'],
+    ['IT-261023-002','등록 2','2026-10-23T05:00:00.000Z'],['IT-261023-001','등록 1','2026-10-23T04:00:00.000Z']]);
+  const notes=f.state.rows.map((_,i)=>f.state.notes.get((i+3)+':1')||'');
+  assert.match(notes[1],/원문 작성일시\(한국시간\): 2026-10-23 14:30$/);assert.equal(notes[0],'원문 작성일시(한국시간): 2026-10-23 15:00');assert.equal(notes[3],'원문 작성일시(한국시간): 2026-10-23 13:00');
+  assert.equal(f.state.rows[0][9],'기존 본문 보존');assert.equal(f.state.batches.length,1);
 });
 test('초 단위가 실제로 보인 경우에만 원문 보존 값에 초를 포함한다',()=>{
   const f=fixture(),p=automatic(f,'14:30:31');assert.equal(p.originalPostedAt,'2026-10-23 14:30:31');
@@ -134,4 +143,28 @@ test('저장된 작성시각과 다른 입력·캡처 시각은 막고, 같은 �
   assert.throws(()=>automatic(f,'14:30',{captureRows:[source('cms 접속 불가','10:07',{requester:'이병수'})]}),/저장된 원문 작성시각\(10:00\)과 다릅니다/);
   const same=automatic(f,'14:30',{captureRows:[],anchorTimes:cmsAnchor('10:00')});assert.equal(same.allowed,true);assert.equal(same.sourceNotes.length,0);assert.equal(same.positionBasis,'confirmed-time');
   const storedOnly=automatic(f,'14:30',{captureRows:[]});assert.equal(storedOnly.allowed,true);assert.equal(storedOnly.positionBasis,'stored-time');assert.equal(f.state.batches.length,0);
+});
+test('11/02처럼 가짜 접수일시가 1분 간격으로 촘촘해도 실제 시각으로 등록하고 분 단위 여유 오류가 나지 않는다',()=>{
+  const titles=['CW 예약접수 확인','듀얼모니터 끊김','입고화면 접수 불가','명세서 엑셀 안열림','cms 접속 불가'];
+  const f=fixture(titles.map((title,i)=>record(i+1,title,{requester:i===4?'이병수':'예시 직원'})).reverse());
+  [[0,'08:55'],[1,'08:57'],[2,'08:58'],[3,'08:59'],[4,'09:00']].forEach(([i,clock])=>{f.state.rows[4-i][2]=new Date('2026-10-23T'+clock+':00+09:00');});
+  [['IT-261023-001','08:40'],['IT-261023-002','09:30'],['IT-261023-003','09:50'],['IT-261023-004','10:10']].forEach(([id,clock])=>{const index=f.state.rows.findIndex(row=>row[0]===id);f.state.notes.set((index+3)+':1','원문 작성일시(한국시간): 2026-10-23 '+clock);});
+  const ask=automatic(f,'10:20',{captureRows:[]});assert.equal(ask.allowed,false);assert.deepEqual(Array.from(ask.anchorNeeded,x=>x.id),['IT-261023-005']);
+  const p=automatic(f,'10:20',{captureRows:[],anchorTimes:[{id:'IT-261023-005',title:'cms 접속 불가',time:'10:30'}]});
+  assert.equal(p.allowed,true);assert.equal(p.id,'IT-261023-005');assert.equal(p.receiptTime,'2026-10-23 10:20');assert.deepEqual(JSON.parse(JSON.stringify(p.changes)),[{from:'IT-261023-005',to:'IT-261023-006'}]);
+  assert.deepEqual(Array.from(p.timeFixes,x=>x.id+' '+x.to),['IT-261023-001 08:40','IT-261023-002 09:30','IT-261023-003 09:50','IT-261023-004 10:10','IT-261023-005 10:30']);
+  assert.deepEqual(JSON.parse(JSON.stringify(p.sourceNotes)),[{id:'IT-261023-005',time:'10:30'}]);
+  f.insert(p.token);const order=f.state.rows.map(row=>row[0]+'@'+row[2].toISOString().slice(11,16));
+  assert.deepEqual(order,['IT-261023-006@01:30','IT-261023-005@01:20','IT-261023-004@01:10','IT-261023-003@00:50','IT-261023-002@00:30','IT-261023-001@23:40']);
+});
+test('번호 순서를 막는 가짜 접수일시 기존 건은 한 번에 모두 물어보고, 시각을 알면 실제 시각으로 맞춘다',()=>{
+  const f=fixture([record(4),record(3),record(2),record(1)]),capture=[source('등록 2','14:00'),source('누락 원문','13:30'),source('등록 1','13:00')];
+  const ask=automatic(f,'13:30',{captureRows:capture});assert.equal(ask.allowed,false);assert.match(ask.reason,/순서가 맞지 않는 기존 건/);
+  assert.deepEqual(Array.from(ask.anchorNeeded,x=>x.id),['IT-261023-003','IT-261023-004']);
+  const p=automatic(f,'13:30',{captureRows:capture,anchorTimes:[{id:'IT-261023-003',title:'등록 3',time:'15:00'},{id:'IT-261023-004',title:'등록 4',time:'16:00'}]});
+  assert.equal(p.allowed,true);assert.equal(p.id,'IT-261023-002');assert.equal(p.receiptTime,'2026-10-23 13:30');
+  assert.deepEqual(Array.from(p.timeFixes,x=>x.id+' '+x.to),['IT-261023-001 13:00','IT-261023-002 14:00','IT-261023-003 15:00','IT-261023-004 16:00']);assert.equal(f.state.batches.length,0);
+});
+test('직접 위치를 지정한 등록은 기존처럼 앞뒤 접수일시 사이값을 쓰고 기존 접수일시를 바꾸지 않는다',()=>{
+  const f=fixture(),p=f.preview('IT-261023-001');assert.equal(p.receiptTime,'2026-10-23 09:05');assert.equal(p.actualTime,false);assert.equal(p.timeFixes.length,0);
 });

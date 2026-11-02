@@ -390,32 +390,78 @@ function hdInferInsertionByTime_(snapshot, data) {
     return blocked('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 이 날짜의 기존 ' + snapshot.rows.length + '건: ', 0);
   } else basis = 'empty-day';
   return { afterId: afterId, originalTime: originalTime, originalPrecision: stamp.time.length === 8 ? 'second' : 'minute', positionBasis: basis,
-    sourceNotes: Object.keys(toSave).map(function(id) { return { id: id, time: toSave[id] }; }) };
+    sourceNotes: Object.keys(toSave).map(function(id) { return { id: id, time: toSave[id] }; }), clocks: clocks, stored: stored };
 }
 function hdOriginalStampText_(plan) {
   return plan.originalTime ? Utilities.formatDate(new Date(plan.originalTime), TIMEZONE, plan.originalPrecision === 'second' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd HH:mm') : '';
 }
-function hdBuildInsertionPlan_(snapshot, afterId, counter) {
+function hdClockText_(ms) {
+  const text = Utilities.formatDate(new Date(ms), TIMEZONE, 'HH:mm:ss');
+  return text.slice(-3) === ':00' ? text.slice(0, 5) : text;
+}
+// 새 건은 원문 작성시각을 그대로 접수일시로 씁니다. 번호 순서와 접수일시 순서가 어긋나지 않도록 원문 시각이 확인된
+// 같은 날 기존 건의 접수일시를 실제 시각으로 맞추고, 시각을 모르는 기존 건이 순서를 막으면 담당자에게 묻습니다. 추정하지 않습니다.
+function hdActualTimeOrder_(snapshot, olderIndex, time, clocks) {
+  const items = snapshot.rows.slice(0, olderIndex + 1).concat([null], snapshot.rows.slice(olderIndex + 1));
+  const at = olderIndex + 1, vals = items.map(function(row) { return row ? row.time : time; }), fixed = {}, need = [];
+  const walk = function(from, step) {
+    let bound = time, blocked = false;
+    for (let i = from; i >= 0 && i < items.length; i += step) {
+      if (step < 0 ? vals[i] < bound : vals[i] > bound) break;
+      const row = items[i], actual = clocks[row.id];
+      if (blocked) { if (actual === undefined) need.push(row); continue; }
+      if (actual === undefined) { blocked = true; need.push(row); continue; }
+      if (step < 0 ? !(actual < bound) : !(actual > bound)) throw new Error('기존 번호 순서와 원문 작성시각 순서가 다릅니다(' + row.id + '). 시트와 원문을 확인해 주세요. 접수일시를 자동으로 정하지 않습니다.');
+      vals[i] = actual; fixed[i] = true; bound = actual;
+    }
+  };
+  walk(at - 1, -1); walk(at + 1, 1);
+  if (need.length) return { need: need };
+  // 그 밖에 원문 시각이 확인된 같은 날 기존 건도 앞뒤 순서를 해치지 않으면 실제 시각으로 맞춥니다.
+  for (let changed = true, pass = 0; changed && pass < items.length; pass++) {
+    changed = false;
+    items.forEach(function(row, i) {
+      if (!row || clocks[row.id] === undefined || vals[i] === clocks[row.id]) return;
+      const actual = clocks[row.id];
+      if ((i === 0 || vals[i - 1] < actual) && (i === items.length - 1 || actual < vals[i + 1])) { vals[i] = actual; fixed[i] = true; changed = true; }
+    });
+  }
+  return { fixes: items.map(function(row, i) { return row && fixed[i] && vals[i] !== row.time ? { id: row.id, rowIndex: row.rowIndex, from: row.time, to: vals[i] } : null; })
+    .filter(function(item) { return item; }) };
+}
+function hdBuildInsertionPlan_(snapshot, afterId, counter, actual) {
   const rows = snapshot.rows;
   const olderIndex = afterId ? rows.findIndex(function(row) { return row.id === afterId; }) : -1;
   if (afterId && olderIndex < 0) throw new Error('삽입 위치가 변경됐습니다. 다시 비교해 주세요.');
   const older = olderIndex >= 0 ? rows[olderIndex] : null, newer = rows[olderIndex + 1] || null;
-  if (older && newer && older.time >= newer.time) throw new Error('선택한 앞뒤 번호의 접수 시간 순서가 다릅니다. 기존 시간을 임의로 바꾸지 않으므로 삽입 위치를 다시 확인해 주세요.');
+  if (!actual && older && newer && older.time >= newer.time) throw new Error('선택한 앞뒤 번호의 접수 시간 순서가 다릅니다. 기존 시간을 임의로 바꾸지 않으므로 삽입 위치를 다시 확인해 주세요.');
   let seq = older ? older.seq + 1 : 1;
   if (!newer) seq = Math.max(seq, Number(counter || 0) + 1);
   const shifted = newer && newer.seq === seq ? rows.filter(function(row) { return row.seq >= seq; }) : [];
   if (shifted.length > HD_INSERT_MAX_SHIFT) throw new Error('변경할 번호가 100건을 넘습니다. 날짜와 위치를 다시 확인해 주세요.');
-  let time = new Date(snapshot.date + 'T09:00:00+09:00').getTime();
-  if (older && newer) time = Math.floor(((older.time + newer.time) / 2) / 60000) * 60000;
-  else if (older) time = older.time + 5 * 60000;
-  else if (newer) time = newer.time - 5 * 60000;
-  if ((older && time <= older.time) || (newer && time >= newer.time) || Utilities.formatDate(new Date(time), TIMEZONE, 'yyyy-MM-dd') !== snapshot.date) {
-    throw new Error('앞뒤 시간 사이에 분 단위 여유가 없습니다. 기존 시간 확인 후 다시 시도해 주세요.');
+  let time = new Date(snapshot.date + 'T09:00:00+09:00').getTime(), timeFixes = [];
+  if (actual) {
+    const order = hdActualTimeOrder_(snapshot, olderIndex, actual.time, actual.clocks);
+    if (order.need) {
+      const list = order.need;
+      return { blocked: true, anchorNeeded: list.slice(0, 5).map(function(row) { return { id: row.id, title: hdInsertText_(row.values[8]), requester: hdInsertText_(row.values[3], 80) }; }),
+        reason: '접수일시를 원문 작성시각으로 넣으려면 순서가 맞지 않는 기존 건의 게시판 작성시각이 필요합니다: ' +
+          list.slice(0, 5).map(function(row) { return row.id + ' 「' + hdInsertText_(row.values[8], 30) + '」'; }).join(', ') + (list.length > 5 ? ' 외 ' + (list.length - 5) + '건' : '') +
+          '. 게시판에서 확인해 아래에 입력해 주세요. 확인되지 않은 시각으로 접수일시를 정하지 않습니다.' };
+    }
+    time = actual.time; timeFixes = order.fixes;
+  } else {
+    // 직접 위치를 지정한 경우는 기존처럼 앞뒤 접수일시 사이값을 씁니다.
+    if (older && newer) time = Math.floor(((older.time + newer.time) / 2) / 60000) * 60000;
+    else if (older) time = older.time + 5 * 60000;
+    else if (newer) time = newer.time - 5 * 60000;
+    if ((older && time <= older.time) || (newer && time >= newer.time)) throw new Error('앞뒤 시간 사이에 분 단위 여유가 없습니다. 기존 시간 확인 후 다시 시도해 주세요.');
   }
+  if (Utilities.formatDate(new Date(time), TIMEZONE, 'yyyy-MM-dd') !== snapshot.date) throw new Error('접수일시가 해당 날짜를 벗어납니다. 원문 작성일시를 확인해 주세요.');
   const id = snapshot.prefix + String(seq).padStart(3, '0');
   const changes = shifted.map(function(row) { return { from: row.id, to: snapshot.prefix + String(row.seq + 1).padStart(3, '0'), rowIndex: row.rowIndex }; });
   return { date: snapshot.date, afterId: afterId || '', id: id, time: time, fingerprint: snapshot.fingerprint, revision: snapshot.revision,
-    changes: changes, older: older && older.id, newer: newer && newer.id,
+    changes: changes, older: older && older.id, newer: newer && newer.id, actualTime: !!actual, timeFixes: timeFixes,
     counter: Math.max(Number(counter || 0), seq, ...rows.map(function(row) { return row.seq + (shifted.indexOf(row) >= 0 ? 1 : 0); })) };
 }
 function hdInsertJiraCheck_(snapshot, plan) {
@@ -477,13 +523,19 @@ function previewHelpdeskInsertion(data) {
   const inferred = data.autoPosition === true ? hdInferInsertionByTime_(snapshot, data) : null;
   // 기준점 부족은 오류가 아니라 담당자 확인이 필요한 상태입니다. 확인할 기존 건을 함께 돌려줍니다.
   if (inferred && inferred.blocked) return { allowed: false, reason: inferred.reason, anchorNeeded: inferred.anchorNeeded };
-  const plan = hdBuildInsertionPlan_(snapshot, inferred ? inferred.afterId : String(data.afterId || ''), props.getProperty(counterKey));
+  const plan = hdBuildInsertionPlan_(snapshot, inferred ? inferred.afterId : String(data.afterId || ''), props.getProperty(counterKey),
+    inferred ? { time: inferred.originalTime, clocks: inferred.clocks } : null);
+  if (plan.blocked) return { allowed: false, reason: plan.reason, anchorNeeded: plan.anchorNeeded };
   if (captureSignature) plan.captureSignature = captureSignature;
   if (inferred) { plan.originalTime = inferred.originalTime; plan.originalPrecision = inferred.originalPrecision; plan.positionBasis = inferred.positionBasis; }
-  if (inferred && inferred.sourceNotes.length) {
-    plan.sourceNotes = inferred.sourceNotes.map(function(item) {
-      const row = snapshot.rows.filter(function(candidate) { return candidate.id === item.id; })[0];
-      return { id: item.id, time: item.time, rowIndex: row.rowIndex, note: hdWithSourceNote_(row.note, snapshot.date, item.time) };
+  if (inferred) {
+    // 담당자가 입력한 시각과, 접수일시를 실제 시각으로 맞추는 기존 건의 원문 시각을 메모에도 남깁니다(이미 저장된 건 제외).
+    const noteTimes = {};
+    inferred.sourceNotes.forEach(function(item) { noteTimes[item.id] = item.time; });
+    plan.timeFixes.forEach(function(item) { if (!inferred.stored[item.id] && !noteTimes[item.id]) noteTimes[item.id] = hdClockText_(item.to); });
+    plan.sourceNotes = Object.keys(noteTimes).map(function(id) {
+      const row = snapshot.rows.filter(function(candidate) { return candidate.id === id; })[0];
+      return { id: id, time: noteTimes[id], rowIndex: row.rowIndex, note: hdWithSourceNote_(row.note, snapshot.date, noteTimes[id]) };
     });
   }
   const check = hdInsertJiraCheck_(snapshot, plan);
@@ -498,20 +550,35 @@ function previewHelpdeskInsertion(data) {
     receiptTime: Utilities.formatDate(new Date(plan.time), TIMEZONE, 'yyyy-MM-dd HH:mm'),
     originalPostedAt: hdOriginalStampText_(plan), positionBasis: plan.positionBasis || 'manual',
     older: plan.older, newer: plan.newer, changes: plan.changes.map(function(change) { return { from: change.from, to: change.to }; }),
-    sourceNotes: (plan.sourceNotes || []).map(function(item) { return { id: item.id, time: item.time }; }) };
+    sourceNotes: (plan.sourceNotes || []).map(function(item) { return { id: item.id, time: item.time }; }),
+    actualTime: plan.actualTime === true, timeFixes: (plan.timeFixes || []).map(function(item) { return { id: item.id, from: hdClockText_(item.from), to: hdClockText_(item.to) }; }) };
+}
+// Sheets 날짜 직렬값은 문서의 현지 시각입니다. 문서 시간대가 달라도 같은 시점을 저장합니다.
+function hdSheetSerial_(sheet, ms) {
+  const zone = sheet.getParent().getSpreadsheetTimeZone();
+  const local = Utilities.formatDate(new Date(ms), zone, 'yyyy-MM-dd-HH-mm-ss').split('-').map(Number);
+  return Date.UTC(local[0], local[1] - 1, local[2], local[3], local[4], local[5]) / 86400000 + 25569;
 }
 function hdInsertBatchRequests_(sheet, snapshot, plan, form, token) {
-  // C열(정렬 시간) 기준으로 기존 행을 이동하지 않고 한 행만 삽입합니다.
-  let target = snapshot.allValues.findIndex(function(row) {
-    const time = row[2] instanceof Date ? row[2].getTime() : new Date(row[2]).getTime();
-    return !isNaN(time) && time < plan.time;
-  });
-  target = target < 0 ? snapshot.allValues.length + START_ROW : target + START_ROW;
+  // 기존 행을 이동하지 않고 한 행만 삽입합니다. 실제 시각 등록은 접수일시 보정 전 값이 아니라 앞뒤 번호 행 위치를 기준으로 합니다.
+  const rowOf = function(id) { const row = id ? snapshot.rows.filter(function(item) { return item.id === id; })[0] : null; return row ? row.rowIndex : 0; };
+  let target = plan.actualTime ? rowOf(plan.older) || (rowOf(plan.newer) ? rowOf(plan.newer) + 1 : 0) : 0;
+  if (!target) {
+    target = snapshot.allValues.findIndex(function(row) {
+      const time = row[2] instanceof Date ? row[2].getTime() : new Date(row[2]).getTime();
+      return !isNaN(time) && time < plan.time;
+    });
+    target = target < 0 ? snapshot.allValues.length + START_ROW : target + START_ROW;
+  }
   const sheetId = sheet.getSheetId(), index = target - 1;
   const requests = [{ insertDimension: { range: { sheetId: sheetId, dimension: 'ROWS', startIndex: index, endIndex: index + 1 }, inheritFromBefore: index > 0 } }];
   plan.changes.forEach(function(change) {
     requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: change.rowIndex - 1 + (change.rowIndex >= target ? 1 : 0), columnIndex: 0 },
       rows: [{ values: [{ userEnteredValue: { stringValue: change.to } }] }], fields: 'userEnteredValue' } });
+  });
+  (plan.timeFixes || []).forEach(function(item) {
+    requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: item.rowIndex - 1 + (item.rowIndex >= target ? 1 : 0), columnIndex: 2 },
+      rows: [{ values: [{ userEnteredValue: { numberValue: hdSheetSerial_(sheet, item.to) } }] }], fields: 'userEnteredValue' } });
   });
   (plan.sourceNotes || []).forEach(function(item) {
     requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: item.rowIndex - 1 + (item.rowIndex >= target ? 1 : 0), columnIndex: 0 },
@@ -521,11 +588,7 @@ function hdInsertBatchRequests_(sheet, snapshot, plan, form, token) {
     form.title, form.details, form.dev || '', '접수대기', '', '', '', form.sourceLink || '', form.jiraLink || '', '', ''];
   const cells = values.map(function(value) { return { userEnteredValue: { stringValue: String(value) } }; });
   cells[0].note = 'KIC_MIDDLE_INSERT:' + token + (plan.originalTime ? '\n원문 작성일시(한국시간): ' + hdOriginalStampText_(plan) : '');
-  // Sheets 날짜 직렬값은 문서의 현지 시각입니다. 문서 시간대가 달라도 같은 시점을 저장합니다.
-  const zone = sheet.getParent().getSpreadsheetTimeZone();
-  const local = Utilities.formatDate(new Date(plan.time), zone, 'yyyy-MM-dd-HH-mm-ss').split('-').map(Number);
-  const serial = Date.UTC(local[0], local[1] - 1, local[2], local[3], local[4], local[5]) / 86400000 + 25569;
-  cells[2] = { userEnteredValue: { numberValue: serial } };
+  cells[2] = { userEnteredValue: { numberValue: hdSheetSerial_(sheet, plan.time) } };
   requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: index, columnIndex: 0 }, rows: [{ values: cells }], fields: 'userEnteredValue,note' } });
   requests.push({ repeatCell: { range: { sheetId: sheetId, startRowIndex: index, endRowIndex: index + 1, startColumnIndex: 2, endColumnIndex: 3 },
     cell: { userEnteredFormat: { numberFormat: { type: 'DATE_TIME', pattern: NUMBER_FORMAT_DT } } }, fields: 'userEnteredFormat.numberFormat' } });
@@ -618,6 +681,11 @@ function insertHelpdeskIssue(data) {
       const moved = {};
       plan.changes.forEach(function(item) { moved[item.from] = item.to; });
       result.sourceTimesSaved = plan.sourceNotes.map(function(item) { return { id: moved[item.id] || item.id, time: item.time }; });
+    }
+    if (plan.timeFixes && plan.timeFixes.length) {
+      const shiftedIds = {};
+      plan.changes.forEach(function(item) { shiftedIds[item.from] = item.to; });
+      result.receiptTimesCorrected = plan.timeFixes.map(function(item) { return { id: shiftedIds[item.id] || item.id, from: hdClockText_(item.from), to: hdClockText_(item.to) }; });
     }
     const journal = { token: data.token, requestHash: requestHash, result: result, counter: plan.counter, captureSignature: plan.captureSignature || '',
       targetRow: requests[0].insertDimension.range.startIndex + 1,
