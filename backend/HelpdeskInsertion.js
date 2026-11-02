@@ -69,6 +69,8 @@ function assertHelpdeskIdentity_(sheet, expectedRevision) {
 function hdInsertSnapshot_(sheet, dateText) {
   const count = Math.max(0, sheet.getLastRow() - START_ROW + 1);
   const values = count ? sheet.getRange(START_ROW, 1, count, JIRA_LINKED_COLUMN).getValues() : [];
+  // 이슈번호 칸 메모의 ‘원문 작성일시’는 확인된 원문 시각입니다(중간 등록·담당자 입력). 위치 기준점으로 씁니다.
+  const notes = count ? sheet.getRange(START_ROW, 1, count, 1).getNotes() : [];
   const prefix = 'IT-' + dateText.slice(2).replace(/-/g, '') + '-';
   const day = [], ids = {};
   values.forEach(function(row, index) {
@@ -82,7 +84,7 @@ function hdInsertSnapshot_(sheet, dateText) {
       throw new Error('해당 일자의 번호·접수일시가 중복되거나 서로 다릅니다. 시트 확인 후 다시 점검해 주세요.');
     }
     ids[id] = true;
-    day.push({ id: id, seq: Number(match[1]), rowIndex: START_ROW + index, time: date.getTime(), values: row });
+    day.push({ id: id, seq: Number(match[1]), rowIndex: START_ROW + index, time: date.getTime(), values: row, note: String(notes[index] && notes[index][0] || '') });
   });
   if (day.length > HD_INSERT_MAX_DAY) throw new Error('하루 200건을 넘는 일자는 중간 등록을 지원하지 않습니다.');
   day.sort(function(a, b) { return a.seq - b.seq; });
@@ -90,7 +92,7 @@ function hdInsertSnapshot_(sheet, dateText) {
     '일부 기존 번호와 접수 시간 순서가 다릅니다. 목록은 비교할 수 있으며, 중간 등록 시 선택 위치의 앞뒤 시간을 별도로 확인합니다.' : '';
   const revision = helpdeskIdentityRevision_(sheet);
   return { date: dateText, prefix: prefix, sheetId: sheet.getSheetId(), rows: day, allValues: values, revision: revision, timeOrderWarning: timeOrderWarning,
-    fingerprint: hdInsertHash_({ revision: revision, rows: day.map(function(row) { return [row.rowIndex, row.values]; }) }) };
+    fingerprint: hdInsertHash_({ revision: revision, rows: day.map(function(row) { return [row.rowIndex, row.values, row.note]; }) }) };
 }
 function hdInsertPublicDay_(snapshot) {
   return snapshot.rows.map(function(row) {
@@ -307,11 +309,23 @@ function hdInsertDuplicate_(snapshot, candidate) {
   });
   return sameDay;
 }
+// 이슈번호 칸 메모의 ‘원문 작성일시(한국시간): YYYY-MM-DD HH:mm[:ss]’ 줄을 읽고 씁니다. 다른 메모 내용은 보존합니다.
+function hdStoredSourceTime_(note, dateText) {
+  const match = String(note || '').match(/원문 작성일시\(한국시간\): (\d{4}-\d{2}-\d{2}) (\d{2}:\d{2}(?::\d{2})?)/);
+  return match && match[1] === dateText ? match[2] : '';
+}
+function hdWithSourceNote_(note, dateText, time) {
+  const text = String(note || ''), line = '원문 작성일시(한국시간): ' + dateText + ' ' + time;
+  return /원문 작성일시\(한국시간\): .*/.test(text) ? text.replace(/원문 작성일시\(한국시간\): .*/, line) : (text ? text + '\n' : '') + line;
+}
 function hdInferInsertionByTime_(snapshot, data) {
   const stamp = hdCaptureStamp_(data.sourceDate, data.sourceTime);
   if (stamp.date !== snapshot.date || !stamp.time) throw new Error('원문 작성 날짜와 시간을 확인해 주세요. 작성시각 없이 삽입 위치를 추정하지 않습니다.');
   const originalTime = new Date(stamp.date + 'T' + stamp.time + (stamp.time.length === 5 ? ':00' : '') + '+09:00').getTime();
-  const existing = hdInsertPublicDay_(snapshot), clocks = {}, rawRows = Array.isArray(data.captureRows) ? data.captureRows : [];
+  const existing = hdInsertPublicDay_(snapshot), clocks = {}, stored = {}, rawRows = Array.isArray(data.captureRows) ? data.captureRows : [];
+  const at = function(time) { return new Date(snapshot.date + 'T' + time + (time.length === 5 ? ':00' : '') + '+09:00').getTime(); };
+  // 중간 등록·담당자 입력으로 메모에 저장된 원문 작성시각은 확인된 기준점입니다. 다시 묻지 않습니다.
+  snapshot.rows.forEach(function(row) { const time = hdStoredSourceTime_(row.note, snapshot.date); if (time) { clocks[row.id] = at(time); stored[row.id] = time; } });
   hdNormalizeListRows_(rawRows).forEach(function(row, index) {
     // 담당자가 ‘등록 확인’으로 연결한 기존 이슈는 같은 날짜이고 제목이 같거나 한 글자 차이일 때만 기준점으로 씁니다.
     const linked = /^IT-\d{6}-\d{3,}$/.test(String(rawRows[index] && rawRows[index].linkedIssueId || '')) ? String(rawRows[index].linkedIssueId) : '';
@@ -322,22 +336,32 @@ function hdInferInsertionByTime_(snapshot, data) {
       throw new Error('등록 확인으로 연결한 ' + linked + '이(가) 같은 날짜·제목의 원문과 맞지 않습니다. 기존 결과 다시 비교 후 연결을 다시 확인해 주세요.');
     }
     if (found.length !== 1) return;
-    const value = new Date(row.date + 'T' + row.time + (row.time.length === 5 ? ':00' : '') + '+09:00').getTime();
-    if (clocks[found[0].id] !== undefined && clocks[found[0].id] !== value) throw new Error('같은 등록 건의 원문 작성시각이 서로 다르게 인식됐습니다. 목록 캡처를 확인해 주세요.');
-    clocks[found[0].id] = value;
+    const id = found[0].id, value = at(row.time);
+    if (clocks[id] !== undefined) {
+      if (Math.floor(clocks[id] / 60000) !== Math.floor(value / 60000)) {
+        throw new Error(stored[id] ? '목록 캡처에서 읽은 ' + id + ' 작성시각이 저장된 원문 작성시각(' + stored[id] + ')과 다릅니다. 캡처와 게시판을 확인해 주세요.' :
+          '같은 등록 건의 원문 작성시각이 서로 다르게 인식됐습니다. 목록 캡처를 확인해 주세요.');
+      }
+      return;
+    }
+    clocks[id] = value;
   });
-  // 담당자가 게시판에서 확인해 입력한 기존 건의 원문 작성시각입니다. 위치 계산에만 쓰고 기존 행은 바꾸지 않습니다.
-  const confirmed = {};
+  // 담당자가 게시판에서 확인해 입력한 기존 건의 원문 작성시각입니다. 최종 등록 때 그 행의 이슈번호 칸 메모에만 함께 저장합니다.
+  const confirmed = {}, toSave = {};
   (Array.isArray(data.anchorTimes) ? data.anchorTimes.slice(0, 50) : []).forEach(function(anchor) {
     const id = hdInsertText_(anchor && anchor.id, 30), row = snapshot.rows.filter(function(item) { return item.id === id; })[0];
     // 그사이 다른 등록으로 번호가 밀렸으면 다른 이슈에 시각을 붙이지 않도록 제목까지 확인합니다.
     if (!row || hdInsertTitle_(row.values[8]) !== hdInsertTitle_(anchor.title)) throw new Error('작성시각을 입력한 ' + id + '의 번호·제목이 현재 목록과 다릅니다. 그사이 목록이 바뀌었을 수 있으니 다시 확인해 주세요.');
     const time = hdCaptureStamp_('', anchor.time, snapshot.date).time;
     if (!time) throw new Error(id + '의 원문 작성시각을 확인해 주세요.');
-    const value = new Date(snapshot.date + 'T' + time + (time.length === 5 ? ':00' : '') + '+09:00').getTime();
-    if (clocks[id] !== undefined && Math.floor(clocks[id] / 60000) !== Math.floor(value / 60000)) throw new Error('입력한 ' + id + ' 작성시각이 목록 캡처에서 읽은 시각과 다릅니다. 게시판에서 다시 확인해 주세요.');
+    const value = at(time);
+    if (clocks[id] !== undefined && Math.floor(clocks[id] / 60000) !== Math.floor(value / 60000)) {
+      throw new Error(stored[id] ? '입력한 ' + id + ' 작성시각이 저장된 원문 작성시각(' + stored[id] + ')과 다릅니다. 게시판에서 다시 확인해 주세요.' :
+        '입력한 ' + id + ' 작성시각이 목록 캡처에서 읽은 시각과 다릅니다. 게시판에서 다시 확인해 주세요.');
+    }
     if (clocks[id] === undefined) clocks[id] = value;
     confirmed[id] = true;
+    if (!stored[id]) toSave[id] = time;
   });
   const timeline = snapshot.rows.map(function(row, index) { return { id: row.id, index: index, time: clocks[row.id] }; }).filter(function(row) { return row.time !== undefined; });
   // 막힌 경우 작성시각을 확인하지 못한 기존 건을 돌려줘 담당자가 확인·입력하게 합니다. 그 시각을 추정해 채우지는 않습니다.
@@ -361,10 +385,12 @@ function hdInferInsertionByTime_(snapshot, data) {
     else if (older) return blocked('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ', older.index + 1);
     else return blocked('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ', 0, newer.index);
     if ((older && confirmed[older.id]) || (newer && confirmed[newer.id])) basis = 'confirmed-time';
+    else if ((older && stored[older.id]) || (newer && stored[newer.id])) basis = 'stored-time';
   } else if (snapshot.rows.length) {
     return blocked('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 이 날짜의 기존 ' + snapshot.rows.length + '건: ', 0);
   } else basis = 'empty-day';
-  return { afterId: afterId, originalTime: originalTime, originalPrecision: stamp.time.length === 8 ? 'second' : 'minute', positionBasis: basis };
+  return { afterId: afterId, originalTime: originalTime, originalPrecision: stamp.time.length === 8 ? 'second' : 'minute', positionBasis: basis,
+    sourceNotes: Object.keys(toSave).map(function(id) { return { id: id, time: toSave[id] }; }) };
 }
 function hdOriginalStampText_(plan) {
   return plan.originalTime ? Utilities.formatDate(new Date(plan.originalTime), TIMEZONE, plan.originalPrecision === 'second' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd HH:mm') : '';
@@ -454,6 +480,12 @@ function previewHelpdeskInsertion(data) {
   const plan = hdBuildInsertionPlan_(snapshot, inferred ? inferred.afterId : String(data.afterId || ''), props.getProperty(counterKey));
   if (captureSignature) plan.captureSignature = captureSignature;
   if (inferred) { plan.originalTime = inferred.originalTime; plan.originalPrecision = inferred.originalPrecision; plan.positionBasis = inferred.positionBasis; }
+  if (inferred && inferred.sourceNotes.length) {
+    plan.sourceNotes = inferred.sourceNotes.map(function(item) {
+      const row = snapshot.rows.filter(function(candidate) { return candidate.id === item.id; })[0];
+      return { id: item.id, time: item.time, rowIndex: row.rowIndex, note: hdWithSourceNote_(row.note, snapshot.date, item.time) };
+    });
+  }
   const check = hdInsertJiraCheck_(snapshot, plan);
   assertHelpdeskIdentity_(sheet, snapshot.revision);
   if (!check.allowed) return check;
@@ -465,7 +497,8 @@ function previewHelpdeskInsertion(data) {
   return { allowed: true, token: token, expiresAt: expiresAt, id: plan.id, date: date,
     receiptTime: Utilities.formatDate(new Date(plan.time), TIMEZONE, 'yyyy-MM-dd HH:mm'),
     originalPostedAt: hdOriginalStampText_(plan), positionBasis: plan.positionBasis || 'manual',
-    older: plan.older, newer: plan.newer, changes: plan.changes.map(function(change) { return { from: change.from, to: change.to }; }) };
+    older: plan.older, newer: plan.newer, changes: plan.changes.map(function(change) { return { from: change.from, to: change.to }; }),
+    sourceNotes: (plan.sourceNotes || []).map(function(item) { return { id: item.id, time: item.time }; }) };
 }
 function hdInsertBatchRequests_(sheet, snapshot, plan, form, token) {
   // C열(정렬 시간) 기준으로 기존 행을 이동하지 않고 한 행만 삽입합니다.
@@ -479,6 +512,10 @@ function hdInsertBatchRequests_(sheet, snapshot, plan, form, token) {
   plan.changes.forEach(function(change) {
     requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: change.rowIndex - 1 + (change.rowIndex >= target ? 1 : 0), columnIndex: 0 },
       rows: [{ values: [{ userEnteredValue: { stringValue: change.to } }] }], fields: 'userEnteredValue' } });
+  });
+  (plan.sourceNotes || []).forEach(function(item) {
+    requests.push({ updateCells: { start: { sheetId: sheetId, rowIndex: item.rowIndex - 1 + (item.rowIndex >= target ? 1 : 0), columnIndex: 0 },
+      rows: [{ values: [{ note: item.note }] }], fields: 'note' } });
   });
   const values = [plan.id, form.branch, '', form.requester || '', form.system || '', form.type || '', form.priority || '보통', form.menu || '',
     form.title, form.details, form.dev || '', '접수대기', '', '', '', form.sourceLink || '', form.jiraLink || '', '', ''];
@@ -577,6 +614,11 @@ function insertHelpdeskIssue(data) {
     const result = { id: plan.id, date: Utilities.formatDate(new Date(plan.time), TIMEZONE, 'yyyy-MM-dd HH:mm'),
       identityRevision: revision, changes: plan.changes.map(function(item) { return { from: item.from, to: item.to }; }) };
     if (plan.originalTime) result.originalPostedAt = hdOriginalStampText_(plan);
+    if (plan.sourceNotes && plan.sourceNotes.length) {
+      const moved = {};
+      plan.changes.forEach(function(item) { moved[item.from] = item.to; });
+      result.sourceTimesSaved = plan.sourceNotes.map(function(item) { return { id: moved[item.id] || item.id, time: item.time }; });
+    }
     const journal = { token: data.token, requestHash: requestHash, result: result, counter: plan.counter, captureSignature: plan.captureSignature || '',
       targetRow: requests[0].insertDimension.range.startIndex + 1,
       exclusions: plan.changes.map(function(item) { return { from: item.from, to: item.to, value: props.getProperty(helpdeskSyncExclusionKey_(sheet.getSheetId(), item.from)) || '' }; }) };

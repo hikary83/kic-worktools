@@ -109,3 +109,29 @@ test('입력 시각은 번호·제목이 바뀌었거나 캡처 시각과 다르
   const same=automatic(f,'14:30',{captureRows:[source('등록 1','13:00'),source('등록 2','14:00'),source('등록 3','15:00')],anchorTimes:[{id:'IT-261023-002',title:'등록 2',time:'14:00:20'}]});assert.equal(same.allowed,true);
   assert.equal(f.state.batches.length,0);
 });
+const cmsDay=()=>fixture([record(1,'cms 접속 불가',{requester:'이병수'})]);
+const cmsAnchor=(time='10:00')=>[{id:'IT-261023-001',title:'cms 접속 불가',time}];
+const noteOf=(f,title)=>{const index=f.state.rows.findIndex(row=>row[8]===title);return f.state.notes.get((index+3)+':1')||'';};
+test('입력한 기존 건 작성시각은 최종 등록 때 그 행 메모에 함께 저장되고 다음 등록부터 다시 묻지 않는다',()=>{
+  const f=cmsDay(),p=automatic(f,'14:30',{captureRows:[],anchorTimes:cmsAnchor()});
+  assert.equal(p.allowed,true);assert.deepEqual(JSON.parse(JSON.stringify(p.sourceNotes)),[{id:'IT-261023-001',time:'10:00'}]);
+  assert.equal(noteOf(f,'cms 접속 불가'),'');assert.equal(f.state.batches.length,0);
+  const result=f.insert(p.token);assert.deepEqual(JSON.parse(JSON.stringify(result.sourceTimesSaved)),[{id:'IT-261023-001',time:'10:00'}]);
+  assert.equal(f.state.batches.length,1);assert.equal(noteOf(f,'cms 접속 불가'),'원문 작성일시(한국시간): 2026-10-23 10:00');
+  const next=automatic(f,'12:00',{captureRows:[],title:'두 번째 누락 원문'});
+  assert.equal(next.allowed,true);assert.equal(next.positionBasis,'stored-time');assert.equal(next.id,'IT-261023-002');assert.equal(next.older,'IT-261023-001');assert.equal(next.newer,'IT-261023-002');assert.equal(next.sourceNotes.length,0);
+});
+test('번호가 밀리는 기존 건에도 메모를 정확히 붙이고 기존 메모 내용은 보존한다',()=>{
+  const f=cmsDay();f.state.notes.set('3:1','기존 메모 보존');
+  const p=automatic(f,'09:30',{captureRows:[],anchorTimes:cmsAnchor()});assert.equal(p.id,'IT-261023-001');assert.deepEqual(JSON.parse(JSON.stringify(p.changes)),[{from:'IT-261023-001',to:'IT-261023-002'}]);
+  const result=f.insert(p.token);assert.deepEqual(JSON.parse(JSON.stringify(result.sourceTimesSaved)),[{id:'IT-261023-002',time:'10:00'}]);
+  assert.equal(f.state.rows.find(row=>row[8]==='cms 접속 불가')[0],'IT-261023-002');assert.equal(noteOf(f,'cms 접속 불가'),'기존 메모 보존\n원문 작성일시(한국시간): 2026-10-23 10:00');
+  assert.match(noteOf(f,'중간 누락 원문'),/^KIC_MIDDLE_INSERT:.*\n원문 작성일시\(한국시간\): 2026-10-23 09:30$/);assert.equal(f.state.rows.find(row=>row[8]==='cms 접속 불가')[9],'기존 본문 보존');
+});
+test('저장된 작성시각과 다른 입력·캡처 시각은 막고, 같은 값이면 다시 저장하지 않는다',()=>{
+  const f=cmsDay();f.state.notes.set('3:1','원문 작성일시(한국시간): 2026-10-23 10:00');
+  assert.throws(()=>automatic(f,'14:30',{captureRows:[],anchorTimes:cmsAnchor('10:05')}),/저장된 원문 작성시각\(10:00\)과 다릅니다/);
+  assert.throws(()=>automatic(f,'14:30',{captureRows:[source('cms 접속 불가','10:07',{requester:'이병수'})]}),/저장된 원문 작성시각\(10:00\)과 다릅니다/);
+  const same=automatic(f,'14:30',{captureRows:[],anchorTimes:cmsAnchor('10:00')});assert.equal(same.allowed,true);assert.equal(same.sourceNotes.length,0);assert.equal(same.positionBasis,'confirmed-time');
+  const storedOnly=automatic(f,'14:30',{captureRows:[]});assert.equal(storedOnly.allowed,true);assert.equal(storedOnly.positionBasis,'stored-time');assert.equal(f.state.batches.length,0);
+});
