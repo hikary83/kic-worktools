@@ -3,7 +3,8 @@
   'use strict';
   const state = { images: [], rows: [], existing: [], fingerprint: '', selected: null, filter: 'missing', generation: 0,
     busy: false, writing: false, marking: false, insertion: null, needsCompare: false, focus: null, drafts: {}, draftKey: '', autoPositionSupported: false, postImages: [],
-    links: {} }; // 행 key → 담당자가 ‘등록 확인’으로 연결한 같은 날짜 기존 이슈. 이번 화면의 위치 기준점으로만 사용합니다.
+    links: {}, // 행 key → 담당자가 ‘등록 확인’으로 연결한 같은 날짜 기존 이슈. 이번 화면의 위치 기준점으로만 사용합니다.
+    anchorTimes: {} }; // 이슈번호 → {title,time}. 담당자가 게시판에서 확인해 입력한 기존 건 원문 작성시각(위치 계산 전용).
   const byId = id => document.getElementById(id);
   const escape = value => String(value == null ? '' : value).replace(/[&<>"']/g, x => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[x]));
   const labels = { missing: '누락 의심', review: '등록 후보 확인', registered: '등록 일치', excluded: '등록 확인 제외', reply: '답글 제외', otherDate: '다른 날짜' };
@@ -187,7 +188,7 @@
     if(state.busy)return;
     const generation=++state.generation;setBusy(true);status('행을 다시 등록하지 않고 이전 작업의 저장 표식을 확인 중입니다...');let recoveredId='';
     try{const answer=await callGASApi('checkIssueInsertion');if(generation!==state.generation)return;
-      if(answer.recovered){recoveredId=answer.result.id;state.needsCompare=true;state.selected=null;state.fingerprint='';state.links={};render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
+      if(answer.recovered){recoveredId=answer.result.id;state.needsCompare=true;state.selected=null;state.fingerprint='';state.links={};state.anchorTimes={};render();markDashboardServerChange();loadData(true);status('저장 확인 완료: '+answer.result.id+'. 최신 목록으로 다시 비교해 주세요.');}
       else status(answer.message||'확인 대기 중인 중간 등록이 없습니다.');
     }catch(error){if(generation===state.generation)status(apiError(error),true);}finally{if(generation===state.generation)setBusy(false);}
     if(recoveredId&&generation===state.generation)await refreshAfterChange('저장 확인 완료('+recoveredId+')');
@@ -286,15 +287,26 @@
     try{
       if(byId('hd-missing-date').value!==form.receiptDate){const current=await callGASApi('compareListCapture',{receiptDate:form.receiptDate,rows:state.rows});if(generation!==state.generation)return;state.rows=current.rows;state.existing=current.existing;state.fingerprint=current.fingerprint;byId('hd-missing-date').value=form.receiptDate;}
       state.draftKey=rekeyDraft(state.selected,oldKey)||state.draftKey;
-      const candidate={receiptDate:form.receiptDate,title:form.title,requester:form.requester,sourceLink:form.sourceLink,fingerprint:state.fingerprint,originalConfirmed:true,autoPosition:true,sourceDate:form.receiptDate,sourceTime,captureRows:withLinks(state.rows),captureRow:state.rows.find(item=>item.key===state.selected)};
+      const candidate={receiptDate:form.receiptDate,title:form.title,requester:form.requester,sourceLink:form.sourceLink,fingerprint:state.fingerprint,originalConfirmed:true,autoPosition:true,sourceDate:form.receiptDate,sourceTime,captureRows:withLinks(state.rows),captureRow:state.rows.find(item=>item.key===state.selected),
+        anchorTimes:Object.entries(state.anchorTimes).filter(([id])=>id.slice(3,9)===form.receiptDate.slice(2).replace(/-/g,'')).map(([id,value])=>({id,title:value.title,time:value.time}))};
       const preview=await callGASApi('previewIssueInsertion',candidate);if(generation!==state.generation)return;
-      if(!preview||preview.allowed!==true){const message=(preview&&preview.reason||'안전 여부를 확인하지 못해 등록할 수 없습니다.')+(preview?.blockedIds?.length?'\n영향 번호: '+preview.blockedIds.join(', '):'')+(preview?.jiraKeys?.length?'\nJira: '+preview.jiraKeys.join(', '):'');byId('hd-missing-block').hidden=false;byId('hd-missing-block').textContent=message;status('등록 준비를 중단했습니다. 펼침 영역의 안내를 확인해 주세요.',true);return;}
+      if(!preview||preview.allowed!==true){const message=(preview&&preview.reason||'안전 여부를 확인하지 못해 등록할 수 없습니다.')+(preview?.blockedIds?.length?'\n영향 번호: '+preview.blockedIds.join(', '):'')+(preview?.jiraKeys?.length?'\nJira: '+preview.jiraKeys.join(', '):'');byId('hd-missing-block').hidden=false;byId('hd-missing-block').textContent=message;if(preview?.anchorNeeded?.length)renderAnchorInputs(preview.anchorNeeded);status(preview?.anchorNeeded?.length?'앞뒤 기존 건의 원문 작성시각이 필요합니다. 게시판에서 확인해 입력해 주세요.':'등록 준비를 중단했습니다. 펼침 영역의 안내를 확인해 주세요.',true);return;}
       if(!preview.token||!preview.id||!preview.receiptTime||!preview.originalPostedAt)throw Error('원문 시각이 포함된 중간 등록 미리보기를 확인하지 못했습니다. 업무 API 배포 상태를 확인해 주세요.');
       state.insertion={...preview,date:candidate.receiptDate,candidate,formSignature:JSON.stringify({form,sourceTime})};
-      const basis=preview.positionBasis==='empty-day'?'등록된 이슈가 없는 일자의 첫 번호입니다.':'캡처에서 일치한 앞뒤 등록 원문의 작성시각으로 위치를 계산했습니다.';
+      const basis=preview.positionBasis==='empty-day'?'등록된 이슈가 없는 일자의 첫 번호입니다.':preview.positionBasis==='confirmed-time'?'담당자가 입력한 기존 건의 원문 작성시각으로 위치를 계산했습니다.':'캡처에서 일치한 앞뒤 등록 원문의 작성시각으로 위치를 계산했습니다.';
       byId('hd-missing-preview-text').textContent=`중간 등록: ${preview.id}\n원문 작성일시: ${preview.originalPostedAt} (별도 보존)\n저장 정렬 시간: ${preview.receiptTime}\n${preview.older||'일자 시작'} → 신규 → ${preview.newer||'일자 마지막'}\n${basis}\n기존 번호 ${preview.changes.length}건 변경\n${preview.changes.map(item=>item.from+' → '+item.to).join('\n')}\n저장 직전에 중복·Jira를 다시 확인합니다.`;
       byId('hd-missing-preview').hidden=false;byId('hd-insertion-approve').checked=false;byId('hd-missing-preview').scrollIntoView({block:'nearest'});status('삽입 위치·원문 작성시각·번호 변경을 확인한 후 최종 등록해 주세요.');
     }catch(error){if(generation===state.generation){byId('hd-missing-block').hidden=false;byId('hd-missing-block').textContent=apiError(error);status(apiError(error),true);}}finally{if(generation===state.generation)setBusy(false);}
+  }
+  // 서버가 돌려준 ‘작성시각 확인 필요’ 기존 건마다 시각 입력란을 띄웁니다. 입력값은 위치 계산에만 씁니다.
+  function renderAnchorInputs(list) {
+    const box=document.createElement('div');box.className='hd-missing-anchor';
+    list.forEach(item=>{const label=document.createElement('label'),input=document.createElement('input');input.type='time';input.step=1;input.dataset.anchorId=item.id;input.dataset.anchorTitle=item.title;input.value=state.anchorTimes[item.id]?.time||'';input.setAttribute('aria-label',item.id+' 원문 작성시각');
+      label.append(`${item.id} 「${item.title}」 · ${item.requester||'작성자 미상'} · 게시판 원문 작성시각`,input);box.append(label);});
+    const retry=document.createElement('button');retry.type='button';retry.className='hd-missing-primary';retry.textContent='입력한 시각으로 다시 확인';
+    retry.onclick=()=>{const inputs=Array.from(box.querySelectorAll('input'));const empty=inputs.find(input=>!input.value);if(empty){empty.focus();status('게시판에서 확인한 원문 작성시각을 모두 입력해 주세요.',true);return;}
+      inputs.forEach(input=>{state.anchorTimes[input.dataset.anchorId]={title:input.dataset.anchorTitle,time:input.value};});prepare();};
+    box.append(retry);byId('hd-missing-block').append(box);
   }
   function resetInsertion() {
     state.insertion=null;if(byId('hd-missing-preview')){byId('hd-missing-preview').hidden=true;byId('hd-insertion-approve').checked=false;byId('hd-missing-submit').disabled=true;}
@@ -322,7 +334,7 @@
     state.writing=true;setBusy(true);setButtonSaving(button,true,'확인·등록 중...');showToast('중복·Jira 연결을 다시 확인한 후 중간 등록합니다.','info');let savedId='';
     try{const result=await callGASApi('insertIssue',{token:insertion.token,renumberConfirmed:true,form});savedId=result&&result.id||'등록';
       // 번호가 바뀌었으므로 이전 연결 번호는 기준점으로 쓰지 않습니다.
-      state.writing=false;delete state.drafts[state.draftKey];state.draftKey='';state.links={};resetInsertion();state.needsCompare=true;state.selected=null;state.fingerprint='';render();
+      state.writing=false;delete state.drafts[state.draftKey];state.draftKey='';state.links={};state.anchorTimes={};resetInsertion();state.needsCompare=true;state.selected=null;state.fingerprint='';render();
       try{applyResult(form,result);}catch(_){markDashboardServerChange();loadData(true);}
       showToast(`중간 등록 완료: ${result.id}. 번호가 변경된 화면은 새로 조회해 주세요.`);status('등록 완료. 다음 후보를 처리하려면 기존 결과 다시 비교를 눌러 주세요.');
     }catch(error){showToast('중간 등록 실패: '+apiError(error)+'\n자동 재등록하지 않습니다. 결과가 불명확하면 입력 내용을 유지한 채 같은 등록으로 재확인해 주세요.','error');markDashboardServerChange();loadData(true);}

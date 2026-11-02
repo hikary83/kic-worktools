@@ -326,13 +326,28 @@ function hdInferInsertionByTime_(snapshot, data) {
     if (clocks[found[0].id] !== undefined && clocks[found[0].id] !== value) throw new Error('같은 등록 건의 원문 작성시각이 서로 다르게 인식됐습니다. 목록 캡처를 확인해 주세요.');
     clocks[found[0].id] = value;
   });
+  // 담당자가 게시판에서 확인해 입력한 기존 건의 원문 작성시각입니다. 위치 계산에만 쓰고 기존 행은 바꾸지 않습니다.
+  const confirmed = {};
+  (Array.isArray(data.anchorTimes) ? data.anchorTimes.slice(0, 50) : []).forEach(function(anchor) {
+    const id = hdInsertText_(anchor && anchor.id, 30), row = snapshot.rows.filter(function(item) { return item.id === id; })[0];
+    // 그사이 다른 등록으로 번호가 밀렸으면 다른 이슈에 시각을 붙이지 않도록 제목까지 확인합니다.
+    if (!row || hdInsertTitle_(row.values[8]) !== hdInsertTitle_(anchor.title)) throw new Error('작성시각을 입력한 ' + id + '의 번호·제목이 현재 목록과 다릅니다. 그사이 목록이 바뀌었을 수 있으니 다시 확인해 주세요.');
+    const time = hdCaptureStamp_('', anchor.time, snapshot.date).time;
+    if (!time) throw new Error(id + '의 원문 작성시각을 확인해 주세요.');
+    const value = new Date(snapshot.date + 'T' + time + (time.length === 5 ? ':00' : '') + '+09:00').getTime();
+    if (clocks[id] !== undefined && Math.floor(clocks[id] / 60000) !== Math.floor(value / 60000)) throw new Error('입력한 ' + id + ' 작성시각이 목록 캡처에서 읽은 시각과 다릅니다. 게시판에서 다시 확인해 주세요.');
+    if (clocks[id] === undefined) clocks[id] = value;
+    confirmed[id] = true;
+  });
   const timeline = snapshot.rows.map(function(row, index) { return { id: row.id, index: index, time: clocks[row.id] }; }).filter(function(row) { return row.time !== undefined; });
-  // 막힌 경우 작성시각을 확인하지 못한 기존 번호를 알려 줍니다. 그 시각을 추정해 채우지는 않습니다.
-  const unresolved = function(from, to) {
+  // 막힌 경우 작성시각을 확인하지 못한 기존 건을 돌려줘 담당자가 확인·입력하게 합니다. 그 시각을 추정해 채우지는 않습니다.
+  const guide = ' 게시판에서 그 원문의 작성시각을 확인해 아래에 입력하거나, 그 원문이 보이도록 목록 캡처를 추가하거나, 등록 후보로 표시된 행이면 ‘등록 확인’으로 기존 이슈와 연결해 주세요. 확인되지 않은 시각으로 위치를 추정하지 않습니다.';
+  const blocked = function(prefix, from, to) {
     const list = snapshot.rows.slice(from, to).filter(function(row) { return clocks[row.id] === undefined; });
-    return list.slice(0, 5).map(function(row) { return row.id + ' 「' + hdInsertText_(row.values[8], 30) + '」'; }).join(', ') + (list.length > 5 ? ' 외 ' + (list.length - 5) + '건' : '');
+    return { blocked: true, reason: prefix + list.slice(0, 5).map(function(row) { return row.id + ' 「' + hdInsertText_(row.values[8], 30) + '」'; }).join(', ') +
+      (list.length > 5 ? ' 외 ' + (list.length - 5) + '건' : '') + '.' + guide,
+      anchorNeeded: list.slice(0, 5).map(function(row) { return { id: row.id, title: hdInsertText_(row.values[8]), requester: hdInsertText_(row.values[3], 80) }; }) };
   };
-  const guide = ' 이 원문이 보이도록 목록 캡처를 추가하거나, 등록 후보로 표시된 행이면 ‘등록 확인’으로 기존 이슈와 연결한 뒤 다시 확인해 주세요. 확인되지 않은 시각으로 위치를 추정하지 않습니다.';
   let afterId = '', basis = 'capture';
   if (timeline.length) {
     if (timeline.some(function(row) { return row.time === originalTime; })) throw new Error('작성시각이 같은 등록 건이 있어 시간만으로 삽입 순서를 확정할 수 없습니다. 원문 시각·순서를 확인해 주세요.');
@@ -342,10 +357,12 @@ function hdInferInsertionByTime_(snapshot, data) {
     else if (older && !newer && older.index === snapshot.rows.length - 1) afterId = older.id;
     else if (!older && newer && newer.index === 0) afterId = '';
     else if (older && newer && newer.index < older.index) throw new Error('기존 번호 순서와 원문 작성시각 순서가 다릅니다(' + older.id + ' · ' + newer.id + '). 시트와 원문을 확인해 주세요. 위치를 자동으로 정하지 않습니다.');
-    else throw new Error('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ' +
-      (older && newer ? unresolved(older.index + 1, newer.index) : older ? unresolved(older.index + 1) : unresolved(0, newer.index)) + '.' + guide);
+    else if (older && newer) return blocked('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ', older.index + 1, newer.index);
+    else if (older) return blocked('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ', older.index + 1);
+    else return blocked('원문 시각의 앞뒤 사이에 작성시각을 확인하지 못한 기존 건이 있습니다: ', 0, newer.index);
+    if ((older && confirmed[older.id]) || (newer && confirmed[newer.id])) basis = 'confirmed-time';
   } else if (snapshot.rows.length) {
-    throw new Error('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 이 날짜의 기존 ' + snapshot.rows.length + '건: ' + unresolved(0) + '.' + guide);
+    return blocked('앞뒤 등록 원문의 작성시각을 확인하지 못했습니다. 기존 정렬 시간과 원문 시각을 섞어 추정하지 않습니다. 이 날짜의 기존 ' + snapshot.rows.length + '건: ', 0);
   } else basis = 'empty-day';
   return { afterId: afterId, originalTime: originalTime, originalPrecision: stamp.time.length === 8 ? 'second' : 'minute', positionBasis: basis };
 }
@@ -432,6 +449,8 @@ function previewHelpdeskInsertion(data) {
   if (captureSignature && props.getProperty(hdConfirmedPrefix_(sheet.getSheetId()) + captureSignature) === 'Y') return { allowed: false, reason: '이미 등록된 원문으로 팀 공통 확인된 항목입니다. 제외 목록에서 확인하거나 제외를 해제해 주세요.' };
   const counterKey = ISSUE_SEQ_PROPERTY_PREFIX + date.slice(2).replace(/-/g, '');
   const inferred = data.autoPosition === true ? hdInferInsertionByTime_(snapshot, data) : null;
+  // 기준점 부족은 오류가 아니라 담당자 확인이 필요한 상태입니다. 확인할 기존 건을 함께 돌려줍니다.
+  if (inferred && inferred.blocked) return { allowed: false, reason: inferred.reason, anchorNeeded: inferred.anchorNeeded };
   const plan = hdBuildInsertionPlan_(snapshot, inferred ? inferred.afterId : String(data.afterId || ''), props.getProperty(counterKey));
   if (captureSignature) plan.captureSignature = captureSignature;
   if (inferred) { plan.originalTime = inferred.originalTime; plan.originalPrecision = inferred.originalPrecision; plan.positionBasis = inferred.positionBasis; }

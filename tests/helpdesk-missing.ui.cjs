@@ -170,6 +170,12 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.locator('#hd-missing-branch').selectOption('서울본사');await page.locator('#hd-missing-details').fill('연결 기준점 확인용 본문');await page.locator('#hd-missing-confirm').check();await page.locator('#hd-missing-prepare').click();
     await page.waitForFunction(()=>!document.querySelector('#hd-missing-block').hidden&&document.querySelector('#hd-missing-block').innerText.includes('IT-261020-001'));
     assert.match(await page.locator('#hd-missing-block').innerText(),/등록 확인/);assert.equal(await page.locator('#hd-missing-preview').isVisible(),false);
+    // v2.10.5: 막힘 안내 아래에서 기존 건의 게시판 작성시각을 입력하면 그 시각을 기준점으로 다시 계산합니다.
+    const anchorInput=page.getByLabel('IT-261020-001 원문 작성시각',{exact:true});assert.equal(await anchorInput.isVisible(),true);
+    await page.getByRole('button',{name:'입력한 시각으로 다시 확인',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('모두 입력'));
+    await anchorInput.fill('14:00');await page.getByRole('button',{name:'입력한 시각으로 다시 확인',exact:true}).click();await page.locator('#hd-missing-preview').waitFor();
+    assert.deepEqual(calls.filter(item=>item.action==='previewIssueInsertion').at(-1).data.anchorTimes,[{id:'IT-261020-001',title:'교정필증 발행 일자 표시 오류 문의',time:'14:00'}]);
+    const anchoredText=await page.locator('#hd-missing-preview-text').innerText();assert.match(anchoredText,/담당자가 입력한 기존 건의 원문 작성시각/);assert.match(anchoredText,/IT-261020-002/);assert.equal(f.state.batches.length,batchesBeforeLink);
     await page.locator('#hd-missing-tabs [data-filter="review"]').click();await page.locator('[data-confirm-row="1"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('삽입 위치 기준점'));
     await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();assert.match(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/위치 기준점 연결: IT-261020-001/);
     await page.locator('#hd-missing-tabs [data-filter="missing"]').click();await page.locator('[data-row="2"]').click();assert.equal(await page.locator('#hd-missing-details').inputValue(),'연결 기준점 확인용 본문');
@@ -185,6 +191,6 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.locator('#hd-missing-tabs [data-filter="excluded"]').click();await page.locator('[data-restore-row="1"]').click();await page.waitForFunction(()=>document.querySelector('#hd-missing-status').innerText.includes('제외를 해제'));
     await page.locator('#hd-missing-tabs [data-filter="all"]').click();assert.doesNotMatch(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/위치 기준점 연결/);
     assert.deepEqual([...f.state.props],propsBeforeLink);assert.equal(f.state.batches.length,batchesBeforeLink);assert.deepEqual(errors,[]);
-    console.log('PASS 목록 이미지 누적 첨부·3장 초과 차단, 후보 근거(작성자·제목 차이) 표시, 정정한 작성일시로 등록 확인, 기준점 부족 안내 후 등록 확인 연결로 위치 계산, 등록·번호 변경 없음');
+    console.log('PASS 목록 이미지 누적 첨부·3장 초과 차단, 후보 근거(작성자·제목 차이) 표시, 정정한 작성일시로 등록 확인, 기준점 부족 시 기존 건 작성시각 입력·등록 확인 연결로 위치 계산, 등록·번호 변경 없음');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error.stack);process.exitCode=1;});

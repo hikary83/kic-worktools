@@ -39,12 +39,12 @@ test('초 단위가 실제로 보인 경우에만 원문 보존 값에 초를 �
 });
 test('동일 원문 시각·서로 모순되는 시각·중간 기준점 부족은 등록하지 않는다',()=>{
   const f=fixture();assert.throws(()=>automatic(f,'14:00'),/작성시각이 같은/);
-  assert.throws(()=>automatic(f,'14:30',{captureRows:[source('등록 1','13:00'),source('등록 3','15:00')]}),/시각을 확인하지 못/);
+  const gap=automatic(f,'14:30',{captureRows:[source('등록 1','13:00'),source('등록 3','15:00')]});assert.equal(gap.allowed,false);assert.match(gap.reason,/시각을 확인하지 못/);assert.deepEqual(Array.from(gap.anchorNeeded,x=>x.id),['IT-261023-002']);
   assert.throws(()=>automatic(f,'14:30',{captureRows:[source('등록 2','14:00'),source('등록 2','14:05')]}),/서로 다르게/);
   assert.equal(f.state.batches.length,0);
 });
 test('캡처 기준점이 없으면 서로 다른 정렬 시각으로 위치를 추정하지 않는다',()=>{
-  const f=fixture();assert.throws(()=>automatic(f,'09:15',{captureRows:[]}),/정렬 시간과 원문 시각을 섞어/);assert.equal(f.state.batches.length,0);
+  const f=fixture(),none=automatic(f,'09:15',{captureRows:[]});assert.equal(none.allowed,false);assert.match(none.reason,/정렬 시간과 원문 시각을 섞어/);assert.equal(none.token,undefined);assert.equal(f.state.batches.length,0);
 });
 test('첫·마지막 및 빈 일자의 위치도 원문 작성시각으로 자동 결정한다',()=>{
   let f=fixture();assert.equal(automatic(f,'12:00').id,'IT-261023-001');assert.equal(automatic(f,'16:00').id,'IT-261023-004');
@@ -75,8 +75,10 @@ const linkedDay=()=>fixture([record(3,'견적서 출력 버튼 오류 확인 요
 const linkedRows=(link)=>[source('견적서 출력 버튼 오류 확인 요청','15:00'),source('누락 원문','14:30'),source('교정필증 발행 일자의 표시 오류 문의','14:00',link?{linkedIssueId:link}:{}),source('사용자 권한 추가 신청 드립니다','13:00')];
 test('기준점이 부족하면 작성시각을 확인하지 못한 기존 번호와 해결 방법을 알려 준다',()=>{
   const f=linkedDay();
-  assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows()}),error=>/IT-261023-002 「교정필증 발행 일자 표시 오류 문의」/.test(error.message)&&/등록 확인/.test(error.message)&&!/IT-261023-001/.test(error.message));
-  assert.throws(()=>automatic(fixture(),'09:15',{captureRows:[]}),error=>/정렬 시간과 원문 시각을 섞어/.test(error.message)&&/IT-261023-001/.test(error.message));
+  const gap=f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows()});
+  assert.equal(gap.allowed,false);assert.match(gap.reason,/IT-261023-002 「교정필증 발행 일자 표시 오류 문의」/);assert.match(gap.reason,/등록 확인/);assert.match(gap.reason,/작성시각을 확인해 아래에 입력/);assert.doesNotMatch(gap.reason,/IT-261023-001/);
+  assert.deepEqual(JSON.parse(JSON.stringify(gap.anchorNeeded)),[{id:'IT-261023-002',title:'교정필증 발행 일자 표시 오류 문의',requester:'예시 직원'}]);
+  const none=automatic(fixture(),'09:15',{captureRows:[]});assert.match(none.reason,/정렬 시간과 원문 시각을 섞어/);assert.deepEqual(Array.from(none.anchorNeeded,x=>x.id),['IT-261023-003','IT-261023-002','IT-261023-001'].sort());
   assert.equal(f.state.batches.length,0);
 });
 test('담당자가 등록 확인으로 연결한 같은 날짜·한 글자 차이 기존 건은 위치 기준점으로 쓴다',()=>{
@@ -87,5 +89,23 @@ test('제목이 맞지 않는 기존 번호로 연결하면 기준점으로 쓰�
   const f=linkedDay();
   assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows('IT-261023-003')}),/연결한 IT-261023-003/);
   assert.throws(()=>f.preview('',{autoPosition:true,sourceDate:'2026-10-23',sourceTime:'14:30',captureRows:linkedRows('IT-261023-009')}),/연결한 IT-261023-009/);
+  assert.equal(f.state.batches.length,0);
+});
+test('담당자가 게시판에서 확인해 입력한 기존 건 작성시각으로 위치를 계산하고 근거를 표시한다',()=>{
+  let f=fixture(),p=automatic(f,'14:30',{captureRows:[source('등록 1','13:00'),source('등록 3','15:00')],anchorTimes:[{id:'IT-261023-002',title:'등록 2',time:'14:00'}]});
+  assert.equal(p.allowed,true);assert.equal(p.id,'IT-261023-003');assert.equal(p.older,'IT-261023-002');assert.equal(p.positionBasis,'confirmed-time');assert.equal(p.originalPostedAt,'2026-10-23 14:30');
+  f=fixture([record(1,'cms 접속 불가',{requester:'이병수'})]);
+  const anchor=[{id:'IT-261023-001',title:'cms 접속 불가',time:'10:00'}];
+  const after=automatic(f,'14:30',{captureRows:[],anchorTimes:anchor});assert.equal(after.allowed,true);assert.equal(after.id,'IT-261023-002');assert.equal(after.changes.length,0);assert.equal(after.positionBasis,'confirmed-time');
+  const before=automatic(f,'09:30',{captureRows:[],anchorTimes:anchor});assert.equal(before.allowed,true);assert.equal(before.id,'IT-261023-001');assert.deepEqual(JSON.parse(JSON.stringify(before.changes)),[{from:'IT-261023-001',to:'IT-261023-002'}]);
+  assert.equal(f.state.rows[0][8],'cms 접속 불가');assert.equal(f.state.batches.length,0);
+});
+test('입력 시각은 번호·제목이 바뀌었거나 캡처 시각과 다르거나 형식이 틀리면 쓰지 않는다',()=>{
+  const f=fixture(),gap={captureRows:[source('등록 1','13:00'),source('등록 3','15:00')]};
+  assert.throws(()=>automatic(f,'14:30',{...gap,anchorTimes:[{id:'IT-261023-002',title:'다른 제목',time:'14:00'}]}),/번호·제목이 현재 목록과 다릅니다/);
+  assert.throws(()=>automatic(f,'14:30',{...gap,anchorTimes:[{id:'IT-261023-009',title:'등록 2',time:'14:00'}]}),/번호·제목이 현재 목록과 다릅니다/);
+  assert.throws(()=>automatic(f,'14:30',{...gap,anchorTimes:[{id:'IT-261023-002',title:'등록 2',time:'25:00'}]}),/원문 작성시각을 확인/);
+  assert.throws(()=>automatic(f,'14:30',{captureRows:[source('등록 2','14:00')],anchorTimes:[{id:'IT-261023-002',title:'등록 2',time:'14:05'}]}),/목록 캡처에서 읽은 시각과 다릅니다/);
+  const same=automatic(f,'14:30',{captureRows:[source('등록 1','13:00'),source('등록 2','14:00'),source('등록 3','15:00')],anchorTimes:[{id:'IT-261023-002',title:'등록 2',time:'14:00:20'}]});assert.equal(same.allowed,true);
   assert.equal(f.state.batches.length,0);
 });
