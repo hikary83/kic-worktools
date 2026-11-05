@@ -62,6 +62,10 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
       await page.setViewportSize({width:390,height:844});await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-mobile.png')});
       const box=await page.locator('#hd-missing-dialog').boundingBox();assert(box.x>=0&&box.x+box.width<=390);assert(await page.locator('#hd-missing-dialog').evaluate(el=>el.scrollWidth<=el.clientWidth));
       await page.evaluate(()=>document.documentElement.classList.add('dark'));await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-missing-dark.png')});
+      // v2.10.9: 신규 등록 창 접수 일자·원문 작성시각이 잘리지 않아야 합니다.
+      await page.setViewportSize({width:1440,height:1100});await page.keyboard.press('Escape');await page.waitForTimeout(500);await page.evaluate(()=>openAddModal());await page.waitForTimeout(400);
+      await page.locator('#addModalContent').screenshot({path:path.join(process.env.TEMP,'helpdesk-add-modal.png')});
+      for(const [id,min] of [['#add-date',130],['#add-time',120],['#add-branch',90],['#add-requester',90],['#add-dev',90]]){const w=(await page.locator(id).boundingBox()).width;console.log('WIDTH',id,w);assert.ok(w>=min,id+' 폭 '+w);}
       assert.deepEqual(errors,[]);console.log('PASS 실제 스타일의 데스크톱·모바일·다크모드 배치. 합성 자료만 사용.');return;
     }
     await page.locator('#hd-missing-details').fill('원문에서 직접 확인한 상세 내용');await page.locator('#hd-missing-branch').selectOption('서울본사');await page.locator('#hd-missing-confirm').check();f.state.jiraIssues=[{key:'ITM-77',issueNumbers:['IT-261023-003']}];await page.locator('#hd-missing-prepare').click();
