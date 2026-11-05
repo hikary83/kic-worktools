@@ -192,5 +192,16 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
     await page.locator('#hd-missing-tabs [data-filter="all"]').click();assert.doesNotMatch(await page.locator('[data-row="1"]').evaluate(el=>el.closest('.hd-missing-row').innerText),/위치 기준점 연결/);
     assert.deepEqual([...f.state.props],propsBeforeLink);assert.equal(f.state.batches.length,batchesBeforeLink);assert.deepEqual(errors,[]);
     console.log('PASS 목록 이미지 누적 첨부·3장 초과 차단, 후보 근거(작성자·제목 차이) 표시, 정정한 작성일시로 등록 확인, 기준점 부족 시 기존 건 작성시각 입력·등록 확인 연결로 위치 계산, 등록·번호 변경 없음');
+    // v2.10.8: 메인 신규 등록도 게시판 원문 작성시각을 필수로 받습니다.
+    if(await page.locator('#hd-missing-dialog').isVisible())await page.keyboard.press('Escape');
+    const addsBefore=calls.filter(item=>item.action==='addIssue').length;
+    await page.evaluate(()=>openAddModal());assert.equal(await page.locator('#add-time').inputValue(),'');
+    await page.locator('#add-branch').selectOption('서울본사');await page.locator('#add-title').fill('작성시각 확인용 제목');await page.locator('#add-details').fill('작성시각 확인용 본문');
+    await page.evaluate(()=>submitAddForm());await page.waitForFunction(()=>document.querySelector('#toast').innerText.includes('원문 작성시각을 입력'));
+    assert.equal(calls.filter(item=>item.action==='addIssue').length,addsBefore);
+    await page.evaluate(()=>applyAddCaptureAnalysis({receiptDate:'2026-10-23',receiptTime:'14:30'},performance.now()));
+    assert.equal(await page.locator('#add-date').inputValue(),'2026-10-23');assert.equal(await page.locator('#add-time').inputValue(),'14:30');
+    await page.evaluate(()=>closeAddModal());assert.deepEqual(errors,[]);
+    console.log('PASS 신규 등록 원문 작성시각 필수·캡처 분석 시 자동 입력·미입력 시 저장 요청 없음');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 })().catch(error=>{console.error(error.stack);process.exitCode=1;});

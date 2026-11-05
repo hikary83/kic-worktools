@@ -14,7 +14,8 @@ function setup(options = {}) {
   const sheet = {getRange: () => ({
     getValues: () => {step('read', 200);return [Array(11).fill('')];},
     setValues: values => {step('write', 470);writes.push(values);if(options.failWrite)throw Error('private-write-error');},
-    setNumberFormat: () => {step('format',50);}
+    setNumberFormat: () => {step('format',50);},
+    setNote: () => {}
   })};
   const context = vm.createContext({Date:Clock,
     Utilities:{getUuid:()=> '00000000-0000-0000-0000-000000000001',formatDate:()=> '2026-10-07 09:00'},
@@ -31,6 +32,7 @@ function setup(options = {}) {
     getQuarterRequestSheet:()=>{step('quarter-open',1200);return sheet;},
     ensureLinkColumns:()=>step('headers',340),
     reserveIssueIdentity:()=>{step('identity',250);return {id:'IT-test',date:new Clock('2026-10-07T09:00:00+09:00')};},
+    hdNewIssueSourceTime_:()=>({date:'2026-10-07',time:'09:00',value:Date.parse('2026-10-07T00:00:00Z')}),
     findInsertRowForIssueDate:()=>{step('position',90);return 3;},
     insertIssueRowAt:()=>step('insert',300),
     findIssueRowById:()=>{step('find',90);return options.notFound?-1:3;},

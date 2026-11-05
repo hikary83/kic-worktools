@@ -98,10 +98,11 @@ async function main(){
     console.log('PASS 담당자 설정 저장도 캐시와 최신 목록에 반영');
 
     await page.evaluate(()=>openAddModal());await page.locator('#add-branch').selectOption('서울본사');
-    await page.locator('#add-title').fill('신규 등록 테스트');await page.locator('#add-details').fill('저장 성공 후 캐시 반영 확인');
+    await page.locator('#add-time').fill('15:20');await page.locator('#add-title').fill('신규 등록 테스트');await page.locator('#add-details').fill('저장 성공 후 캐시 반영 확인');
     await page.locator('#addModal').getByRole('button',{name:'이슈 등록 (이관)',exact:true}).click();
     await page.waitForFunction(()=>fullIssueData.issues.some(i=>i.id==='IT-261007-004'));
     assert.equal(f.requests.filter(r=>r.action==='addIssue').length,1);
+    assert.equal(f.requests.find(r=>r.action==='addIssue').data.sourceTime,'15:20');
     assert.equal(await page.locator('#kpi-total').innerText(),'3');
     assert.ok(await page.evaluate(()=>JSON.parse(localStorage.getItem('kic_dashboard_cache')).full.issues.some(i=>i.id==='IT-261007-004')));
     console.log('PASS 실제 신규 등록 성공·캐시 반영·등록 요청 한 번');

@@ -34,8 +34,8 @@
   <link href="css/helpdesk-missing.css?v=2.10.5" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.10.7"></script>
-  <script src="js/kic-sidebar.js?v=2.10.7"></script>
+  <script src="js/config.js?v=2.10.8"></script>
+  <script src="js/kic-sidebar.js?v=2.10.8"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -375,7 +375,7 @@
           <div id="add-capture-warning" class="hidden mt-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2"></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-4 gap-4 bg-slate-50 dark:bg-[#262626] p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">접수 일자 (지정) <span class="text-red-500">*</span></label><input type="date" id="add-date" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"></div>
+          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">접수 일자 · 원문 작성시각 <span class="text-red-500">*</span></label><div class="flex gap-2"><input type="date" id="add-date" aria-label="접수 일자" class="flex-1 min-w-0 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"><input type="time" id="add-time" aria-label="원문 작성시각" title="게시판에 표시된 원문 작성시각. 접수일시로 그대로 저장합니다." class="w-28 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"></div></div>
           <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지사 <span class="text-red-500">*</span></label><select id="add-branch" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
           <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">요청자</label><input type="text" id="add-requester" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
           <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="add-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
@@ -1346,7 +1346,7 @@
 
     function buildLocalIssueFromAddData(data, result) {
         const issueId = (result && result.id) ? result.id : '';
-        const dateText = (result && result.date) ? result.date : ((data.receiptDate || getLocalDateString(new Date())) + ' 09:00');
+        const dateText = (result && result.date) ? result.date : ((data.receiptDate || getLocalDateString(new Date())) + ' ' + (data.sourceTime || '09:00'));
         return {
             id: issueId,
             identityRevision: Number(result && result.identityRevision || 0),
@@ -2975,6 +2975,8 @@
         const insertion = window.HelpdeskMissingCheck && window.HelpdeskMissingCheck.insertion();
         if (insertion) document.getElementById('add-date').value = insertion.date;
         else if (data.receiptDate) { document.getElementById('add-date').value = data.receiptDate; filled.push('add-date'); }
+        // 게시글에 보이는 작성시각만 채웁니다. 접수일시로 그대로 저장됩니다.
+        if (/^\d{2}:\d{2}/.test(data.receiptTime || '')) { document.getElementById('add-time').value = data.receiptTime.slice(0, 5); filled.push('add-time'); }
         if (data.requester) { document.getElementById('add-requester').value = data.requester; filled.push('add-requester'); }
 
         // 등록자 이름 기준표를 우선하고, 매칭되지 않을 때만 캡처에서 판독한 지사를 보조로 사용합니다.
@@ -3094,6 +3096,7 @@
         });
         document.getElementById('add-priority').value = '보통';
         document.getElementById('add-date').value = getLocalDateString(new Date());
+        document.getElementById('add-time').value = '';
         clearAddCaptureImages();
         initAddCaptureHandlers();
         initImeProtection();
@@ -3113,9 +3116,10 @@
         const branch = document.getElementById('add-branch').value;
         const title = document.getElementById('add-title').value;
         const details = document.getElementById('add-details').value;
-        if(!date || !branch || !title || !details) return showToast('필수 항목(*)을 모두 입력하세요.', 'error');
+        const sourceTime = document.getElementById('add-time').value;
+        if(!date || !sourceTime || !branch || !title || !details) return showToast(!sourceTime && date && branch && title && details ? '게시판에 표시된 원문 작성시각을 입력하세요. 접수일시로 그대로 저장합니다.' : '필수 항목(*)을 모두 입력하세요.', 'error');
         const menu = document.getElementById('add-menu').value;
-        const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details };
+        const data = { receiptDate: date, branch, requester: document.getElementById('add-requester').value, dev: document.getElementById('add-dev').value, system: document.getElementById('add-system').value, type: document.getElementById('add-type').value, priority: document.getElementById('add-priority').value, menu: menu, sourceLink: document.getElementById('add-source-link').value, jiraLink: document.getElementById('add-jira-link').value, title, details, sourceTime };
         if (window.HelpdeskMissingCheck && window.HelpdeskMissingCheck.insertion()) {
             window.HelpdeskMissingCheck.submit(data, saveButton);
             return;

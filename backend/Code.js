@@ -782,6 +782,7 @@ function analyzeHelpdeskCapture(payload) {
 [반환 JSON 형식]
 {
   "receiptDate": "YYYY-MM-DD 또는 빈 문자열",
+  "receiptTime": "게시글에 표시된 작성 시각 HH:mm 또는 HH:mm:ss, 확인할 수 없으면 빈 문자열",
   "branch": "서울본사|부산지사|대전지사|웨이투웨이|기타|빈 문자열",
   "requester": "작성자/요청자 이름 또는 빈 문자열",
   "system": "CMS|CWIZ|인프라|기타|빈 문자열",
@@ -802,6 +803,7 @@ function analyzeHelpdeskCapture(payload) {
 - 시스템 구분과 유형은 요청의 의미를 보고 가장 가까운 항목을 추천할 수 있습니다.
 - 긴급도는 명확한 긴급 표현이 없으면 "보통"으로 하세요.
 - 날짜에 연도가 명확하지 않으면 receiptDate는 빈 문자열로 두세요.
+- receiptTime은 게시글 작성일시에 실제로 표시된 시각만 24시간제로 옮기세요. 보이지 않으면 빈 문자열로 두고 시각을 만들지 마세요.
 - 지사가 명확하지 않으면 branch는 빈 문자열로 두세요.
 - title은 게시판 제목 영역에 실제로 표시된 제목을 원문 그대로 복사하세요.
 - 제목을 요약하거나 자연스럽게 다듬거나 맞춤법을 고치거나 Jira 말머리를 추가하지 마세요.
@@ -973,12 +975,15 @@ function normalizeHelpdeskCaptureResult(data) {
 
   let receiptDate = clean(data.receiptDate, 20);
   if (!/^\d{4}-\d{2}-\d{2}$/.test(receiptDate)) receiptDate = '';
+  let receiptTime = '';
+  try { receiptTime = hdCaptureStamp_('', clean(data.receiptTime, 20), receiptDate || undefined).time; } catch (_) { receiptTime = ''; }
 
   let warnings = Array.isArray(data.warnings) ? data.warnings : [];
   warnings = warnings.map(function(v) { return clean(v, 120); }).filter(Boolean).slice(0, 5);
 
   return {
     receiptDate: receiptDate,
+    receiptTime: receiptTime,
     branch: enumValue(data.branch, allowedBranches, ''),
     requester: clean(data.requester, 80),
     system: enumValue(data.system, allowedSystems, ''),
@@ -1293,7 +1298,10 @@ function addIssueFromDashboard(formData) {
   try {
     markApiDiagnosticStage('issue_identity');
     if (typeof assertHelpdeskInsertionIdle_ === 'function') assertHelpdeskInsertionIdle_(sheet);
-    const identity = reserveIssueIdentity(sheet, formData.receiptDate);
+    // [v2.10.8] 접수일시는 게시판 원문 작성일시입니다. 예전의 ‘09:00 + 10분 간격’ 정렬 시간은 쓰지 않습니다.
+    const source = hdNewIssueSourceTime_(sheet, formData.receiptDate, formData.sourceTime);
+    const identity = reserveIssueIdentity(sheet, source.date);
+    identity.date = new Date(source.value);
     markApiDiagnosticStage('insert_position');
     const targetRow = findInsertRowForIssueDate(sheet, identity.date);
     markApiDiagnosticStage('sheet_insert');
@@ -1327,6 +1335,8 @@ function addIssueFromDashboard(formData) {
     sheet.getRange(targetRow, 1, 1, JIRA_LINKED_COLUMN).setValues(rowValues);
     markApiDiagnosticStage('sheet_format');
     sheet.getRange(targetRow, 3).setNumberFormat(NUMBER_FORMAT_DT);
+    // 중간 등록과 같은 형식으로 원문 작성일시를 남겨, 이후 위치 계산에서 확인된 시각으로 씁니다.
+    sheet.getRange(targetRow, 1).setNote('원문 작성일시(한국시간): ' + source.date + ' ' + source.time);
 
     return {
       success: true,

@@ -395,6 +395,29 @@ function hdInferInsertionByTime_(snapshot, data) {
 function hdOriginalStampText_(plan) {
   return plan.originalTime ? Utilities.formatDate(new Date(plan.originalTime), TIMEZONE, plan.originalPrecision === 'second' ? 'yyyy-MM-dd HH:mm:ss' : 'yyyy-MM-dd HH:mm') : '';
 }
+// 메인 신규 등록(v2.10.8): 접수일시는 게시판 원문 작성일시입니다. 신규 등록은 그날 마지막 번호를 받으므로,
+// 작성시각이 같거나 더 늦은 등록 건이 이미 있으면 번호·접수일시 순서를 지키기 위해 중간 등록으로 안내합니다.
+function hdNewIssueSourceTime_(sheet, dateValue, timeValue) {
+  const date = hdInsertDate_(dateValue), time = hdCaptureStamp_('', timeValue, date).time;
+  if (!time) throw new Error('원문 작성시각을 입력해 주세요. 게시판에 표시된 작성시각으로 접수일시를 저장합니다.');
+  const at = function(clock) { return new Date(date + 'T' + clock + (clock.length === 5 ? ':00' : '') + '+09:00').getTime(); };
+  const value = at(time), count = Math.max(0, sheet.getLastRow() - START_ROW + 1), prefix = 'IT-' + date.slice(2).replace(/-/g, '') + '-';
+  if (count) {
+    const values = sheet.getRange(START_ROW, 1, count, 3).getValues(), notes = sheet.getRange(START_ROW, 1, count, 1).getNotes();
+    let latest = null;
+    values.forEach(function(row, index) {
+      const id = hdInsertText_(row[0], 60);
+      if (id.indexOf(prefix) !== 0) return;
+      const stored = hdStoredSourceTime_(notes[index] && notes[index][0], date);
+      const known = stored ? at(stored) : (row[2] instanceof Date ? row[2].getTime() : new Date(row[2]).getTime());
+      if (!isNaN(known) && (!latest || known > latest.time)) latest = { id: id, time: known };
+    });
+    if (latest && latest.time >= value) {
+      throw new Error('이 날짜에 작성시각이 같거나 더 늦은 등록 건(' + latest.id + ', ' + hdClockText_(latest.time) + ')이 있습니다. 번호와 접수일시 순서를 지키기 위해 목록 캡처 누락 점검의 중간 등록으로 넣어 주세요.');
+    }
+  }
+  return { date: date, time: time, value: value };
+}
 function hdClockText_(ms) {
   const text = Utilities.formatDate(new Date(ms), TIMEZONE, 'HH:mm:ss');
   return text.slice(-3) === ':00' ? text.slice(0, 5) : text;
