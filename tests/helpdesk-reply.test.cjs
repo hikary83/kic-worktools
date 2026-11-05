@@ -159,10 +159,30 @@ for (const withImage of [false, true]) {
     assert.match(parts[0].text, /초안에 없는 완료 여부, 확정 일정/);
     assert.equal(parts.length, withImage ? 2 : 1);
     if (withImage) assert.deepEqual(parts[1], { inlineData: { mimeType: 'image/png', data: 'dGVzdA==' } });
-    assert.equal(result.data.text, '안녕하세요, IT전략실입니다.\n\n검토 후 개선할 예정입니다.\n\n감사합니다.');
+    assert.equal(result.data.text, '안녕하세요. IT전략실입니다.\n검토 후 개선할 예정입니다.\n\n감사합니다.\nIT전략실 드림');
     assert.equal(result.diagnostics.action, 'generateReply');
   });
 }
+
+test('답변은 Confluence 가이드 형식과 성격별 마무리 문장을 따른다', () => {
+  const f = setup();
+  const fmt = text => f.context.enforceHelpdeskReplyFormat(text);
+  assert.equal(fmt('안녕하세요, IT전략실입니다.\n\n**■ 확인 결과**\n내용\n\n감사합니다.'),
+    '안녕하세요. IT전략실입니다.\n■ 확인 결과\n내용\n\n감사합니다.\nIT전략실 드림'.replace('입니다.\n■', '입니다.\n\n■'));
+  assert.equal(fmt('안녕하세요. IT전략실입니다.\n요청주신 기능개선 사항 확인 후 아래와 같이 안내드립니다.\n\n■ 요청 내용 확인\n내용\n\n의견 전달해 주셔서 감사합니다.\n추가로 필요한 사항이 있으시면 말씀 부탁드립니다.\n\n감사합니다.\nIT전략실 드림'),
+    '안녕하세요. IT전략실입니다.\n요청주신 기능개선 사항 확인 후 아래와 같이 안내드립니다.\n\n■ 요청 내용 확인\n내용\n\n의견 전달해 주셔서 감사합니다.\n추가로 필요한 사항이 있으시면 말씀 부탁드립니다.\n\n감사합니다.\nIT전략실 드림');
+  assert.match(fmt('본문\n\n의견 전달해 주셔서 감사합니다.'), /의견 전달해 주셔서 감사합니다\.\n\n감사합니다\.\nIT전략실 드림$/);
+  assert.equal(fmt('본문\n감사합니다. IT전략실 드림'), '안녕하세요. IT전략실입니다.\n본문\n\n감사합니다.\nIT전략실 드림');
+  const result = f.request({ requestText: '이슈 유형: 데이터 수정', draftAnswer: '접수일자 수정 완료', mode: 'fast' });
+  const prompt = f.calls[0].payload.contents[0].parts[0].text;
+  for (const line of [
+    '이후에도 동일한 문제가 발생하거나 다른 문의 사항이 있으시면 언제든지 IT전략실로 연락해 주시기 바랍니다.',
+    '수정된 내용 확인 부탁드리며, 추가로 필요한 사항이 있으시면 말씀 부탁드립니다.',
+    '안내드린 방법으로 확인 부탁드리며, 추가로 궁금하신 사항이 있으시면 말씀 부탁드립니다.',
+    '의견 전달해 주셔서 감사합니다.', '■ 발생 원인', '■ 이용 안내', '■ 검토 결과 및 진행 계획'
+  ]) assert.ok(prompt.includes(line), line);
+  assert.equal(result.success, true);
+});
 
 test('초안이 없으면 기존 입력 검증을 유지한다', () => {
   const f = setup([]);
