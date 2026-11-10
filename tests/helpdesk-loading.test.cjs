@@ -85,7 +85,7 @@ test('재조회 안내 UI 오류가 성공한 조회를 실패로 바꾸지 않�
   const f=apiFixture([new TypeError('Failed to fetch'),response()]);await f.run({}, {onRetry(){throw Error('UI failed');}});
   assert.equal(f.calls.length,2);
 });
-for(const action of ['addIssue','updateIssue','updateStatus','updateHidden','saveDevelopers','generateReply','analyzeCapture','applyJiraSync']){
+for(const action of ['addIssue','updateIssue','updateStatus','updateHidden','saveDevelopers','generateReply','applyJiraSync']){
   test(action+'에는 새 시간제한/자동 재시도가 적용되지 않는다',async()=>{
     const f=apiFixture([new TypeError('Failed to fetch')]);await assert.rejects(f.ctx.callGASApi(action,{}));assert.equal(f.calls.length,1);
     assert.equal(f.calls[0].options.method,'POST');assert.equal(f.calls[0].options.signal,undefined);assert.equal(f.timers.size,0);

@@ -34,8 +34,8 @@
   <link href="css/helpdesk-missing.css?v=2.10.5" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.10.10"></script>
-  <script src="js/kic-sidebar.js?v=2.10.10"></script>
+  <script src="js/config.js?v=2.10.11"></script>
+  <script src="js/kic-sidebar.js?v=2.10.11"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -2796,10 +2796,12 @@
     async function loadHelpdeskStaffBranchMap() {
         if (helpdeskStaffBranchMapPromise) return helpdeskStaffBranchMapPromise;
         helpdeskStaffBranchMapPromise = (async () => {
+            const controller = new AbortController();
+            const timeout = setTimeout(() => controller.abort(), 5000);
             try {
                 const url = new URL('data/staff-branch-map.json', window.location.href);
                 url.searchParams.set('t', Date.now());
-                const response = await fetch(url, { cache: 'no-cache' });
+                const response = await fetch(url, { cache: 'no-cache', signal: controller.signal });
                 if (!response.ok) throw new Error(`HTTP ${response.status}`);
                 const payload = await response.json();
                 const staff = payload && payload.staff && typeof payload.staff === 'object' ? payload.staff : {};
@@ -2815,6 +2817,8 @@
                 helpdeskStaffBranchMapLoaded = false;
                 console.warn('직원-지사 공통 기준표를 불러오지 못했습니다.', error);
                 return helpdeskStaffBranchMap;
+            } finally {
+                clearTimeout(timeout);
             }
         })();
         return helpdeskStaffBranchMapPromise;
@@ -3026,6 +3030,7 @@
         }
 
         addCaptureAnalyzeInFlight = true;
+        let analysisFailed = false;
         const startedAt = performance.now();
         const btn = document.getElementById('add-capture-analyze-btn');
         if (btn) {
@@ -3033,7 +3038,7 @@
             btn.dataset.originalHtml = btn.dataset.originalHtml || btn.innerHTML;
             btn.innerHTML = '<i class="fas fa-spinner fa-spin mr-1"></i>캡처 분석 중...';
         }
-        setAddCaptureStatus(isAuto ? '캡처를 자동 분석 중...' : '캡처 분석 중...', 'work');
+        setAddCaptureStatus((isAuto ? '캡처를 자동 분석 중...' : '캡처 분석 중...') + ' 최대 30초 동안 응답을 기다립니다.', 'work');
         setAddCaptureWarnings([]);
 
         try {
@@ -3041,12 +3046,16 @@
             await loadHelpdeskStaffBranchMap();
             applyAddCaptureAnalysis((result && result.data) || result || {}, startedAt);
         } catch (e) {
-            setAddCaptureStatus('분석 실패: ' + (e && e.message ? e.message : String(e)), 'err');
+            analysisFailed = true;
+            addCaptureAnalyzeQueued = false;
+            if (addCaptureAnalyzeTimer) clearTimeout(addCaptureAnalyzeTimer);
+            addCaptureAnalyzeTimer = null;
+            setAddCaptureStatus((e && e.code === 'API_CAPTURE_TIMEOUT' ? '분석 지연: ' : '분석 실패: ') + (e && e.message ? e.message : String(e)), 'err');
         } finally {
             addCaptureAnalyzeInFlight = false;
             if (btn) {
                 btn.disabled = false;
-                btn.innerHTML = btn.dataset.originalHtml || '<i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력';
+                btn.innerHTML = analysisFailed ? '<i class="fas fa-rotate-right mr-1"></i>다시 분석' : btn.dataset.originalHtml || '<i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력';
             }
             if (addCaptureAnalyzeQueued) {
                 addCaptureAnalyzeQueued = false;

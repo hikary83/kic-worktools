@@ -138,7 +138,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v2.10.10', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v2.10.11', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 
@@ -160,8 +160,9 @@ function showGASDiagnosticNotice(record) {
   }
   const names = { addIssue: '신규 등록', insertIssue: '중간 등록', analyzeListCapture: '목록 캡처 분석', compareListCapture: '누락 대조', previewIssueInsertion: '삽입·Jira 확인', updateIssue: '이슈 수정', analyzeCapture: '캡처 분석', generateReply: '답변 생성', getDashboardData: '목록 조회' };
   const failed = record.outcome === 'failure';
-  panel.querySelector('[data-summary]').textContent = (names[record.action] || '서버 요청') + (failed ? ' 실패' : ' 지연 후 완료') + ' · ' + (record.httpStatus ? 'HTTP ' + record.httpStatus + ' · ' : '') + (record.elapsedMs / 1000).toFixed(1) + '초';
-  panel.querySelector('[data-note]').textContent = failed && GAS_WRITE_ACTIONS.has(record.action) ? '응답 실패만으로 저장 여부를 단정할 수 없습니다. 목록을 확인한 뒤 다시 시도해 주세요.' : '로그를 복사해 보내주면 실패 단계와 지연 시간을 확인할 수 있어요.';
+  const captureTimedOut = record.code === 'API_CAPTURE_TIMEOUT';
+  panel.querySelector('[data-summary]').textContent = (names[record.action] || '서버 요청') + (captureTimedOut ? ' 응답 지연' : failed ? ' 실패' : ' 지연 후 완료') + ' · ' + (record.httpStatus ? 'HTTP ' + record.httpStatus + ' · ' : '') + (record.elapsedMs / 1000).toFixed(1) + '초';
+  panel.querySelector('[data-note]').textContent = captureTimedOut ? '첨부 이미지와 입력 내용은 유지됩니다. 잠시 후 분석 버튼을 눌러 다시 시도해 주세요.' : failed && GAS_WRITE_ACTIONS.has(record.action) ? '응답 실패만으로 저장 여부를 단정할 수 없습니다. 목록을 확인한 뒤 다시 시도해 주세요.' : '로그를 복사해 보내주면 실패 단계와 지연 시간을 확인할 수 있어요.';
   const ai = ['analyzeCapture', 'analyzeListCapture'].includes(record.action) ? safeGASCaptureDiagnostic(record.server && record.server.ai) : null;
   const aiInfo = panel.querySelector('[data-ai]');
   aiInfo.hidden = !ai;
@@ -263,6 +264,7 @@ async function readGASApiResponse(response, diagnostic) {
 }
 
 const GAS_DASHBOARD_READ_TIMEOUT_MS = 20000;
+const GAS_CAPTURE_TIMEOUT_MS = 30000;
 
 function isDashboardReadRetryable(error) {
   return ['API_READ_TIMEOUT', 'API_NETWORK_ERROR', 'API_INFO_RESPONSE', 'API_INVALID_RESPONSE', 'API_REQUEST_MISMATCH'].includes(error.code)
@@ -299,10 +301,12 @@ async function performGASRequest(action, data, method, requestId, policy = {}) {
       Object.assign(diagnostic, { responseWaitMs: Date.now() - started, httpStatus: response.status, redirected: response.redirected, responseAddress: response.url, stage: 'response_headers' });
       return readGASApiResponse(response, diagnostic);
     })();
-    // 목록 조회만 대기를 제한합니다. 브라우저 중단이 서버 작업 중단을 보장하지는 않습니다.
+    // 조회·캡처 분석의 대기만 제한합니다. 브라우저 중단이 서버 작업 중단을 보장하지는 않습니다.
     const result = controller ? await Promise.race([request, new Promise((_, reject) => {
       timeout = setTimeout(() => {
-        reject(createGASApiError('목록 조회 응답을 20초 동안 받지 못했습니다. [API_READ_TIMEOUT]', 'API_READ_TIMEOUT', diagnostic.httpStatus));
+        reject(createGASApiError(
+          policy.timeoutMessage || '목록 조회 응답을 20초 동안 받지 못했습니다. [API_READ_TIMEOUT]',
+          policy.timeoutCode || 'API_READ_TIMEOUT', diagnostic.httpStatus));
         controller.abort();
       }, policy.timeoutMs);
     })]) : await request;
@@ -361,6 +365,15 @@ async function callGASApi(action, data = {}, options = {}) {
     }
   }
   
+  if (['analyzeCapture', 'analyzeListCapture'].includes(action)) {
+    // 자동 재호출 없이 입력을 보존하고 수동 재시도를 허용합니다. 늦은 응답은 호출자에게 전달하지 않습니다.
+    return performGASRequest(action, data, 'POST', requestId, {
+      timeoutMs: GAS_CAPTURE_TIMEOUT_MS,
+      timeoutCode: 'API_CAPTURE_TIMEOUT',
+      timeoutMessage: '캡처 분석 응답을 30초 동안 받지 못했습니다. 첨부 이미지와 입력 내용은 유지됩니다. 잠시 후 분석 버튼을 눌러 다시 시도해 주세요. [API_CAPTURE_TIMEOUT]'
+    });
+  }
+
   try {
     return await performGASRequest(action, data, 'POST', requestId);
   } catch (error) {
