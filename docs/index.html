@@ -34,8 +34,8 @@
   <link href="css/helpdesk-missing.css?v=2.10.5" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.10.11"></script>
-  <script src="js/kic-sidebar.js?v=2.10.11"></script>
+  <script src="js/config.js?v=2.10.12"></script>
+  <script src="js/kic-sidebar.js?v=2.10.12"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -85,7 +85,7 @@
       </div>
 
       <!-- 상단 컨트롤 캡슐 바 -->
-      <div class="bg-white dark:bg-[#2F2F2F] p-2 rounded-2xl border border-slate-200/90 dark:border-[#424242] shadow-sm flex flex-wrap items-center gap-2 transition-colors">
+      <div class="bg-white dark:bg-[#2F2F2F] p-2 rounded-2xl border border-slate-200/90 dark:border-[#424242] shadow-sm flex flex-wrap lg:flex-nowrap lg:shrink-0 items-center gap-2 transition-colors">
         <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-[#262626] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
           <i class="far fa-calendar-alt text-slate-400 dark:text-slate-500 text-xs cursor-pointer" onclick="document.getElementById('startDate').showPicker && document.getElementById('startDate').showPicker()" title="달력 열기"></i>
           <input type="date" id="startDate" onclick="this.showPicker && this.showPicker()" class="bg-transparent border-0 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 cursor-pointer p-0 dark:[color-scheme:dark]">

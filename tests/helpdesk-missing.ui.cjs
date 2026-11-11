@@ -66,6 +66,12 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
       await page.setViewportSize({width:1440,height:1100});await page.keyboard.press('Escape');await page.waitForTimeout(500);await page.evaluate(()=>openAddModal());await page.waitForTimeout(400);
       await page.locator('#addModalContent').screenshot({path:path.join(process.env.TEMP,'helpdesk-add-modal.png')});
       for(const [id,min] of [['#add-date',130],['#add-time',120],['#add-branch',90],['#add-requester',90],['#add-dev',90]]){const w=(await page.locator(id).boundingBox()).width;console.log('WIDTH',id,w);assert.ok(w>=min,id+' 폭 '+w);}
+      // v2.10.12: 동기화 상태 상자가 표시돼도 넓은 화면에서 상단 조회 막대가 한 줄을 유지해야 합니다.
+      await page.keyboard.press('Escape');await page.waitForTimeout(500);await page.evaluate(()=>setDashboardSyncStatus('saved'));
+      for(const width of [1280,1440]){await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
+        const tops=await page.evaluate(()=>['#startDate','button[title="시스템 설정 (담당자 관리)"]','button[aria-label="목록 캡처 누락 점검"]'].map(s=>Math.round(document.querySelector(s).getBoundingClientRect().top+document.querySelector(s).getBoundingClientRect().height/2)));
+        console.log('TOOLBAR',width,tops);assert.ok(Math.max(...tops)-Math.min(...tops)<=4,'상단 막대 줄바꿈 '+width+' '+tops);}
+      await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-toolbar.png'),clip:{x:0,y:0,width:1440,height:200}});
       assert.deepEqual(errors,[]);console.log('PASS 실제 스타일의 데스크톱·모바일·다크모드 배치. 합성 자료만 사용.');return;
     }
     await page.locator('#hd-missing-details').fill('원문에서 직접 확인한 상세 내용');await page.locator('#hd-missing-branch').selectOption('서울본사');await page.locator('#hd-missing-confirm').check();f.state.jiraIssues=[{key:'ITM-77',issueNumbers:['IT-261023-003']}];await page.locator('#hd-missing-prepare').click();
