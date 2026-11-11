@@ -50,11 +50,15 @@ const basicStyles='<style>.hidden{display:none!important}.relative{position:rela
     assert.equal(await page.locator('#progress-current-container').isVisible(),false);assert.equal(await page.locator('#done-current-container').isVisible(),false);assert.equal(await page.locator('#pending-past-container').isVisible(),false);
     for(const status of ['검토중','예정','처리중'])assert.match(await page.locator('#progress-current-status-counts').innerText(),new RegExp(status+' 1건'));
     assert.equal(await page.locator('#kpi-pending').innerText(),'7');assert.equal(await page.locator('#btn-toggle-progress').getAttribute('aria-expanded'),'false');
+    // v2.10.13: 조회 기간·검색과 무관하게 전체 이슈 중 접수일시가 가장 늦은 건(같으면 번호가 큰 건)을 표시합니다. 분기 요청은 제외합니다.
+    const latestText=()=>page.locator('#latest-registered').innerText();assert.match(await latestText(),/최근 등록[\s\S]*IT-261022-009[\s\S]*이전 상태값 업무[\s\S]*서울본사 예시 요청자[\s\S]*10\/22 09:00/);
     if(process.env.KIC_SECTIONS_VISUAL==='1'){
       // Visual QA is limited to this change; modal/API flows use the offline fixture below.
       await page.locator('#tab-pending-content').screenshot({path:path.join(process.env.TEMP,'helpdesk-sections-desktop.png')});
       await page.getByRole('button',{name:'진행 관리 상태 안내',exact:true}).hover();assert.equal(await page.locator('#tooltip-progress-current').isVisible(),true);
       await page.setViewportSize({width:390,height:844});
+      const latestBox=await page.locator('#latest-registered').evaluate(el=>{el.scrollIntoView({block:'center'});const r=el.getBoundingClientRect();return {left:r.left,right:r.right,height:Math.round(r.height),scroll:document.documentElement.scrollWidth};});console.log('LATEST MOBILE',JSON.stringify(latestBox));
+      await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-latest-mobile.png')});assert(latestBox.right<=390&&latestBox.scroll<=390,'최근 등록 모바일 넘침 '+JSON.stringify(latestBox));
       await page.getByRole('button',{name:'진행 관리 상태 안내',exact:true}).evaluate(el=>el.scrollIntoView({block:'center'}));
       await page.getByRole('button',{name:'진행 관리 상태 안내',exact:true}).focus();
       await page.waitForFunction(()=>{const r=document.querySelector('#tooltip-progress-current').getBoundingClientRect();return r.x>=0&&r.right<=innerWidth;});
@@ -92,6 +96,9 @@ const basicStyles='<style>.hidden{display:none!important}.relative{position:rela
     console.log('PASS 네 영역 툴팁의 키보드 포커스·모바일 경계·다크모드 표시');
     await page.setViewportSize({width:1440,height:1100});await page.reload();await page.waitForFunction(()=>document.querySelector('#sync-indicator').innerText.includes('동기화 완료'));await count('count-pending-current',3);await count('count-progress-current',3);assert.equal(await page.locator('#progress-current-container').isVisible(),false);
     await page.locator('#startDate').fill('2026-10-12');await page.locator('#endDate').fill('2026-10-18');await page.getByRole('button',{name:'조회',exact:true}).click();await page.waitForFunction(()=>document.querySelector('#kpi-total').innerText==='2');await count('count-pending-current',0);await count('count-progress-current',1);await count('count-done-current',1);assert.equal(await page.locator('#progress-current-container').isVisible(),false);
+    assert.match(await latestText(),/IT-261022-009/);await page.locator('#globalSearchInput').fill('이월 반려');await page.waitForTimeout(150);assert.match(await latestText(),/IT-261022-009/);await page.locator('#globalSearchClearBtn').click();await page.waitForTimeout(120);
+    await page.evaluate(()=>applyLocalIssueUpdate({id:'IT-261023-001',date:'2026-10-23 08:30',title:'새로 등록한 업무',status:'접수대기',type:'오류',sourceType:'helpdesk',sourceLabel:'헬프',branch:'부산지사',requester:'예시 신규',details:'합성',system:'CMS',priority:'보통'}));
+    assert.match(await latestText(),/IT-261023-001[\s\S]*새로 등록한 업무[\s\S]*부산지사 예시 신규[\s\S]*10\/23 08:30/);console.log('PASS 최근 등록 건: 조회 기간·검색 무관, 분기 요청 제외, 신규 등록 즉시 갱신');
     assert.deepEqual(errors,[]);assert.equal(requests.filter(x=>x.action==='updateIssue').length,3);
     console.log('PASS 재접속 시 저장 상태 반영·진행 관리 초기 접힘. 운영 API 호출·실제 데이터 변경 없음.');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

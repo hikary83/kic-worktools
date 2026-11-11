@@ -34,8 +34,8 @@
   <link href="css/helpdesk-missing.css?v=2.10.5" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.10.12"></script>
-  <script src="js/kic-sidebar.js?v=2.10.12"></script>
+  <script src="js/config.js?v=2.10.13"></script>
+  <script src="js/kic-sidebar.js?v=2.10.13"></script>
   <script src="js/kic-common.js?v=2.8.3"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -204,6 +204,7 @@
             <span>📥 조회 기간 내 이슈 - 접수 확인</span>
             <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="접수 확인 상태 안내" aria-describedby="tooltip-intake-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-intake-current" class="hd-section-tooltip" role="tooltip">상태: 접수대기<br>조회 기간 내 접수대기 건을 표시합니다. 상태가 비어 있거나 알 수 없는 미완료 건도 확인 누락을 막기 위해 이곳에 표시합니다.</span></span>
             <span class="text-xs bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-pending-current">0건</span>
+            <span id="latest-registered" class="hidden min-w-0 max-w-full overflow-hidden flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#424242] px-3 py-1 rounded-xl sm:rounded-full"></span>
           </h3>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="pending-current-container"></div>
@@ -1122,6 +1123,27 @@
         });
     }
 
+    // 조회 기간·검색어와 무관하게 전체 헬프데스크 이슈 중 접수일시(원문 작성시각)가 가장 늦은 건. 같으면 번호가 큰 건.
+    function renderLatestRegistered() {
+        const el = document.getElementById('latest-registered');
+        const issues = ((window.fullIssueData && window.fullIssueData.issues) || []).filter(item => item.sourceType !== 'quarter');
+        const latest = issues.reduce((best, item) => !best || `${item.date}|${item.id}` > `${best.date}|${best.id}` ? item : best, null);
+        el.classList.toggle('hidden', !latest);
+        el.classList.toggle('inline-flex', Boolean(latest));
+        if (!latest) return;
+        const who = [latest.branch, latest.requester].filter(value => value && value !== '-').join(' ');
+        const time = String(latest.date || '').replace(/^\d{4}-(\d{2})-(\d{2})/, '$1/$2');
+        el.title = `최근 등록: ${latest.id} · ${latest.title || ''} · ${who} · ${time}`;
+        const dot = '<span class="opacity-40" aria-hidden="true">·</span>';
+        el.innerHTML = [
+            '<span class="shrink-0 font-bold text-slate-600 dark:text-slate-300">최근 등록</span>',
+            `<span class="shrink-0 font-mono font-bold text-blue-600 dark:text-sky-400">${escapeHtml(latest.id)}</span>`,
+            `<span class="truncate font-bold text-slate-700 dark:text-slate-200">${escapeHtml(latest.title)}</span>`,
+            who ? `<span class="shrink-0">${escapeHtml(who)}</span>` : '',
+            time ? `<span class="shrink-0 font-mono">${escapeHtml(time)}</span>` : ''
+        ].filter(Boolean).join(dot);
+    }
+
     function renderIssueSections(stats, shouldCollapseFoldableSections, statePreserve = null) {
         if (!stats) return;
         const pendingCurrent = filterIssuesByGlobalSearch(stats.pendingCurrent || []);
@@ -1138,6 +1160,7 @@
         renderProgressStatusCounts(statusCounts);
         document.getElementById('count-done-current').innerText = `${completedCurrent.length}건`;
         document.getElementById('count-past').innerText = `${pastBoardItems.length}건`;
+        renderLatestRegistered();
 
         renderCardsGroupedByType('pending-current-container', intake, isSearching ? '검색 결과가 없습니다.' : '접수 확인할 이슈가 없습니다.');
         renderCardsGroupedByType('progress-current-container', progress, isSearching ? '검색 결과가 없습니다.' : '진행 관리할 이슈가 없습니다.');
