@@ -48,9 +48,10 @@ const KicTheme = {
     const switchBtns = document.querySelectorAll('.kic-theme-switch');
     switchBtns.forEach(btn => {
       btn.innerHTML = isDark
-        ? `<span class="kic-lnb-ico">☀️</span><span class="kic-lnb-text">라이트</span>`
-        : `<span class="kic-lnb-ico">🌙</span><span class="kic-lnb-text">다크</span>`;
+        ? `<span class="kic-lnb-ico"><i class="fas fa-circle-half-stroke" aria-hidden="true"></i></span><span class="kic-lnb-text">라이트</span>`
+        : `<span class="kic-lnb-ico"><i class="fas fa-circle-half-stroke" aria-hidden="true"></i></span><span class="kic-lnb-text">다크</span>`;
       btn.setAttribute('title', isDark ? '라이트 모드로 전환' : '다크 모드로 전환');
+      btn.dataset.title = isDark ? '라이트 모드로 전환' : '다크 모드로 전환';
     });
   },
   init: function() {
@@ -66,37 +67,27 @@ const KicTheme = {
   }
 };
 
-// 3. 공통 토스트 팝업 (showToast)
+// 3. 공통 토스트 (showToast): 아래 가운데에 잠깐 떴다가 사라집니다. 색 점으로 성공·오류·안내를 구분합니다.
 let toastTimer = null;
-function showToast(message, type = 'info', duration = 2500) {
+function showToast(message, type = 'info', duration = 2800) {
   let toast = document.getElementById('kic-toast');
   if (!toast) {
     toast = document.createElement('div');
     toast.id = 'kic-toast';
-    toast.className = 'hidden';
+    toast.setAttribute('role', 'status');
+    toast.setAttribute('aria-live', 'polite');
     document.body.appendChild(toast);
   }
 
   if (toastTimer) clearTimeout(toastTimer);
-
-  let icon = 'ℹ️';
-  let typeClass = 'toast-info';
-  if (type === 'success') {
-    icon = '✅';
-    typeClass = 'toast-success';
-  } else if (type === 'error') {
-    icon = '❌';
-    typeClass = 'toast-error';
-  }
-
-  toast.className = `${typeClass} flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md`;
-  toast.innerHTML = `<span class="text-base leading-none">${icon}</span><span>${message}</span>`;
-  toast.classList.remove('hidden');
+  const typeClass = type === 'success' ? 'toast-success' : type === 'error' ? 'toast-error' : 'toast-info';
+  toast.className = typeClass;
+  toast.textContent = message;
+  toast.style.opacity = '1';
 
   toastTimer = setTimeout(() => {
     toast.style.opacity = '0';
-    toast.style.transform = 'translateY(-12px)';
-    setTimeout(() => toast.classList.add('hidden'), 250);
+    toastTimer = setTimeout(() => toast.classList.add('hidden'), 200);
   }, duration);
 }
 
@@ -106,6 +97,7 @@ const KicModal = {
     // 키보드 ESC 키로 모달 닫기
     document.addEventListener('keydown', e => {
       if (e.key === 'Escape' || e.key === 'Esc') {
+        if (window.KicLnb) window.KicLnb.close();
         this.closeAll();
       }
     });
@@ -135,19 +127,36 @@ const KicModal = {
   }
 };
 
-// 5. 공통 사이드바 LNB 관리자 (KicLnb)
+// 5. 공통 사이드바(메뉴) 관리자 (KicLnb)
+// 넓은 화면의 ☰ = 72px 아이콘 줄로 접기(기억함). 휴대폰(860px 이하)의 ☰ = 서랍 열고 닫기.
 const KicLnb = {
+  mobileQuery: window.matchMedia ? window.matchMedia('(max-width: 860px)') : null,
+  isMobile: function() {
+    return Boolean(this.mobileQuery && this.mobileQuery.matches);
+  },
   init: function() {
-    const isCollapsed = localStorage.getItem('kic_lnb_collapsed') === 'true';
-    if (isCollapsed) {
-      document.body.classList.add('kic-lnb-collapsed');
+    try {
+      if (localStorage.getItem('kic_lnb_collapsed') === 'true') document.body.classList.add('kic-lnb-collapsed');
+    } catch (e) { /* 저장소를 못 쓰면 펼친 상태로 둡니다 */ }
+    if (this.mobileQuery && this.mobileQuery.addEventListener) {
+      this.mobileQuery.addEventListener('change', () => this.close());
     }
   },
   toggle: function() {
+    if (this.isMobile()) {
+      document.body.classList.toggle('kic-lnb-open');
+      return;
+    }
     const isCollapsed = document.body.classList.toggle('kic-lnb-collapsed');
-    localStorage.setItem('kic_lnb_collapsed', isCollapsed ? 'true' : 'false');
+    try { localStorage.setItem('kic_lnb_collapsed', isCollapsed ? 'true' : 'false'); } catch (e) { /* 기억만 못 함 */ }
+  },
+  close: function() {
+    document.body.classList.remove('kic-lnb-open');
   }
 };
+
+window.KicTheme = KicTheme;
+window.KicLnb = KicLnb;
 
 // DOM 로드 시 공통 초기화
 document.addEventListener('DOMContentLoaded', () => {
