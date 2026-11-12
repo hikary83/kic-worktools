@@ -35,7 +35,7 @@
   <!-- Marked.js Markdown Parser CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/config.js"></script>
-  <script src="js/kic-sidebar.js?v=2.10.13"></script>
+  <script src="js/kic-sidebar.js?v=3.0.0"></script>
   <script src="js/kic-common.js?v=3.0.0"></script>
   <style>
     body {
@@ -169,7 +169,7 @@
               <button id="btn-plan-refresh" onclick="loadBlogPostPlans(true)" class="p-2 border border-[var(--line)] hover:bg-[var(--raise)] bg-[var(--card)] rounded-xl transition-all text-[var(--ok)] " title="시트 실시간 새로고침">
                 <i data-lucide="refresh-cw" class="w-4 h-4"></i>
               </button>
-              <a href="https://blog.naver.com/kicblog" target="_blank" rel="noopener noreferrer" class="p-2 border border-[var(--line)] hover:bg-[var(--ok-soft)] bg-[var(--card)] rounded-xl transition-all text-[var(--muted)] hover:text-[var(--ok)] flex items-center justify-center shadow-xs" title="공식 네이버 블로그 바로가기 (새 창)">
+              <a href="https://blog.naver.com/kicblog" target="_blank" rel="noopener noreferrer" class="p-2 border border-[var(--line)] hover:bg-[var(--accent-soft)] bg-[var(--card)] rounded-xl transition-all text-[var(--muted)] hover:text-[var(--accent)] flex items-center justify-center shadow-xs" title="공식 네이버 블로그 바로가기 (새 창)">
                 <i data-lucide="globe" class="w-4 h-4"></i>
               </a>
             </div>
@@ -209,7 +209,7 @@
           <button onclick="goToStep(1)" class="flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--ink)] font-bold transition-all">
             <i data-lucide="arrow-left" class="w-4 h-4"></i> 1단계 캘린더 일정 선택으로
           </button>
-          <div id="selected-plan-banner" class="hidden flex items-center gap-2 bg-[var(--ok-soft)] border border-[var(--ok)] px-3.5 py-1.5 rounded-xl text-xs text-[var(--ok)] font-bold">
+          <div id="selected-plan-banner" class="hidden flex items-center gap-2 bg-[var(--accent-soft)] border border-[var(--accent)] px-3.5 py-1.5 rounded-xl text-xs text-[var(--accent)] font-bold">
             <span class="text-sm">📌</span>
             <span id="selected-plan-text" class="truncate max-w-xs sm:max-w-md">선택된 포스팅: ...</span>
             <span id="selected-plan-badge" class="text-[10px] font-extrabold px-2 py-0.5 rounded-full flex-shrink-0"></span>
@@ -248,7 +248,7 @@
             </div>
             <div id="file-attached-info" class="hidden flex items-center justify-between bg-[var(--ink)] border border-[var(--line2)] text-[var(--bg)] px-4 py-3 rounded-2xl">
               <div class="flex items-center gap-3 overflow-hidden">
-                <i data-lucide="file" class="w-4 h-4 flex-shrink-0 text-[var(--ok)]"></i>
+                <i data-lucide="file" class="w-4 h-4 flex-shrink-0 text-[var(--accent)]"></i>
                 <span id="attached-file-name" class="text-xs font-bold truncate">filename.pdf</span>
               </div>
               <button onclick="removeAttachedFile()" class="p-1 hover:bg-[var(--card)] rounded-lg transition-colors">
@@ -276,10 +276,10 @@
           </button>
           <div class="flex flex-wrap items-center gap-2">
             <button id="btn-mark-posted-step2" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-[var(--ok)] hover:bg-[var(--ok)] text-[var(--bg)] text-xs font-extrabold transition-all flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i> 완료(○) 저장
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 완료(○) 저장
             </button>
             <button id="btn-mark-reserved-step2" onclick="savePlanStatus('△')" class="px-3.5 py-2 rounded-xl bg-[var(--warn)] hover:bg-[var(--warn)] text-[var(--bg)] text-xs font-extrabold transition-all flex items-center gap-1.5">
-              <i data-lucide="clock" class="w-3.5 h-3.5 text-white"></i> 예약(△) 저장
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i> 예약(△) 저장
             </button>
             <button onclick="copyRichText('rendered-markdown')" class="px-4 py-2 rounded-full bg-[var(--accent)] text-[var(--accent-ink)] text-xs font-extrabold hover:bg-[var(--accent-hover)] transition-all flex items-center gap-1.5">
               <i data-lucide="copy" class="w-3.5 h-3.5"></i> 네이버 블로그 복사 <span id="badge-copied-rich" class="hidden ml-1 text-[10px] bg-[var(--ok)] px-1 py-0.5 rounded">완료</span>
@@ -306,8 +306,8 @@
               </div>
               <!-- 2행: 뱃지 2개 나란히 배치 -->
               <div class="flex items-center gap-2 flex-wrap">
-                <span id="draft-category-badge" class="text-xs font-extrabold text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] px-3 py-1 rounded-xl flex items-center gap-1.5 ">
-                  <i data-lucide="folder" class="w-3.5 h-3.5 text-[var(--ok)]"></i>
+                <span id="draft-category-badge" class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-3 py-1 rounded-xl flex items-center gap-1.5 ">
+                  <i data-lucide="folder" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
                   <span id="draft-category-text">카테고리: 미지정</span>
                 </span>
                 <span id="draft-date-badge" class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-3 py-1 rounded-xl flex items-center gap-1.5 hidden">
@@ -320,11 +320,11 @@
             <!-- 🚀 초안 작성 실시간 프로그레스 바 -->
             <div id="blog-progress-box" class="py-14 px-6 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
               <div class="w-full flex justify-between items-center text-xs font-extrabold text-[var(--ink)] ">
-                <span id="blog-progress-status" class="flex items-center gap-1.5 text-[var(--ok)] ">
-                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-[var(--ok)]"></i>
+                <span id="blog-progress-status" class="flex items-center gap-1.5 text-[var(--accent)] ">
+                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-[var(--accent)]"></i>
                   <span id="blog-progress-status-text">KIC 블로그 포스팅 초안 작성 중...</span>
                 </span>
-                <span id="blog-progress-percent" class="font-mono text-[var(--ok)] font-black text-sm">15%</span>
+                <span id="blog-progress-percent" class="font-mono text-[var(--accent)] font-black text-sm">15%</span>
               </div>
               <div class="w-full bg-[var(--raise)] rounded-full h-3 overflow-hidden p-0.5 border border-[var(--line)] shadow-inner">
                 <div id="blog-progress-bar" class="bg-[var(--accent)] h-full rounded-full transition-all duration-300 ease-out " style="width: 15%"></div>
@@ -362,8 +362,8 @@
             <button onclick="goBackToDraft()" class="flex items-center gap-2 text-sm text-[var(--muted)] hover:text-[var(--ink)] font-bold transition-all">
               <i data-lucide="arrow-left" class="w-4 h-4"></i> 3단계 초안 편집으로
             </button>
-            <span id="assets-category-badge" class="text-xs font-extrabold text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] px-3 py-1 rounded-xl flex items-center gap-1.5 ">
-              <i data-lucide="folder" class="w-3.5 h-3.5 text-[var(--ok)]"></i>
+            <span id="assets-category-badge" class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-3 py-1 rounded-xl flex items-center gap-1.5 ">
+              <i data-lucide="folder" class="w-3.5 h-3.5 text-[var(--accent)]"></i>
               <span id="assets-category-text">카테고리: 미지정</span>
             </span>
             <span id="assets-date-badge" class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-3 py-1 rounded-xl flex items-center gap-1.5 hidden">
@@ -373,10 +373,10 @@
           </div>
           <div class="flex flex-wrap items-center gap-2">
             <button id="btn-mark-posted-step4" onclick="savePlanStatus('○')" class="px-3.5 py-2 rounded-xl bg-[var(--ok)] hover:bg-[var(--ok)] text-[var(--bg)] text-xs font-extrabold transition-all flex items-center gap-1.5">
-              <i data-lucide="check-circle" class="w-3.5 h-3.5 text-white"></i> 완료(○) 저장
+              <i data-lucide="check-circle" class="w-3.5 h-3.5"></i> 완료(○) 저장
             </button>
             <button id="btn-mark-reserved-step4" onclick="savePlanStatus('△')" class="px-3.5 py-2 rounded-xl bg-[var(--warn)] hover:bg-[var(--warn)] text-[var(--bg)] text-xs font-extrabold transition-all flex items-center gap-1.5">
-              <i data-lucide="clock" class="w-3.5 h-3.5 text-white"></i> 예약(△) 저장
+              <i data-lucide="clock" class="w-3.5 h-3.5"></i> 예약(△) 저장
             </button>
             <button onclick="startNewPost()" class="px-3.5 py-2 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] text-xs font-extrabold transition-all flex items-center gap-1.5" title="첫 화면으로 이동하여 새 포스팅 작성">
               <i data-lucide="plus-circle" class="w-3.5 h-3.5"></i> 새 글 작성
@@ -409,7 +409,7 @@
                 <div>
                   <div class="flex items-center gap-2">
                     <span class="text-xs font-extrabold text-[var(--ink)] ">KIC 공식 견적 배너 이미지</span>
-                    <span class="text-[10px] font-bold bg-[var(--ok-soft)] text-[var(--ok)] px-2 py-0.5 rounded-full">공식 에셋</span>
+                    <span class="text-[10px] font-bold bg-[var(--accent-soft)] text-[var(--accent)] px-2 py-0.5 rounded-full">공식 에셋</span>
                   </div>
                   <p class="text-xs text-[var(--muted)] font-semibold mt-1">네이버 블로그 본문 맨 마지막에 배너 이미지를 삽입하고, 아래 URL을 링크로 걸어주세요.</p>
                 </div>
@@ -461,7 +461,7 @@
           <!-- 추천 해시태그 -->
           <div class="bg-[var(--card)] border border-[var(--line)] rounded-2xl p-6 space-y-4 transition-colors">
             <div class="flex justify-between items-center border-b border-[var(--line)] pb-3">
-              <h2 class="text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5"><i data-lucide="hash" class="w-4 h-4 text-[var(--ok)]"></i> 추천 해시태그</h2>
+              <h2 class="text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5"><i data-lucide="hash" class="w-4 h-4 text-[var(--accent)]"></i> 추천 해시태그</h2>
               <button onclick="copyHashtags()" class="px-3 py-1.5 rounded-xl border border-[var(--line)] bg-[var(--card)] text-xs font-bold hover:bg-[var(--raise)] flex items-center gap-1.5 transition-all text-[var(--muted)] ">
                 <i data-lucide="copy" class="w-3.5 h-3.5"></i> 복사하기 <span id="badge-copied-tags" class="hidden ml-1 text-[10px] text-[var(--ok)] font-bold">완료</span>
               </button>
@@ -472,7 +472,7 @@
           <!-- 이미지 프롬프트 리스트 -->
           <div class="bg-[var(--card)] border border-[var(--line)] rounded-2xl p-6 space-y-4 transition-colors">
             <div class="flex justify-between items-center border-b border-[var(--line)] pb-3">
-              <h2 class="text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5"><i data-lucide="image" class="w-4 h-4 text-[var(--ok)]"></i> 생성형 AI 이미지 프롬프트 리스트</h2>
+              <h2 class="text-sm font-extrabold text-[var(--ink)] flex items-center gap-1.5"><i data-lucide="image" class="w-4 h-4 text-[var(--accent)]"></i> 생성형 AI 이미지 프롬프트 리스트</h2>
               <button id="btn-more-assets" onclick="generateMoreAssets()" class="px-3 py-1.5 rounded-full bg-transparent border border-[var(--line2)] text-[var(--ink)] text-xs font-bold hover:bg-transparent flex items-center gap-1.5 transition-all">
                 <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i> 추가 프롬프트 3개 더 생성
               </button>
@@ -481,11 +481,11 @@
             <!-- 🚀 에셋 추출 실시간 프로그레스 바 -->
             <div id="assets-progress-box" class="py-14 px-6 max-w-md mx-auto flex flex-col items-center justify-center space-y-4">
               <div class="w-full flex justify-between items-center text-xs font-extrabold text-[var(--ink)] ">
-                <span id="assets-progress-status" class="flex items-center gap-1.5 text-[var(--ok)] ">
-                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-[var(--ok)]"></i>
+                <span id="assets-progress-status" class="flex items-center gap-1.5 text-[var(--accent)] ">
+                  <i data-lucide="sparkles" class="w-4 h-4 animate-spin text-[var(--accent)]"></i>
                   <span id="assets-progress-status-text">AI 이미지 프롬프트 및 해시태그 추출 중...</span>
                 </span>
-                <span id="assets-progress-percent" class="font-mono text-[var(--ok)] font-black text-sm">20%</span>
+                <span id="assets-progress-percent" class="font-mono text-[var(--accent)] font-black text-sm">20%</span>
               </div>
               <div class="w-full bg-[var(--raise)] rounded-full h-3 overflow-hidden p-0.5 border border-[var(--line)] shadow-inner">
                 <div id="assets-progress-bar" class="bg-[var(--accent)] h-full rounded-full transition-all duration-300 ease-out " style="width: 20%"></div>
@@ -528,7 +528,7 @@
       <!-- 모달 헤더 -->
       <div class="p-5 border-b border-[var(--line)] flex justify-between items-center bg-[var(--raise)] ">
         <div class="flex items-center gap-2.5">
-          <div class="p-2 bg-[var(--ok-soft)] text-[var(--ok)] border border-[var(--ok)] rounded-xl">
+          <div class="p-2 bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)] rounded-xl">
             <i data-lucide="calendar" class="w-4 h-4"></i>
           </div>
           <div>
@@ -547,7 +547,7 @@
         <div class="bg-[var(--raise)] border border-[var(--line)] rounded-2xl p-4 space-y-2.5">
           <div class="flex items-center justify-between">
             <span class="text-[11px] font-bold uppercase text-[var(--dim)] ">카테고리</span>
-            <span id="modal-plan-category" class="text-xs font-extrabold text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] px-2.5 py-0.5 rounded-md">03. 매뉴얼</span>
+            <span id="modal-plan-category" class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-2.5 py-0.5 rounded-md">03. 매뉴얼</span>
           </div>
           <div>
             <span class="text-[11px] font-bold uppercase text-[var(--dim)] block mb-1">블로그 포스팅 주제</span>
@@ -582,7 +582,7 @@
         <div class="space-y-3 pt-2 border-t border-[var(--line)] ">
           <div class="flex items-center justify-between">
             <label class="text-xs font-bold text-[var(--ink)] flex items-center gap-1.5">
-              <i data-lucide="link" class="w-3.5 h-3.5 text-[var(--ok)]"></i> 실제 발행된 네이버 블로그 URL
+              <i data-lucide="link" class="w-3.5 h-3.5 text-[var(--accent)]"></i> 실제 발행된 네이버 블로그 URL
             </label>
             <span id="modal-url-status-badge" class="text-[10px] font-extrabold text-[var(--dim)] ">링크 미등록</span>
           </div>
@@ -848,7 +848,7 @@
 
         const isNewSelectedDay = selectedPlan && selectedPlan.isNew && selectedPlan.fullDate && selectedPlan.fullDate.includes(`-${targetMonthPad}-${String(day).padStart(2, '0')}`);
 
-        cell.className = `min-h-[70px] sm:min-h-[76px] bg-white dark:bg-[#262626] rounded-2xl border ${isNewSelectedDay ? 'border-emerald-500 ring-2 ring-emerald-300 dark:ring-emerald-800 shadow-md' : (isToday ? 'border-emerald-500 dark:border-emerald-500 ring-2 ring-emerald-100 dark:ring-emerald-950/60' : 'border-slate-100 dark:border-[#383838]')} p-1.5 flex flex-col justify-between hover:border-emerald-400 dark:hover:border-emerald-500 hover:shadow-sm transition-all cursor-pointer group`;
+        cell.className = `min-h-[70px] sm:min-h-[76px] bg-[var(--card)] rounded-xl border ${isNewSelectedDay ? 'border-[var(--accent)] ring-2 ring-[var(--accent-soft)]' : (isToday ? 'border-[var(--accent)]' : 'border-[var(--line)]')} p-1.5 flex flex-col justify-between hover:border-[var(--line2)] hover:bg-[var(--raise)] transition-all cursor-pointer group`;
 
         // 날짜 헤더 (+ 추가 아이콘 포함, 줄바꿈 완전 방지)
         const header = document.createElement('div');
@@ -856,7 +856,7 @@
         header.innerHTML = `
           <div class="flex items-center gap-1 whitespace-nowrap flex-shrink-0">
             <span class="font-extrabold ${dayColor} text-xs">${day}</span>
-            ${isToday ? '<span class="text-[9px] font-extrabold text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] px-1 py-0.2 rounded leading-none whitespace-nowrap flex-shrink-0">오늘</span>' : ''}
+            ${isToday ? '<span class="text-[9px] font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-1 py-0.2 rounded leading-none whitespace-nowrap flex-shrink-0">오늘</span>' : ''}
           </div>
           <span class="text-[10px] text-[var(--ok)] font-bold opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center w-3.5 h-3.5 rounded-full bg-[var(--ok-soft)] hover:bg-[var(--ok-soft)] flex-shrink-0" title="이 날짜에 새 글 배정하기">
             <i data-lucide="plus" class="w-2.5 h-2.5"></i>
@@ -1805,7 +1805,7 @@
         card.innerHTML = `
           <div class="flex items-center justify-between border-b border-[var(--line)] pb-2.5">
             <div class="flex items-center gap-2">
-              <span class="text-xs font-extrabold text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] px-2.5 py-1 rounded-xl">이미지 ${img.id}</span>
+              <span class="text-xs font-extrabold text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-2.5 py-1 rounded-xl">이미지 ${img.id}</span>
               <span class="text-xs font-bold text-[var(--dim)] ">구도: ${img.type}</span>
             </div>
             <button onclick="copyToClipboard(\`${img.prompt}\`, 'filename', ${img.id}, 'all')" class="text-xs font-bold text-[var(--muted)] hover:text-[var(--ink)] flex items-center gap-1">
@@ -1940,22 +1940,17 @@
         toast.id = 'app-toast';
         document.body.appendChild(toast);
       }
-      const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
-      const bgClass = type === 'error'
-        ? 'bg-rose-600/95 text-white border border-rose-400 shadow-rose-900/20'
-        : type === 'info'
-        ? 'bg-slate-900/95 text-white border border-slate-700 shadow-slate-900/30'
-        : 'bg-emerald-600/95 text-white border border-emerald-400 shadow-emerald-900/20';
-
-      toast.className = `fixed top-6 right-6 z-[999999] flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md ${bgClass}`;
-      toast.innerHTML = `<span>${icon}</span><span>${message}</span>`;
-      toast.classList.remove('hidden');
+      // v3: 화면 아래 가운데 토스트(kic-theme.css .kic-toast). 색 점으로 성공·오류·안내를 구분합니다.
+      toast.className = `kic-toast ${type === 'error' ? 'toast-error' : type === 'info' ? 'toast-info' : 'toast-success'}`;
+      toast.setAttribute('role', 'status');
+      toast.textContent = message;
+      toast.style.opacity = '1';
 
       clearTimeout(window.__marketerToastTimer);
       window.__marketerToastTimer = setTimeout(() => {
-        toast.classList.add('translate-y-[-10px]', 'opacity-0');
-        setTimeout(() => toast.classList.add('hidden'), 300);
-      }, 2500);
+        toast.style.opacity = '0';
+        window.__marketerToastTimer = setTimeout(() => toast.classList.add('hidden'), 200);
+      }, type === 'error' ? 5000 : 2800);
     }
 
     // ✨ ESC 키 및 바깥 배경 클릭 시 모달 즉시 닫기

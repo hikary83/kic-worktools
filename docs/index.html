@@ -34,8 +34,8 @@
   <link href="css/helpdesk-missing.css?v=3.0.0" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=2.10.13"></script>
-  <script src="js/kic-sidebar.js?v=2.10.13"></script>
+  <script src="js/config.js?v=3.0.0"></script>
+  <script src="js/kic-sidebar.js?v=3.0.0"></script>
   <script src="js/kic-common.js?v=3.0.0"></script>
   <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.0">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
@@ -2027,7 +2027,19 @@
       return Math.round((v / t) * 100);
     }
 
+    // v3: 그래프 글자·눈금선·도넛 틈 색은 현재 테마 토큰을 따릅니다.
+    function applyChartThemeDefaults() {
+      if (!window.Chart || !Chart.defaults) return;
+      const css = getComputedStyle(document.documentElement);
+      const token = (name, fallback) => (css.getPropertyValue(name) || '').trim() || fallback;
+      Chart.defaults.color = token('--muted', '#64748b');
+      Chart.defaults.borderColor = token('--line', 'rgba(0,0,0,.1)');
+      if (Chart.defaults.elements && Chart.defaults.elements.arc) Chart.defaults.elements.arc.borderColor = token('--card', '#fff');
+    }
+    window.addEventListener('kic-theme-changed', () => { if (window.currentStats) updateCharts(window.currentStats); });
+
     async function updateCharts(stats) {
+      applyChartThemeDefaults();
       await ensureKicChartFontReady();
       // 폰트 대기 중 새 조회/저장이 끝났다면 오래된 집계로 차트를 되돌리지 않습니다.
       if (stats !== window.currentStats) return;

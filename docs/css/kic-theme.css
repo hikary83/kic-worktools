@@ -19,17 +19,17 @@
   --line2: #d3d3d3;
   --ink: #0f0f0f;
   --muted: #606060;
-  --dim: #737373;          /* 흰 바탕 4.7:1 */
+  --dim: #6b6b6b;          /* 흰 바탕 5.3:1 · 회색 판(#f2f2f2) 4.8:1 */
   --accent: #065fd4;
   --accent-hover: #0b4fb0;
   --accent-ink: #ffffff;   /* 포인트 색 위 글자 5.8:1 */
   --accent-soft: rgba(6, 95, 212, 0.10);
-  --ok: #188038;
-  --warn: #b45309;
+  --ok: #137333;
+  --warn: #a14a07;
   --err: #cc0000;
   --purple: #7c3aed;
-  --ok-soft: rgba(24, 128, 56, 0.10);
-  --warn-soft: rgba(180, 83, 9, 0.10);
+  --ok-soft: rgba(19, 115, 51, 0.10);
+  --warn-soft: rgba(161, 74, 7, 0.10);
   --err-soft: rgba(204, 0, 0, 0.08);
   --field: #ffffff;
   --field-ro: #f6f6f6;
@@ -140,30 +140,32 @@ body {
   outline-offset: 2px;
 }
 
-/* 다크 입력칸: 각 화면의 하드코딩 색보다 앞서도록 !important 유지 */
-html.dark input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]),
-html.dark select,
-html.dark textarea {
+/* 입력칸(두 테마 공통): 바탕 --field, 1px --line2, 포커스 때 글자색 테두리. 각 화면의 하드코딩 색보다 앞서도록 !important.
+   알약 안에 든 입력칸(.kic-bare)은 바깥 알약이 테두리를 맡으므로 뺀다. */
+html input:not([type="checkbox"]):not([type="radio"]):not([type="button"]):not([type="submit"]):not([type="range"]):not([type="color"]):not([type="file"]):not(.kic-bare),
+html select:not(.kic-bare),
+html textarea:not(.kic-bare) {
   background-color: var(--field) !important;
   border-color: var(--line2) !important;
   color: var(--ink) !important;
 }
 
-html.dark input:not([type="checkbox"]):not([type="radio"]):focus,
-html.dark select:focus,
-html.dark textarea:focus {
+html input:not([type="checkbox"]):not([type="radio"]):not(.kic-bare):focus,
+html select:not(.kic-bare):focus,
+html textarea:not(.kic-bare):focus {
   border-color: var(--ink) !important;
   background-color: var(--field) !important;
+  box-shadow: none !important;
   outline: none;
 }
 
-html.dark input[readonly],
-html.dark textarea[readonly] {
+html input[readonly]:not(.kic-bare),
+html textarea[readonly]:not(.kic-bare) {
   background-color: var(--field-ro) !important;
 }
 
-html.dark input::placeholder,
-html.dark textarea::placeholder {
+html input::placeholder,
+html textarea::placeholder {
   color: var(--dim) !important;
 }
 
