@@ -303,6 +303,17 @@
     .thumb-board .string{position:absolute;left:80px;top:-18px;width:2px;height:30px;background:rgba(255,255,255,.8)}
     .thumb-board .hook{position:absolute;left:61px;top:-18px;width:40px;height:22px;border:5px solid rgba(255,255,255,.75);border-bottom:0;border-left-color:transparent;border-right-color:transparent;border-radius:30px 30px 0 0}
     @media(max-width:980px){.app{grid-template-columns:1fr!important;padding:16px!important}.editor{height:auto!important;position:static!important}.previewPanel{height:auto!important;position:static!important}.previewWrap{min-height:0}}
+    /* ===== v3 화면 보정(유튜브 스튜디오풍): 입력칸·안내·버튼·판만 토큰으로. 생성 이미지(.notice / .delay-card / .thumb-card)는 그대로 ===== */
+    .panel, .previewPanel, .previewArea { border-radius: 16px !important; box-shadow: none !important; }
+    .hint, html.dark .hint { background: var(--raise) !important; border: 1px solid var(--line) !important; color: var(--muted) !important; border-radius: 12px !important; }
+    .input, .textarea, .select, html.dark .input, html.dark .textarea, html.dark .select { background: var(--field) !important; border-color: var(--line2) !important; color: var(--ink) !important; border-radius: 10px !important; }
+    .input:focus, .textarea:focus, .select:focus { border-color: var(--ink) !important; box-shadow: none !important; }
+    .item-box, html.dark .item-box, .colorOption, html.dark .colorOption { background: var(--panel) !important; border-color: var(--line) !important; }
+    .colorOption.active { border-color: var(--ink) !important; box-shadow: none !important; }
+    .btn { border-radius: 999px !important; font-weight: 700 !important; }
+    .btn.line { background: transparent !important; border: 1px dashed var(--line2) !important; color: var(--ink) !important; }
+    .btn.red { background: transparent !important; border: 1px solid var(--err) !important; color: var(--err) !important; }
+    .btn.green, .btn.blue { background: var(--accent) !important; color: var(--accent-ink) !important; }
   </style>
 
   <link href="css/kic-theme.css?v=3.0.0" rel="stylesheet" />
@@ -316,15 +327,15 @@
   <!-- 📦 메인 콘텐츠 영역 -->
   <main class="kic-tool-offset">
     <!-- 상단 헤더 (reply.html 규격 통일) -->
-    <header class="bg-white dark:bg-[#2F2F2F] border-b border-slate-200 dark:border-[#424242] px-6 sm:px-8 py-5 flex flex-wrap items-center justify-between gap-3 shadow-sm sticky top-0 z-40 transition-colors">
+    <header class="kic-page-head">
       <div>
-        <h1 class="text-xl font-extrabold text-slate-900 dark:text-[#ECECEC] tracking-tight flex items-center gap-2">⏳ 교정 지연 안내</h1>
-        <p class="text-xs font-medium text-slate-500 dark:text-[#8E8E8E] mt-1">일부 품목 교정 지연 안내 팝업 이미지와 썸네일을 생성합니다.</p>
+        <h1 class="kic-page-title">교정 지연 안내</h1>
+        <p class="kic-page-desc">일부 품목 교정 지연 안내 팝업 이미지와 썸네일을 생성합니다.</p>
       </div>
       <div class="flex items-center gap-2.5 flex-wrap">
-        <button id="btnSample" class="px-4 py-2.5 rounded-xl border border-slate-200 dark:border-[#424242] bg-white dark:bg-[#262626] text-slate-600 dark:text-[#B4B4B4] text-xs font-bold hover:bg-slate-50 dark:hover:bg-[#383838] transition-all">샘플</button>
-        <button id="btnThumbDownload" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold shadow-md shadow-blue-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5"><i class="fas fa-image"></i> 썸네일 다운로드</button>
-        <button id="btnDownload" class="px-5 py-2.5 rounded-xl bg-emerald-600 hover:bg-emerald-700 text-white text-xs font-bold shadow-md shadow-emerald-600/20 active:scale-[0.98] transition-all flex items-center gap-1.5"><i class="fas fa-download"></i> PNG 다운로드</button>
+        <button id="btnSample" class="kic-btn">샘플</button>
+        <button id="btnThumbDownload" class="kic-btn"><i class="fas fa-image"></i> 썸네일 다운로드</button>
+        <button id="btnDownload" class="kic-btn primary"><i class="fas fa-download"></i> PNG 다운로드</button>
       </div>
     </header>
 

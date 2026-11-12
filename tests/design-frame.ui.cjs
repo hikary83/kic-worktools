@@ -31,7 +31,7 @@ const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), co
   });
   await new Promise(ok => server.listen(0, '127.0.0.1', ok));
   const origin = 'http://127.0.0.1:' + server.address().port;
-  const allowed = ['cdn.tailwindcss.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'fonts.googleapis.com', 'fonts.gstatic.com'];
+  const allowed = ['cdn.tailwindcss.com', 'cdnjs.cloudflare.com', 'cdn.jsdelivr.net', 'unpkg.com', 'fonts.googleapis.com', 'fonts.gstatic.com'];
   const browser = await chromium.launch({ channel: 'msedge', headless: true });
   const report = [], errors = [];
   try {
