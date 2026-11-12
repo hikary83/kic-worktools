@@ -27,6 +27,7 @@
   --ok: #188038;
   --warn: #b45309;
   --err: #cc0000;
+  --purple: #7c3aed;
   --ok-soft: rgba(24, 128, 56, 0.10);
   --warn-soft: rgba(180, 83, 9, 0.10);
   --err-soft: rgba(204, 0, 0, 0.08);
@@ -63,6 +64,7 @@ html.dark {
   --ok: #3ecf72;
   --warn: #ff9f43;
   --err: #ff5c4d;
+  --purple: #b388ff;
   --ok-soft: rgba(62, 207, 114, 0.14);
   --warn-soft: rgba(255, 159, 67, 0.14);
   --err-soft: rgba(255, 92, 77, 0.14);
@@ -219,6 +221,9 @@ html.dark textarea::placeholder {
 @keyframes kic-spin { to { transform: rotate(360deg); } }
 .kic-spinning::before {
   content: "";
+  display: inline-block;
+  vertical-align: -2px;
+  margin-right: 6px;
   flex: none;
   width: 12px;
   height: 12px;
@@ -261,6 +266,7 @@ html.dark textarea::placeholder {
 .kic-dot.warn { background: var(--warn); }
 .kic-dot.err { background: var(--err); }
 .kic-dot.accent { background: var(--accent); }
+.kic-dot.purple { background: var(--purple); }
 
 .kic-legend { display: flex; flex-wrap: wrap; gap: 14px; font-size: 12px; color: var(--muted); }
 .kic-legend span { display: inline-flex; align-items: center; gap: 5px; }
@@ -363,6 +369,52 @@ html.dark textarea::placeholder {
   outline: none;
   color: var(--ink);
 }
+
+.kic-search-x {
+  flex: none;
+  width: 26px;
+  height: 26px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--dim);
+  cursor: pointer;
+}
+.kic-search-x:hover { background: var(--hover); color: var(--ink); }
+
+/* 바깥 칸이 테두리를 맡는 입력칸(검색 알약·기간 알약 안) */
+input.kic-bare,
+html.dark input.kic-bare {
+  background: transparent !important;
+  border: 0 !important;
+  padding: 0;
+  outline: none;
+  color: var(--ink) !important;
+}
+html.dark input.kic-bare { color-scheme: dark; }
+
+/* 위 막대 오른쪽: 연결(동기화) 상태 — 점 + 한 줄 */
+.kic-sync {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  max-width: 460px;
+  font-size: 12.5px;
+  color: var(--muted);
+  white-space: nowrap;
+}
+.kic-sync-mark { width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--dim); }
+.kic-sync.ok .kic-sync-mark { background: var(--ok); }
+.kic-sync.warn .kic-sync-mark { background: var(--warn); }
+.kic-sync.busy .kic-sync-mark { width: 12px; height: 12px; background: transparent; border: 2px solid var(--line2); border-top-color: var(--accent); animation: kic-spin .8s linear infinite; }
+.kic-sync.warn .kic-sync-text { color: var(--warn); }
+.kic-sync-text { overflow: hidden; text-overflow: ellipsis; }
+.kic-sync-time { color: var(--dim); overflow: hidden; text-overflow: ellipsis; }
+.kic-sync-time::before { content: "· "; }
+@media (max-width: 1100px) { .kic-sync-time { display: none; } }
 
 /* 왼쪽 메뉴 */
 .kic-lnb {
@@ -535,11 +587,19 @@ body.kic-with-lnb, .kic-tool-offset {
 @media (max-width: 480px) {
   .kic-ver { display: none; }
 }
+/* 휴대폰에서 가운데 검색칸이 있으면 로고 글자는 접고 검색칸에 자리를 준다 */
+@media (max-width: 860px) {
+  .kic-top:has(.kic-top-center > *) .kic-brand-name,
+  .kic-top:has(.kic-top-center > *) .kic-ver { display: none; }
+  .kic-search { height: 36px; padding: 0 12px; }
+  .kic-sync { max-width: 96px; }
+  .kic-sync-text { display: none; }
+}
 
 /* ==============================================================
    토스트: 아래 가운데, 2.8초
    ============================================================== */
-#kic-toast {
+#kic-toast, .kic-toast {
   position: fixed;
   left: 50%;
   bottom: 28px;
@@ -558,12 +618,12 @@ body.kic-with-lnb, .kic-tool-offset {
   box-shadow: var(--shadow-pop);
   transition: opacity 0.2s ease;
 }
-#kic-toast::before { content: ""; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--accent); }
-#kic-toast.toast-success::before { background: var(--ok); }
-#kic-toast.toast-error::before { background: var(--err); }
-#kic-toast.hidden { display: none; }
+#kic-toast::before, .kic-toast::before { content: ""; width: 8px; height: 8px; flex: none; border-radius: 50%; background: var(--accent); }
+#kic-toast.toast-success::before, .kic-toast.toast-success::before { background: var(--ok); }
+#kic-toast.toast-error::before, .kic-toast.toast-error::before { background: var(--err); }
+#kic-toast.hidden, .kic-toast.hidden { display: none; }
 @media (max-width: 860px) {
-  #kic-toast { bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); }
+  #kic-toast, .kic-toast { bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); }
 }
 
 /* ==============================================================

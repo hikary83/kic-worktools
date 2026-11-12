@@ -12,7 +12,12 @@ const issue = (n, title, status, type, date) => ({ id: 'IT-261111-' + String(n).
   branch: '서울본사', requester: '예시 요청자', dev: n % 2 ? '예시 담당자' : '', details: '합성 테스트 내용', system: 'CMS', priority: '보통', menu: '예시 메뉴', remark: '', actionContent: '', sourceLink: 'https://example.invalid/source', jiraLink: '' });
 const items = [issue(9, '예시 접수 건 A', '접수대기', '단순 문의', '2026-11-11 10:20'), issue(8, '예시 접수 건 B', '접수대기', '오류', '2026-11-11 09:40'),
   issue(7, '예시 진행 건', '처리중', '기능 개선', '2026-11-11 09:10'), issue(6, '예시 예정 건', '예정', '오류', '2026-11-10 15:00'),
-  issue(5, '예시 완료 건', '완료', '단순 문의', '2026-11-10 11:00')];
+  issue(5, '예시 완료 건', '완료', '단순 문의', '2026-11-10 11:00'),
+  // 이월 보드용: 이번 주 이전 날짜
+  { ...issue(4, '예시 이월 접수 건', '접수대기', '데이터 수정', '2026-11-03 10:00'), id: 'IT-261103-004' },
+  { ...issue(3, '예시 이월 예정 건', '예정', '기능 개선', '2026-11-03 09:00'), id: 'IT-261103-003' },
+  { ...issue(2, '예시 이월 처리중 건', '처리중', '오류', '2026-11-02 14:00'), id: 'IT-261102-002' },
+  { ...issue(1, '예시 불가 건', '반려', '기능 개선', '2026-11-02 09:00'), id: 'IT-261102-001' }];
 const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), completedCurrent: items.filter(x => x.status === '완료'), quarterRequestItems: [], developers: [{ name: '예시 담당자', email: 'dev@example.invalid' }] };
 
 (async () => {
@@ -82,6 +87,35 @@ const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), co
         report.push(`${theme}/${label} ${name}: scrollWidth=${frame.scroll} bodyBg=${frame.bodyBg}`);
         await page.close();
       }
+      await context.close();
+    }
+    // 헬프데스크 안쪽: 탭 · 창 캡처 (다크·라이트 넓은 화면). 저장 버튼은 누르지 않는다.
+    for (const theme of ['dark', 'light']) {
+      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      await context.addInitScript(t => { try { localStorage.setItem('kic_theme', t); } catch (_) {} }, theme);
+      await context.route('**/*', route => {
+        const url = new URL(route.request().url());
+        if (url.origin === origin || allowed.includes(url.hostname)) return route.continue();
+        if (url.hostname === 'script.google.com') return route.fulfill({ contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ success: true, data: dashboard }) });
+        return route.abort();
+      });
+      const page = await context.newPage();
+      page.on('pageerror', e => errors.push(`index(${theme}) parts: ${e.message}`));
+      await page.goto(`${origin}/index.html`); await page.waitForTimeout(1800);
+      const shot = name => page.screenshot({ path: path.join(outDir, `index-${theme}-${name}.png`) });
+      await page.evaluate(() => { toggleSection('done-current-container', 'btn-toggle-done'); toggleSection('pending-past-container', 'btn-toggle-past'); });
+      await page.evaluate(() => window.scrollTo(0, 700)); await page.waitForTimeout(200); await shot('sections');
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await page.evaluate(() => switchTab('stats')); await page.waitForTimeout(600); await shot('tab-stats');
+      await page.evaluate(() => switchTab('ai')); await page.waitForTimeout(200); await shot('tab-ai');
+      await page.evaluate(() => switchTab('pending'));
+      for (const [name, open, close] of [['add', 'openAddModal()', 'closeAddModal()'], ['edit', "openEditById('IT-261111-007')", 'closeEditModal()'], ['settings', 'openSettingsModal()', 'closeSettingsModal()']]) {
+        await page.evaluate(open); await page.waitForTimeout(450); await shot('modal-' + name);
+        await page.evaluate(close); await page.waitForTimeout(450);
+      }
+      await page.getByRole('button', { name: '목록 캡처 누락 점검', exact: true }).click(); await page.waitForTimeout(300); await shot('dialog-missing');
+      await page.keyboard.press('Escape');
+      await page.evaluate(() => showToast('저장 완료: IT-261111-010')); await page.waitForTimeout(100); await shot('toast');
       await context.close();
     }
     console.log(report.join('\n'));

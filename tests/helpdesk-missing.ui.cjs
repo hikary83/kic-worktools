@@ -66,11 +66,15 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
       await page.setViewportSize({width:1440,height:1100});await page.keyboard.press('Escape');await page.waitForTimeout(500);await page.evaluate(()=>openAddModal());await page.waitForTimeout(400);
       await page.locator('#addModalContent').screenshot({path:path.join(process.env.TEMP,'helpdesk-add-modal.png')});
       for(const [id,min] of [['#add-date',130],['#add-time',120],['#add-branch',90],['#add-requester',90],['#add-dev',90]]){const w=(await page.locator(id).boundingBox()).width;console.log('WIDTH',id,w);assert.ok(w>=min,id+' 폭 '+w);}
-      // v2.10.12: 동기화 상태 상자가 표시돼도 넓은 화면에서 상단 조회 막대가 한 줄을 유지해야 합니다.
+      // v3.0.0: 동기화 상태가 길어져도 넓은 화면에서 도구 줄(설정·누락 점검·새 이슈)과 기간 줄(날짜·조회)이 각각 한 줄을 유지해야 합니다.
       await page.keyboard.press('Escape');await page.waitForTimeout(500);await page.evaluate(()=>setDashboardSyncStatus('saved'));
+      const mid=sel=>page.evaluate(s=>{const r=document.querySelector(s).getBoundingClientRect();return Math.round(r.top+r.height/2);},sel);
       for(const width of [1280,1440]){await page.setViewportSize({width,height:900});await page.waitForTimeout(200);
-        const tops=await page.evaluate(()=>['#startDate','button[title="시스템 설정 (담당자 관리)"]','button[aria-label="목록 캡처 누락 점검"]'].map(s=>Math.round(document.querySelector(s).getBoundingClientRect().top+document.querySelector(s).getBoundingClientRect().height/2)));
-        console.log('TOOLBAR',width,tops);assert.ok(Math.max(...tops)-Math.min(...tops)<=4,'상단 막대 줄바꿈 '+width+' '+tops);}
+        const tools=[await mid('button[title="시스템 설정 (담당자 관리)"]'),await mid('button[aria-label="목록 캡처 누락 점검"]'),await mid('.hd-tools .kic-btn.primary')];
+        const range=[await mid('#startDate'),await mid('#endDate'),await mid('.hd-range .kic-btn.white')];
+        console.log('TOOLBAR',width,tools,range);
+        assert.ok(Math.max(...tools)-Math.min(...tools)<=4,'도구 줄바꿈 '+width+' '+tools);assert.ok(Math.max(...range)-Math.min(...range)<=4,'기간 줄바꿈 '+width+' '+range);
+        assert.equal(await page.evaluate(()=>document.querySelector('#sync-indicator').parentElement.id),'kic-top-right');}
       await page.screenshot({path:path.join(process.env.TEMP,'helpdesk-toolbar.png'),clip:{x:0,y:0,width:1440,height:200}});
       assert.deepEqual(errors,[]);console.log('PASS 실제 스타일의 데스크톱·모바일·다크모드 배치. 합성 자료만 사용.');return;
     }

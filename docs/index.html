@@ -30,14 +30,14 @@
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
   <link href="css/kic-theme.css?v=3.0.0" rel="stylesheet">
-  <link href="css/helpdesk-sections.css?v=2.9.3" rel="stylesheet">
-  <link href="css/helpdesk-missing.css?v=2.10.5" rel="stylesheet">
+  <link href="css/helpdesk-sections.css?v=3.0.0" rel="stylesheet">
+  <link href="css/helpdesk-missing.css?v=3.0.0" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
   <script src="js/config.js?v=2.10.13"></script>
   <script src="js/kic-sidebar.js?v=2.10.13"></script>
   <script src="js/kic-common.js?v=3.0.0"></script>
-  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=2.8.3">
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.0">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
   <script src="js/helpdesk-missing.js?v=2.10.7" defer></script>
 </head>
@@ -47,133 +47,83 @@
 
   <main class="kic-tool-offset">
     <div class="p-4 md:p-8 relative">
-  <div id="toast" class="fixed top-5 right-5 z-[9999] hidden px-5 py-3 rounded-xl shadow-lg text-sm font-bold transition-all duration-300"></div>
+  <div id="toast" class="kic-toast hidden" role="status" aria-live="polite"></div>
 
   <!-- 카드 드래그 중에만 표시되는 화면 고정 완료 처리 영역 -->
   <div id="kanban-floating-done-dropzone"
-       class="kanban-floating-done-dropzone flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-green-300 bg-green-50 text-green-700 px-5 py-3"
+       class="kanban-floating-done-dropzone flex items-center justify-center gap-3 rounded-xl border-2 border-dashed border-[var(--ok)] bg-[var(--ok-soft)] text-[var(--ok)] px-5 py-3"
        aria-hidden="true"
        ondragover="allowKanbanDrop(event)"
        ondragenter="handleKanbanDoneDragEnter(event)"
        ondragleave="handleKanbanDoneDragLeave(event)"
        ondrop="handleKanbanDrop(event, '완료')">
-    <div class="w-9 h-9 rounded-full bg-white border border-green-200 flex items-center justify-center shrink-0">
-      <i class="fas fa-check-circle text-green-600"></i>
+    <div class="w-9 h-9 rounded-full bg-[var(--card)] border border-[var(--ok)] flex items-center justify-center shrink-0">
+      <i class="fas fa-check-circle text-[var(--ok)]"></i>
     </div>
     <div class="text-center sm:text-left">
       <div class="text-sm font-bold">완료 처리</div>
-      <div class="text-[11px] font-medium text-green-600 mt-0.5">카드를 여기에 놓으면 완료 처리됩니다.</div>
+      <div class="text-[11px] font-medium text-[var(--ok)] mt-0.5">카드를 여기에 놓으면 완료 처리됩니다.</div>
     </div>
   </div>
 
   <div class="max-w-7xl mx-auto space-y-6">
-    <!-- 1단: Header & 검색 필터 -->
-    <div class="flex flex-col lg:flex-row lg:items-center justify-between gap-4">
-      <div class="flex items-center gap-3 flex-wrap">
-        <div class="w-10 h-10 rounded-2xl bg-blue-600/10 dark:bg-sky-500/20 border border-blue-500/20 dark:border-sky-400/30 flex items-center justify-center text-blue-600 dark:text-sky-400 shadow-sm">
-          <i class="fas fa-chart-line text-lg"></i>
-        </div>
-        <div>
-          <h1 class="text-2xl font-extrabold text-slate-900 dark:text-white tracking-tight flex items-center gap-2.5">
-            실시간 IT 헬프데스크
-          </h1>
-          <p class="text-xs text-slate-400 dark:text-slate-500 mt-0.5 font-medium">Enterprise Issue Tracker & Automation</p>
-        </div>
-        <span id="sync-indicator" role="status" aria-live="polite" class="hidden text-xs font-bold text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-sky-950/60 border border-blue-200 dark:border-sky-800/80 px-3 py-1 rounded-full flex items-center gap-1.5 shadow-sm">
-          <i class="fas fa-sync-alt fa-spin text-blue-500 dark:text-sky-400"></i> 동기화 중...
-        </span>
-      </div>
-
-      <!-- 상단 컨트롤 캡슐 바 -->
-      <div class="bg-white dark:bg-[#2F2F2F] p-2 rounded-2xl border border-slate-200/90 dark:border-[#424242] shadow-sm flex flex-wrap lg:flex-nowrap lg:shrink-0 items-center gap-2 transition-colors">
-        <div class="flex items-center gap-1.5 bg-slate-50 dark:bg-[#262626] px-3 py-1.5 rounded-xl border border-slate-200/70 dark:border-slate-700/60">
-          <i class="far fa-calendar-alt text-slate-400 dark:text-slate-500 text-xs cursor-pointer" onclick="document.getElementById('startDate').showPicker && document.getElementById('startDate').showPicker()" title="달력 열기"></i>
-          <input type="date" id="startDate" onclick="this.showPicker && this.showPicker()" class="bg-transparent border-0 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 cursor-pointer p-0 dark:[color-scheme:dark]">
-          <span class="text-slate-300 dark:text-slate-600 text-xs font-bold">~</span>
-          <input type="date" id="endDate" onclick="this.showPicker && this.showPicker()" class="bg-transparent border-0 text-xs font-bold outline-none text-slate-700 dark:text-slate-200 cursor-pointer p-0 dark:[color-scheme:dark]">
-        </div>
-        <button onclick="loadData(false)" class="bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 dark:hover:bg-blue-600 text-white px-4 py-2 rounded-xl text-xs font-extrabold transition-all shadow-md shadow-blue-500/20 active:scale-95 flex items-center gap-1.5"><i class="fas fa-search"></i> 조회</button>
-        <button onclick="setThisWeekAndLoad()" class="text-slate-500 hover:text-blue-600 dark:text-slate-400 dark:hover:text-sky-400 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors">이번주</button>
-        <button onclick="resetFilter()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 px-2.5 py-1.5 rounded-xl text-xs font-bold transition-colors">전체조회</button>
-        
-        <div class="flex items-center gap-1.5 border-l border-slate-100 dark:border-slate-800 pl-2 ml-auto">
-          <button onclick="openSettingsModal()" class="w-9 h-9 flex items-center justify-center bg-slate-50 dark:bg-[#262626] text-slate-500 dark:text-slate-400 rounded-xl hover:bg-slate-200 dark:hover:bg-slate-700 hover:text-slate-800 dark:hover:text-white transition-colors" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog"></i></button>
-          <button onclick="openAddModal()" class="w-9 h-9 flex items-center justify-center bg-blue-50 dark:bg-sky-950/60 text-blue-600 dark:text-sky-400 border border-blue-100 dark:border-sky-800/60 rounded-xl hover:bg-blue-600 hover:text-white dark:hover:bg-sky-500 dark:hover:text-white transition-colors shadow-sm" title="새 이슈 등록"><i class="fas fa-plus"></i></button>
-          <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" class="w-9 h-9 flex items-center justify-center bg-emerald-50 dark:bg-emerald-950/60 text-emerald-600 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60 rounded-xl hover:bg-emerald-600 hover:text-white transition-colors shadow-sm" title="구글 시트 열기"><i class="fas fa-file-excel"></i></a>
-          <button onclick="openHelpdeskJiraSync()" class="w-9 h-9 flex items-center justify-center bg-indigo-50 dark:bg-indigo-950/60 text-indigo-600 dark:text-indigo-400 border border-indigo-100 dark:border-indigo-800/60 rounded-xl hover:bg-indigo-600 hover:text-white transition-colors shadow-sm" title="Jira 싱크 확인" aria-label="Jira 싱크 확인"><i class="fas fa-sync-alt"></i></button>
-          <button type="button" onclick="openHelpdeskMissingCheck()" class="w-9 h-9 flex items-center justify-center bg-teal-50 dark:bg-teal-950/60 text-teal-700 dark:text-teal-300 border border-teal-200 dark:border-teal-800 rounded-xl hover:bg-teal-600 hover:text-white transition-colors shadow-sm" title="목록 캡처 누락 점검·중간 등록" aria-label="목록 캡처 누락 점검"><i class="fas fa-list-check" aria-hidden="true"></i></button>
-        </div>
+    <!-- 1단: 제목 · 도구 (v3) -->
+    <div class="hd-head">
+      <h1 class="hd-title">실시간 IT 헬프데스크</h1>
+      <!-- 동기화 상태: 화면이 열리면 위 막대 오른쪽으로 옮겨집니다 -->
+      <span id="sync-indicator" role="status" aria-live="polite" class="hidden"></span>
+      <div class="hd-tools">
+        <button type="button" onclick="openSettingsModal()" class="kic-ibtn lg" title="시스템 설정 (담당자 관리)"><i class="fas fa-cog" aria-hidden="true"></i></button>
+        <a href="https://docs.google.com/spreadsheets/d/1_R_utTOTotgXwlpkKFS3MaJ2IQH5LqzUAy0FWZz83YQ/edit" target="_blank" rel="noopener" class="kic-ibtn lg" title="구글 시트 열기"><i class="fas fa-file-excel" aria-hidden="true"></i></a>
+        <button type="button" onclick="openHelpdeskJiraSync()" class="kic-ibtn lg" title="Jira 싱크 확인" aria-label="Jira 싱크 확인"><i class="fas fa-sync-alt" aria-hidden="true"></i></button>
+        <button type="button" onclick="openHelpdeskMissingCheck()" class="kic-ibtn lg" title="목록 캡처 누락 점검·중간 등록" aria-label="목록 캡처 누락 점검"><i class="fas fa-list-check" aria-hidden="true"></i></button>
+        <button type="button" onclick="openAddModal()" class="kic-btn primary"><i class="fas fa-plus" aria-hidden="true"></i>새 이슈 등록</button>
       </div>
     </div>
 
-    <!-- 2단: Stitch 스타일 KPI 요약 카드 (글로우 + 입체 칩) -->
-    <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
-      <!-- KPI 1: 조회 기간 접수 -->
-      <div class="kic-stat-card group">
-        <div class="kic-stat-glow bg-blue-500"></div>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs font-bold text-slate-400 dark:text-slate-500 uppercase tracking-wider mb-1.5">조회 기간 접수</p>
-            <h3 class="text-4xl font-extrabold text-slate-900 dark:text-white font-mono tracking-tight" id="kpi-total">0</h3>
-          </div>
-          <div class="kic-icon-box bg-blue-50 dark:bg-blue-950/60 text-blue-600 dark:text-sky-400 border border-blue-100 dark:border-blue-800/60 shadow-sm">
-            <i class="fas fa-inbox"></i>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-          <span class="text-slate-400 dark:text-slate-500 font-medium">전체 등록 티켓</span>
-          <span class="text-blue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-sky-950/50 px-2 py-0.5 rounded-full text-[11px]">실시간 집계</span>
-        </div>
+    <!-- 조회 기간 -->
+    <div class="hd-range">
+      <div class="hd-dates">
+        <i class="far fa-calendar-alt" onclick="document.getElementById('startDate').showPicker && document.getElementById('startDate').showPicker()" title="달력 열기"></i>
+        <input type="date" id="startDate" onclick="this.showPicker && this.showPicker()" class="kic-bare" aria-label="조회 시작일">
+        <span aria-hidden="true">~</span>
+        <input type="date" id="endDate" onclick="this.showPicker && this.showPicker()" class="kic-bare" aria-label="조회 종료일">
       </div>
+      <button type="button" onclick="loadData(false)" class="kic-btn white sm"><i class="fas fa-search" aria-hidden="true"></i> 조회</button>
+      <button type="button" onclick="setThisWeekAndLoad()" class="kic-btn sm">이번주</button>
+      <button type="button" onclick="resetFilter()" class="kic-btn sm">전체조회</button>
+    </div>
 
-      <!-- KPI 2: 현재 처리 중 -->
-      <div class="kic-stat-card group">
-        <div class="kic-stat-glow bg-amber-500"></div>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider mb-1.5">현재 처리 중</p>
-            <h3 class="text-4xl font-extrabold text-amber-600 dark:text-amber-400 font-mono tracking-tight" id="kpi-pending">0</h3>
-          </div>
-          <div class="kic-icon-box bg-amber-50 dark:bg-amber-950/60 text-amber-500 dark:text-amber-400 border border-amber-100 dark:border-amber-800/60 shadow-sm">
-            <i class="fas fa-spinner fa-spin"></i>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-          <span class="text-slate-400 dark:text-slate-500 font-medium">접수대기/검토/예정/진행</span>
-          <span class="text-amber-600 dark:text-amber-400 font-bold bg-amber-50 dark:bg-amber-950/50 px-2 py-0.5 rounded-full text-[11px]">처리 진행중</span>
-        </div>
+    <!-- 2단: 숫자 카드 (평평한 판 · 큰 숫자 · 작은 설명) -->
+    <div class="hd-stats">
+      <div class="kic-card hd-stat">
+        <span class="hd-stat-label"><i class="kic-dot accent" aria-hidden="true"></i>조회 기간 접수</span>
+        <b class="hd-stat-num font-mono" id="kpi-total">0</b>
+        <span class="hd-stat-sub">전체 등록 티켓</span>
       </div>
-
-      <!-- KPI 3: 처리 완료 -->
-      <div class="kic-stat-card group">
-        <div class="kic-stat-glow bg-emerald-500"></div>
-        <div class="flex items-center justify-between">
-          <div>
-            <p class="text-xs font-bold text-emerald-600 dark:text-emerald-400 uppercase tracking-wider mb-1.5">처리 완료</p>
-            <h3 class="text-4xl font-extrabold text-emerald-600 dark:text-emerald-400 font-mono tracking-tight" id="kpi-done">0</h3>
-          </div>
-          <div class="kic-icon-box bg-emerald-50 dark:bg-emerald-950/60 text-emerald-500 dark:text-emerald-400 border border-emerald-100 dark:border-emerald-800/60 shadow-sm">
-            <i class="fas fa-check-circle"></i>
-          </div>
-        </div>
-        <div class="mt-4 pt-3 border-t border-slate-100 dark:border-slate-800/80 flex items-center justify-between text-xs">
-          <span class="text-slate-400 dark:text-slate-500 font-medium">해결 완료된 이슈</span>
-          <span class="text-emerald-600 dark:text-emerald-400 font-bold bg-emerald-50 dark:bg-emerald-950/50 px-2 py-0.5 rounded-full text-[11px]">완료율 산출</span>
-        </div>
+      <div class="kic-card hd-stat">
+        <span class="hd-stat-label"><i class="kic-dot warn" aria-hidden="true"></i>현재 처리 중</span>
+        <b class="hd-stat-num font-mono" id="kpi-pending">0</b>
+        <span class="hd-stat-sub">접수대기/검토/예정/진행</span>
+      </div>
+      <div class="kic-card hd-stat">
+        <span class="hd-stat-label"><i class="kic-dot ok" aria-hidden="true"></i>처리 완료</span>
+        <b class="hd-stat-num font-mono" id="kpi-done">0</b>
+        <span class="hd-stat-sub">해결 완료된 이슈</span>
       </div>
     </div>
 
     <!-- 3단: 탭 네비게이션 -->
-    <div class="flex border-b border-slate-200 dark:border-[#424242] gap-8 px-2">
+    <div class="hd-tabs">
       <!-- 탭 이름 이슈 관리로 일원화 -->
-      <button onclick="switchTab('pending')" id="tab-btn-pending" class="pb-3 text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all tab-active"><i class="fas fa-tasks mr-2"></i>이슈 관리</button>
-      <button onclick="switchTab('stats')" id="tab-btn-stats" class="pb-3 text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 transition-all"><i class="fas fa-chart-pie mr-2"></i>통계 리포트</button>
-      <button onclick="switchTab('ai')" id="tab-btn-ai" class="pb-3 text-sm font-bold text-slate-400 dark:text-slate-500 hover:text-purple-600 dark:hover:text-purple-400 transition-all"><i class="fas fa-robot mr-2"></i>AI 분석 리포트</button>
+      <button type="button" onclick="switchTab('pending')" id="tab-btn-pending" class="hd-tab tab-active"><i class="fas fa-tasks" aria-hidden="true"></i>이슈 관리</button>
+      <button type="button" onclick="switchTab('stats')" id="tab-btn-stats" class="hd-tab"><i class="fas fa-chart-pie" aria-hidden="true"></i>통계 리포트</button>
+      <button type="button" onclick="switchTab('ai')" id="tab-btn-ai" class="hd-tab"><i class="fas fa-robot" aria-hidden="true"></i>AI 분석 리포트</button>
     </div>
 
     <div id="loading" class="text-center py-20 hidden">
       <div class="loader mx-auto"></div>
-      <p class="text-slate-400 dark:text-slate-500 mt-4 font-medium" id="loading-text">데이터를 동기화 중입니다...</p>
+      <p class="text-[var(--dim)] mt-4 font-medium" id="loading-text">데이터를 동기화 중입니다...</p>
     </div>
 
     <!-- 4단: 상세 콘텐츠 영역 -->
@@ -182,29 +132,22 @@
       <!-- 탭 1: 이슈 관리 (진행중 / 완료 그룹핑) -->
       <div id="tab-pending-content" class="space-y-10 animate-in fade-in duration-500">
         
-        <!-- 이슈 관리 전용 검색 -->
-        <div class="bg-white dark:bg-[#2F2F2F] p-4 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm">
-          <div class="flex flex-col md:flex-row md:items-center gap-3">
-            <div class="relative flex-1">
-              <i class="fas fa-search absolute left-4 top-1/2 -translate-y-1/2 text-slate-300 dark:text-slate-600 text-sm"></i>
-              <input type="text" id="globalSearchInput" oninput="handleGlobalSearchInput()"
-                     class="w-full pl-10 pr-10 py-3 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-slate-700 rounded-xl text-sm outline-none text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:ring-2 focus:ring-blue-100 dark:focus:ring-blue-900/40 focus:border-blue-400"
-                     placeholder="이슈 관리 검색: 제목, 요청자, 담당자, 메뉴, 처리내용, 지라링크 등">
-              <button id="globalSearchClearBtn" onclick="clearGlobalSearch()"
-                      class="hidden absolute right-3 top-1/2 -translate-y-1/2 w-7 h-7 rounded-full text-slate-300 dark:text-slate-500 hover:text-slate-600 dark:hover:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 transition-colors"
-                      title="검색어 지우기"><i class="fas fa-times"></i></button>
-            </div>
-            <div id="globalSearchSummary" class="hidden shrink-0 text-xs font-bold text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-sky-950/60 border border-blue-100 dark:border-sky-800 px-3 py-2 rounded-xl"></div>
-          </div>
+        <!-- 이슈 관리 검색: 화면이 열리면 위 막대 가운데로 옮겨집니다 -->
+        <div id="hd-search" class="kic-search" role="search">
+          <i class="fas fa-search" aria-hidden="true"></i>
+          <input type="text" id="globalSearchInput" oninput="handleGlobalSearchInput()" class="kic-bare" aria-label="이슈 관리 검색"
+                 placeholder="이슈 관리 검색: 제목, 요청자, 담당자, 메뉴, 처리내용, 지라링크 등">
+          <button id="globalSearchClearBtn" type="button" onclick="clearGlobalSearch()" class="hidden kic-search-x" title="검색어 지우기" aria-label="검색어 지우기"><i class="fas fa-times" aria-hidden="true"></i></button>
         </div>
+        <div id="globalSearchSummary" class="hidden kic-chip accent hd-search-summary"></div>
 
         <!-- 섹션 1: 기간 내 접수 확인 -->
         <div>
-          <h3 class="hd-section-title text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-amber-400 pl-3 mb-4 flex flex-wrap items-center gap-2">
-            <span>📥 조회 기간 내 이슈 - 접수 확인</span>
+          <h3 class="hd-section-title hd-sec mb-4 flex flex-wrap items-center gap-2">
+            <span class="hd-sec-name"><i class="kic-dot warn" aria-hidden="true"></i>조회 기간 내 이슈 - 접수 확인</span>
             <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="접수 확인 상태 안내" aria-describedby="tooltip-intake-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-intake-current" class="hd-section-tooltip" role="tooltip">상태: 접수대기<br>조회 기간 내 접수대기 건을 표시합니다. 상태가 비어 있거나 알 수 없는 미완료 건도 확인 누락을 막기 위해 이곳에 표시합니다.</span></span>
-            <span class="text-xs bg-amber-100 dark:bg-amber-950/60 text-amber-700 dark:text-amber-400 border border-amber-200/60 dark:border-amber-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-pending-current">0건</span>
-            <span id="latest-registered" class="hidden min-w-0 max-w-full overflow-hidden flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-0.5 text-xs font-medium text-slate-500 dark:text-slate-400 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-[#424242] px-3 py-1 rounded-xl sm:rounded-full"></span>
+            <span class="kic-chip font-mono" id="count-pending-current">0건</span>
+            <span id="latest-registered" class="hidden hd-latest min-w-0 max-w-full overflow-hidden flex-wrap sm:flex-nowrap items-center gap-x-1.5 gap-y-0.5"></span>
           </h3>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="pending-current-container"></div>
@@ -212,43 +155,43 @@
 
         <!-- 섹션 2: 기간 내 진행 관리 (기본 접힘) -->
         <div>
-          <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-blue-400 pl-3 mb-4 flex items-center justify-between gap-2">
+          <div class="hd-sec mb-4 flex items-center justify-between gap-2">
             <div class="min-w-0 flex-1">
               <h3 class="hd-section-title flex flex-wrap items-center gap-2">
-                <span>🚀 조회 기간 내 이슈 - 진행 관리</span>
+                <span class="hd-sec-name"><i class="kic-dot accent" aria-hidden="true"></i>조회 기간 내 이슈 - 진행 관리</span>
                 <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="진행 관리 상태 안내" aria-describedby="tooltip-progress-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-progress-current" class="hd-section-tooltip" role="tooltip">상태: 검토중·예정·처리중<br>조회 기간 내 해당 상태의 이슈를 표시합니다. 기본은 접힌 상태이며 펼쳐서 내용을 확인할 수 있습니다. 이 영역에 표시된다고 별도로 읽음 처리되지는 않습니다.</span></span>
-                <span class="text-xs bg-blue-100 dark:bg-sky-950/60 text-blue-700 dark:text-sky-300 border border-blue-200/60 dark:border-sky-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-progress-current">0건</span>
+                <span class="kic-chip font-mono" id="count-progress-current">0건</span>
               </h3>
               <div id="progress-current-status-counts" class="hd-progress-status-counts" aria-label="진행 관리 상태별 건수" aria-live="polite"></div>
             </div>
-            <button id="btn-toggle-progress" type="button" onclick="toggleSection('progress-current-container', 'btn-toggle-progress')" aria-controls="progress-current-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
+            <button id="btn-toggle-progress" type="button" onclick="toggleSection('progress-current-container', 'btn-toggle-progress')" aria-controls="progress-current-container" aria-expanded="false" class="kic-btn sm shrink-0">펼치기</button>
           </div>
           <div id="progress-current-container" class="hidden"></div>
         </div>
 
         <!-- 섹션 3: 기간 내 완료 -->
         <div>
-          <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-emerald-500 pl-3 mb-4 flex items-center justify-between gap-2">
+          <div class="hd-sec mb-4 flex items-center justify-between gap-2">
             <h3 class="hd-section-title min-w-0 flex-1 flex flex-wrap items-center gap-2">
-              <span>✅ 조회 기간 내 이슈 - 완료</span>
+              <span class="hd-sec-name"><i class="kic-dot ok" aria-hidden="true"></i>조회 기간 내 이슈 - 완료</span>
               <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="완료 영역 상태 안내" aria-describedby="tooltip-done-current"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-done-current" class="hd-section-tooltip" role="tooltip">상태: 완료·반려<br>조회 기간 내 완료와 반려 건을 기존 집계 기준에 따라 함께 표시합니다.</span></span>
-              <span class="text-xs bg-emerald-100 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-400 border border-emerald-200/60 dark:border-emerald-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-done-current">0건</span>
+              <span class="kic-chip font-mono" id="count-done-current">0건</span>
             </h3>
-            <button id="btn-toggle-done" type="button" onclick="toggleSection('done-current-container', 'btn-toggle-done')" aria-controls="done-current-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
+            <button id="btn-toggle-done" type="button" onclick="toggleSection('done-current-container', 'btn-toggle-done')" aria-controls="done-current-container" aria-expanded="false" class="kic-btn sm shrink-0">펼치기</button>
           </div>
           <!-- 그룹핑 카드가 렌더링될 컨테이너 -->
           <div id="done-current-container" class="hidden"></div>
         </div>
 
         <!-- 섹션 4: 과거 누적 -->
-        <div class="pt-6 border-t border-slate-200 dark:border-[#424242]">
-          <div class="text-base font-extrabold text-slate-800 dark:text-slate-100 border-l-4 border-rose-500 pl-3 mb-4 flex items-center justify-between gap-2">
+        <div class="pt-6 border-t border-[var(--line)] ">
+          <div class="hd-sec mb-4 flex items-center justify-between gap-2">
             <h3 class="hd-section-title min-w-0 flex-1 flex flex-wrap items-center gap-2">
-              <span>⚠️ 이월된 미처리 건</span>
+              <span class="hd-sec-name"><i class="kic-dot err" aria-hidden="true"></i>이월된 미처리 건</span>
               <span class="hd-section-help"><button type="button" class="hd-section-help-button" aria-label="이월 영역 상태 안내" aria-describedby="tooltip-past"><i class="fas fa-circle-info" aria-hidden="true"></i></button><span id="tooltip-past" class="hd-section-tooltip" role="tooltip">상태: 접수대기·검토중·예정·처리중·반려<br>조회 시작일 이전의 미완료·반려 헬프데스크 이슈와 기간에 관계없는 미완료 분기 요청을 표시합니다. 숨김 반려 건은 기존 표시 설정을 따릅니다.</span></span>
-              <span class="text-xs bg-rose-100 dark:bg-rose-950/60 text-rose-700 dark:text-rose-400 border border-rose-200/60 dark:border-rose-800/60 px-2.5 py-0.5 rounded-full font-bold font-mono" id="count-past">0건</span>
+              <span class="kic-chip font-mono" id="count-past">0건</span>
             </h3>
-            <button id="btn-toggle-past" type="button" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" aria-controls="pending-past-container" aria-expanded="false" class="text-xs font-bold text-slate-600 dark:text-slate-300 bg-white dark:bg-[#262626] border border-slate-200 dark:border-slate-700 px-3.5 py-1 rounded-full hover:bg-slate-50 dark:hover:bg-slate-700 shadow-sm transition-colors shrink-0">펼치기</button>
+            <button id="btn-toggle-past" type="button" onclick="toggleSection('pending-past-container', 'btn-toggle-past')" aria-controls="pending-past-container" aria-expanded="false" class="kic-btn sm shrink-0">펼치기</button>
           </div>
           <!-- 칸반 보드가 렌더링될 컨테이너 -->
           <div id="pending-past-container" class="hidden"></div>
@@ -257,25 +200,25 @@
 
       <!-- 탭 2: 통계 요약 -->
       <div id="tab-stats-content" class="hidden grid grid-cols-1 md:grid-cols-2 gap-6 mt-6 pb-10">
-        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="far fa-building text-blue-500"></i> 지사별 접수 비율</h4><div class="relative h-64 w-full"><canvas id="branchChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-desktop text-purple-500"></i> 시스템별 비중</h4><div class="relative h-64 w-full"><canvas id="systemChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-user-tag text-emerald-500"></i> 담당자별 처리 현황</h4><div class="relative h-64 w-full"><canvas id="devChart"></canvas></div></div>
-        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm"><h4 class="font-bold text-slate-700 dark:text-slate-200 mb-6 flex items-center gap-2 text-sm"><i class="fas fa-tags text-amber-500"></i> 이슈 유형 분포</h4><div class="relative h-64 w-full"><canvas id="typeChart"></canvas></div></div>
+        <div class="bg-[var(--card)] p-6 rounded-2xl border border-[var(--line)] "><h4 class="font-bold text-[var(--ink)] mb-6 flex items-center gap-2 text-sm"><i class="far fa-building text-[var(--accent)]"></i> 지사별 접수 비율</h4><div class="relative h-64 w-full"><canvas id="branchChart"></canvas></div></div>
+        <div class="bg-[var(--card)] p-6 rounded-2xl border border-[var(--line)] "><h4 class="font-bold text-[var(--ink)] mb-6 flex items-center gap-2 text-sm"><i class="fas fa-desktop text-[var(--accent)]"></i> 시스템별 비중</h4><div class="relative h-64 w-full"><canvas id="systemChart"></canvas></div></div>
+        <div class="bg-[var(--card)] p-6 rounded-2xl border border-[var(--line)] "><h4 class="font-bold text-[var(--ink)] mb-6 flex items-center gap-2 text-sm"><i class="fas fa-user-tag text-[var(--ok)]"></i> 담당자별 처리 현황</h4><div class="relative h-64 w-full"><canvas id="devChart"></canvas></div></div>
+        <div class="bg-[var(--card)] p-6 rounded-2xl border border-[var(--line)] "><h4 class="font-bold text-[var(--ink)] mb-6 flex items-center gap-2 text-sm"><i class="fas fa-tags text-[var(--warn)]"></i> 이슈 유형 분포</h4><div class="relative h-64 w-full"><canvas id="typeChart"></canvas></div></div>
       </div>
 
       <!-- 탭 3: AI 분석 리포트 -->
       <div id="tab-ai-content" class="hidden pb-10 mt-6">
-        <div class="bg-white dark:bg-[#2F2F2F] p-6 rounded-2xl border border-slate-200 dark:border-[#424242] shadow-sm flex flex-col min-h-[600px]">
-          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-slate-100 dark:border-slate-800 pb-4">
+        <div class="bg-[var(--card)] p-6 rounded-2xl border border-[var(--line)] flex flex-col min-h-[600px]">
+          <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6 border-b border-[var(--line)] pb-4">
             <div>
-              <h4 class="font-bold text-slate-900 dark:text-white flex items-center gap-2 text-base"><i class="fas fa-magic text-purple-500"></i> Gemini AI 헬프데스크 운영 리포트</h4>
-              <p class="text-xs text-slate-400 dark:text-slate-500 mt-1">현재 조회 데이터와 전주 동일 기간을 비교해 보고용 운영 요약과 주요 인사이트를 정리합니다.</p>
+              <h4 class="font-bold text-[var(--ink)] flex items-center gap-2 text-base"><i class="fas fa-magic text-[var(--accent)]"></i> Gemini AI 헬프데스크 운영 리포트</h4>
+              <p class="text-xs text-[var(--dim)] mt-1">현재 조회 데이터와 전주 동일 기간을 비교해 보고용 운영 요약과 주요 인사이트를 정리합니다.</p>
             </div>
             <div class="flex items-center gap-2 shrink-0">
-              <button id="btn-copy-ai" onclick="copyAIReport()" class="hidden bg-white dark:bg-[#262626] text-purple-600 dark:text-purple-400 border border-purple-200 dark:border-purple-800 px-4 py-2 rounded-xl text-sm font-bold hover:bg-purple-50 dark:hover:bg-purple-950/50 transition-colors shadow-sm flex items-center gap-2" title="AI 리포트 복사">
+              <button id="btn-copy-ai" onclick="copyAIReport()" class="hidden bg-[var(--card)] text-[var(--accent)] border border-[var(--accent)] px-4 py-2 rounded-xl text-sm font-bold hover:bg-[var(--accent-soft)] transition-colors flex items-center gap-2" title="AI 리포트 복사">
                 <i class="fas fa-copy"></i> 복사
               </button>
-              <button id="btn-generate-ai" onclick="generateAIReport()" class="bg-purple-600 hover:bg-purple-700 text-white px-5 py-2 rounded-xl text-sm font-bold transition-all shadow-sm shadow-purple-500/20 flex items-center gap-2">
+              <button id="btn-generate-ai" onclick="generateAIReport()" class="bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] px-5 py-2 rounded-full text-sm font-bold transition-all flex items-center gap-2">
                 <i class="fas fa-robot"></i> 분석 리포트 자동 생성
               </button>
             </div>
@@ -283,22 +226,22 @@
           
           <div id="ai-loading" class="hidden py-16 text-center">
             <div class="loader mx-auto" style="border-top-color: #9333ea;"></div>
-            <p class="text-purple-600 dark:text-purple-400 mt-4 font-bold text-sm animate-pulse">AI가 이슈를 분석 중입니다...</p>
+            <p class="text-[var(--accent)] mt-4 font-bold text-sm animate-pulse">AI가 이슈를 분석 중입니다...</p>
           </div>
 
-          <div id="ai-report-result" class="text-slate-700 dark:text-slate-200 leading-relaxed text-sm bg-slate-50 dark:bg-[#262626] p-6 rounded-xl border border-slate-200/80 dark:border-slate-800 flex-1">
-            <div class="text-center py-20 text-slate-400 dark:text-slate-600">
+          <div id="ai-report-result" class="text-[var(--ink)] leading-relaxed text-sm bg-[var(--raise)] p-6 rounded-xl border border-[var(--line)] flex-1">
+            <div class="text-center py-20 text-[var(--dim)] ">
               <i class="fas fa-chart-line text-5xl mb-4 opacity-30 block"></i>
               상단의 '분석 리포트 자동 생성' 버튼을 클릭하시면 AI 리포트가 생성됩니다.
             </div>
           </div>
 
           <!-- 대화형 AI 채팅 섹션 -->
-          <div id="ai-chat-section" class="hidden mt-6 flex-col border border-slate-200 dark:border-slate-700 rounded-xl overflow-hidden bg-white dark:bg-[#2F2F2F] shadow-sm">
-            <div id="ai-chat-history" class="p-6 h-72 overflow-y-auto space-y-5 bg-slate-50 dark:bg-[#262626] border-b border-slate-200 dark:border-slate-700 scroll-smooth"></div>
-            <div class="p-3 bg-white dark:bg-[#2F2F2F] flex gap-2 items-center">
-                <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 px-4 py-2.5 bg-slate-50 dark:bg-[#262626] border border-slate-200 dark:border-slate-700 rounded-xl outline-none focus:ring-2 focus:ring-purple-500 focus:bg-white dark:focus:bg-[#1A2234] transition-all text-sm text-slate-800 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500" placeholder="리포트 내용에 대해 추가로 지시하거나 질문해보세요...">
-                <button onclick="sendChatMessage()" id="btn-send-chat" class="px-5 py-2.5 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors font-bold text-sm shadow-sm flex items-center gap-2 whitespace-nowrap">
+          <div id="ai-chat-section" class="hidden mt-6 flex-col border border-[var(--line)] rounded-xl overflow-hidden bg-[var(--card)] ">
+            <div id="ai-chat-history" class="p-6 h-72 overflow-y-auto space-y-5 bg-[var(--raise)] border-b border-[var(--line)] scroll-smooth"></div>
+            <div class="p-3 bg-[var(--card)] flex gap-2 items-center">
+                <input type="text" id="ai-chat-input" onkeypress="if(event.key==='Enter') sendChatMessage()" class="flex-1 px-4 py-2.5 bg-[var(--raise)] border border-[var(--line)] rounded-xl outline-none focus:ring-2 focus:ring-[var(--accent-soft)] focus:bg-[var(--card)] transition-all text-sm text-[var(--ink)] placeholder:text-[var(--dim)] " placeholder="리포트 내용에 대해 추가로 지시하거나 질문해보세요...">
+                <button onclick="sendChatMessage()" id="btn-send-chat" class="px-5 py-2.5 bg-[var(--accent)] text-[var(--accent-ink)] rounded-full hover:bg-[var(--accent-hover)] transition-colors font-bold text-sm flex items-center gap-2 whitespace-nowrap">
                     <i class="fas fa-paper-plane"></i> 전송
                 </button>
             </div>
@@ -310,16 +253,16 @@
 
   <!-- [모달] 시스템 설정 (담당 개발자 관리) -->
   <div id="settingsModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col m-4 transform scale-95 transition-transform duration-300" id="settingsModalContent">
-      <div class="p-5 border-b border-slate-100 dark:border-[#424242] flex justify-between items-center bg-slate-50 dark:bg-[#262626] rounded-t-3xl">
-        <h2 class="text-base font-extrabold text-slate-800 dark:text-[#ECECEC] flex items-center gap-2"><i class="fas fa-cog text-slate-500"></i> 시스템 설정 (담당 개발자 관리)</h2>
-        <button onclick="closeSettingsModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-200 dark:hover:bg-slate-700 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    <div class="bg-[var(--dialog)] border border-[var(--line)] rounded-2xl shadow-2xl w-full max-w-lg max-h-[90vh] flex flex-col m-4 transform scale-95 transition-transform duration-300" id="settingsModalContent">
+      <div class="p-5 border-b border-[var(--line)] flex justify-between items-center rounded-t-2xl">
+        <h2 class="text-base font-extrabold text-[var(--ink)] flex items-center gap-2"><i class="fas fa-cog text-[var(--muted)]"></i> 시스템 설정 (담당 개발자 관리)</h2>
+        <button type="button" onclick="closeSettingsModal()" class="kic-ibtn" title="닫기" aria-label="닫기"><i class="fas fa-times" aria-hidden="true"></i></button>
       </div>
       <div class="p-5 flex-1 overflow-y-auto no-scrollbar space-y-4">
-        <p class="text-xs text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-[#262626] p-3 rounded-xl border border-blue-100 dark:border-[#424242]">
+        <p class="text-xs text-[var(--accent)] bg-[var(--accent-soft)] p-3 rounded-xl border border-[var(--line2)] ">
           <i class="fas fa-info-circle mr-1"></i> 여기에 등록된 이름이 '이슈 등록'과 '현황 업데이트'의 담당자 목록에 표시됩니다. 이메일을 정확히 입력해야 알림이 발송됩니다.
         </p>
-        <div class="flex text-xs font-bold text-slate-500 dark:text-slate-400 mb-2 px-1">
+        <div class="flex text-xs font-bold text-[var(--muted)] mb-2 px-1">
             <div class="w-1/3">이름</div>
             <div class="flex-1">이메일 (알림 수신용)</div>
             <div class="w-9 text-center">삭제</div>
@@ -327,40 +270,40 @@
         <div id="settings-dev-list" class="space-y-2">
             <!-- 동적으로 담당자 리스트가 추가됨 -->
         </div>
-        <button onclick="addDevRow()" class="w-full mt-4 py-2.5 border-2 border-dashed border-slate-300 dark:border-[#424242] text-slate-500 dark:text-slate-400 font-bold text-sm rounded-xl hover:border-blue-400 hover:text-blue-500 dark:hover:border-emerald-500 dark:hover:text-emerald-400 transition-colors">
+        <button onclick="addDevRow()" class="w-full mt-4 py-2.5 border-2 border-dashed border-[var(--line2)] text-[var(--muted)] font-bold text-sm rounded-xl hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
             <i class="fas fa-plus mr-1"></i> 담당자 행 추가
         </button>
       </div>
-      <div class="p-5 border-t border-slate-100 dark:border-[#424242] flex justify-end gap-3 rounded-b-3xl bg-slate-50 dark:bg-[#262626]">
-        <button onclick="closeSettingsModal()" class="px-5 py-2 text-slate-600 dark:text-slate-300 bg-slate-200 dark:bg-[#383838] rounded-xl font-bold text-sm">취소</button>
-        <button onclick="saveSettings()" class="px-6 py-2 text-white bg-blue-600 dark:bg-emerald-600 hover:dark:bg-emerald-700 rounded-xl font-bold text-sm shadow-sm">설정 저장</button>
+      <div class="p-5 border-t border-[var(--line)] flex justify-end gap-3 rounded-b-2xl bg-[var(--raise)] ">
+        <button type="button" onclick="closeSettingsModal()" class="kic-btn">취소</button>
+        <button type="button" onclick="saveSettings()" class="kic-btn white">설정 저장</button>
       </div>
     </div>
   </div>
 
   <!-- [모달] 이슈 등록 -->
   <div id="addModal" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar m-4 transform scale-95 transition-transform duration-300" id="addModalContent">
-      <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#2F2F2F] z-10">
-        <h2 class="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-plus-circle text-blue-600 dark:text-sky-400"></i> 새 이슈 등록 (이관)</h2>
-        <button onclick="closeAddModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    <div class="bg-[var(--dialog)] border border-[var(--line)] rounded-2xl shadow-2xl w-full max-w-3xl max-h-[90vh] overflow-y-auto no-scrollbar m-4 transform scale-95 transition-transform duration-300" id="addModalContent">
+      <div class="p-6 border-b border-[var(--line)] flex justify-between items-center sticky top-0 bg-[var(--dialog)] z-10">
+        <h2 class="text-lg font-extrabold text-[var(--ink)] flex items-center gap-2"><i class="fas fa-plus-circle text-[var(--accent)] "></i> 새 이슈 등록 (이관)</h2>
+        <button type="button" onclick="closeAddModal()" class="kic-ibtn" title="닫기" aria-label="닫기"><i class="fas fa-times" aria-hidden="true"></i></button>
       </div>
       <div class="p-6 space-y-5">
         <div id="add-insertion-notice" class="hd-missing-note" hidden></div>
         <!-- [v16] 게시판 캡처 자동 이관 -->
-        <div class="rounded-2xl border border-blue-200 dark:border-sky-800/80 bg-blue-50/60 dark:bg-sky-950/30 p-4" id="add-capture-panel">
+        <div class="rounded-2xl border border-[var(--accent)] bg-[var(--accent-soft)] p-4" id="add-capture-panel">
           <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-3 mb-3">
             <div>
-              <div class="flex items-center gap-2 text-sm font-extrabold text-blue-900 dark:text-sky-300"><i class="fas fa-camera"></i> 게시판 캡처 자동 이관</div>
-              <p class="mt-1 text-xs text-blue-700 dark:text-sky-400 leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. (💡 상단 <b>브라우저 주소창(URL)까지 함께 캡처</b>하시면 원문 링크까지 자동으로 채워집니다!)</p>
+              <div class="flex items-center gap-2 text-sm font-extrabold text-[var(--accent)] "><i class="fas fa-camera"></i> 게시판 캡처 자동 이관</div>
+              <p class="mt-1 text-xs text-[var(--accent)] leading-relaxed">게시판 화면을 캡처한 뒤 이 영역을 클릭하고 <b>Ctrl+V</b>로 붙여넣으세요. (💡 상단 <b>브라우저 주소창(URL)까지 함께 캡처</b>하시면 원문 링크까지 자동으로 채워집니다!)</p>
             </div>
-            <span class="shrink-0 text-[11px] font-bold text-blue-700 dark:text-sky-300 bg-white dark:bg-[#2F2F2F] border border-blue-200 dark:border-sky-800 rounded-full px-2.5 py-1">최대 3장</span>
+            <span class="shrink-0 text-[11px] font-bold text-[var(--accent)] bg-[var(--card)] border border-[var(--accent)] rounded-full px-2.5 py-1">최대 3장</span>
           </div>
 
-          <div id="add-capture-zone" tabindex="0" class="min-h-[112px] rounded-xl border-2 border-dashed border-blue-300 dark:border-sky-700 bg-white dark:bg-[#262626] flex items-center justify-center p-3 outline-none focus:ring-4 focus:ring-blue-100 dark:focus:ring-sky-900/40 transition-all">
-            <div id="add-capture-empty" class="text-center text-slate-400 dark:text-slate-500 py-3">
-              <i class="fas fa-paste text-2xl text-blue-400 dark:text-sky-400 mb-2"></i>
-              <div class="text-sm font-bold text-slate-600 dark:text-slate-300">여기를 클릭한 뒤 Ctrl+V</div>
+          <div id="add-capture-zone" tabindex="0" class="min-h-[112px] rounded-xl border-2 border-dashed border-[var(--accent)] bg-[var(--card)] flex items-center justify-center p-3 outline-none focus:ring-4 focus:ring-[var(--accent-soft)] transition-all">
+            <div id="add-capture-empty" class="text-center text-[var(--dim)] py-3">
+              <i class="fas fa-paste text-2xl text-[var(--accent)] mb-2"></i>
+              <div class="text-sm font-bold text-[var(--muted)] ">여기를 클릭한 뒤 Ctrl+V</div>
               <div class="text-[11px] mt-1">또는 아래 '이미지 선택' 버튼을 이용하세요.</div>
             </div>
             <div id="add-capture-thumbs" class="hidden w-full flex flex-wrap gap-2"></div>
@@ -368,102 +311,102 @@
 
           <input id="add-capture-input" type="file" accept="image/*" multiple class="hidden">
           <div class="mt-3 flex flex-wrap items-center gap-2">
-            <button type="button" onclick="document.getElementById('add-capture-input').click()" class="px-3 py-2 rounded-lg bg-white dark:bg-[#262626] border border-blue-200 dark:border-sky-800 text-blue-700 dark:text-sky-300 text-xs font-bold hover:bg-blue-50 dark:hover:bg-sky-900/40"><i class="fas fa-image mr-1"></i>이미지 선택</button>
-            <button type="button" id="add-capture-analyze-btn" onclick="analyzeAddCapture(false)" class="px-3.5 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 dark:bg-blue-500 text-white text-xs font-bold disabled:opacity-50 shadow-sm"><i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력</button>
-            <button type="button" onclick="clearAddCaptureImages()" class="px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300 text-xs font-bold hover:bg-slate-200">캡처 초기화</button>
-            <span id="add-capture-status" class="text-xs font-bold text-slate-500 ml-1"></span>
+            <button type="button" onclick="document.getElementById('add-capture-input').click()" class="px-3 py-2 rounded-lg bg-[var(--card)] border border-[var(--accent)] text-[var(--accent)] text-xs font-bold hover:bg-[var(--accent-soft)] "><i class="fas fa-image mr-1"></i>이미지 선택</button>
+            <button type="button" id="add-capture-analyze-btn" onclick="analyzeAddCapture(false)" class="px-3.5 py-2 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] text-xs font-bold disabled:opacity-50 "><i class="fas fa-wand-magic-sparkles mr-1"></i>AI 분석 후 자동 입력</button>
+            <button type="button" onclick="clearAddCaptureImages()" class="px-3 py-2 rounded-lg bg-[var(--raise)] text-[var(--muted)] text-xs font-bold hover:bg-[var(--hover)]">캡처 초기화</button>
+            <span id="add-capture-status" class="text-xs font-bold text-[var(--muted)] ml-1"></span>
           </div>
-          <div id="add-capture-warning" class="hidden mt-2 text-[11px] leading-relaxed text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 border border-amber-200 dark:border-amber-800 rounded-lg px-3 py-2"></div>
+          <div id="add-capture-warning" class="hidden mt-2 text-[11px] leading-relaxed text-[var(--warn)] bg-[var(--warn-soft)] border border-[var(--warn)] rounded-lg px-3 py-2"></div>
         </div>
-        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 bg-slate-50 dark:bg-[#262626] p-4 rounded-xl border border-slate-200 dark:border-slate-700">
-          <div class="md:col-span-3"><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">접수 일자 · 원문 작성시각 <span class="text-red-500">*</span></label><div class="flex gap-2"><input type="date" id="add-date" aria-label="접수 일자" class="flex-1 min-w-0 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"><input type="time" id="add-time" aria-label="원문 작성시각" title="게시판에 표시된 원문 작성시각. 접수일시로 그대로 저장합니다." class="w-32 border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-blue-500 bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 cursor-pointer"></div></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지사 <span class="text-red-500">*</span></label><select id="add-branch" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">요청자</label><input type="text" id="add-requester" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="add-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
+        <div class="grid grid-cols-1 md:grid-cols-6 gap-4 bg-[var(--raise)] p-4 rounded-xl border border-[var(--line)] ">
+          <div class="md:col-span-3"><label class="block text-xs font-bold text-[var(--muted)] mb-1">접수 일자 · 원문 작성시각 <span class="text-[var(--err)]">*</span></label><div class="flex gap-2"><input type="date" id="add-date" aria-label="접수 일자" class="flex-1 min-w-0 border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] bg-[var(--card)] text-[var(--ink)] cursor-pointer"><input type="time" id="add-time" aria-label="원문 작성시각" title="게시판에 표시된 원문 작성시각. 접수일시로 그대로 저장합니다." class="w-32 border border-[var(--line)] rounded-lg px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] bg-[var(--card)] text-[var(--ink)] cursor-pointer"></div></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">지사 <span class="text-[var(--err)]">*</span></label><select id="add-branch" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="">선택</option><option value="서울본사">서울본사</option><option value="부산지사">부산지사</option><option value="대전지사">대전지사</option><option value="웨이투웨이">웨이투웨이</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">요청자</label><input type="text" id="add-requester" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">담당 개발자</label><select id="add-dev" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="">로딩중...</option></select></div>
         </div>
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">시스템 구분</label><select id="add-system" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="CMS">CMS</option><option value="CWIZ">CWIZ</option><option value="인프라">인프라</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">유형</label><select id="add-type" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">선택</option><option value="오류">오류</option><option value="데이터 수정">데이터 수정</option><option value="단순 문의">단순 문의</option><option value="기능 개선">기능 개선</option><option value="기타">기타</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">긴급도</label><select id="add-priority" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="낮음">낮음</option><option value="보통" selected>보통</option><option value="높음">높음</option><option value="긴급">긴급</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">시스템 구분</label><select id="add-system" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="">선택</option><option value="CMS">CMS</option><option value="CWIZ">CWIZ</option><option value="인프라">인프라</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">유형</label><select id="add-type" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="">선택</option><option value="오류">오류</option><option value="데이터 수정">데이터 수정</option><option value="단순 문의">단순 문의</option><option value="기능 개선">기능 개선</option><option value="기타">기타</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">긴급도</label><select id="add-priority" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="낮음">낮음</option><option value="보통" selected>보통</option><option value="높음">높음</option><option value="긴급">긴급</option></select></div>
         </div>
         <input type="hidden" id="add-menu" value="">
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="add-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">지라 링크</label><input type="url" id="add-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">제목 <span class="text-red-500">*</span></label><input type="text" id="add-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상세 내용 <span class="text-red-500">*</span></label><textarea id="add-details" rows="4" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></textarea></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">원문/첨부 링크</label><input type="url" id="add-source-link" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] " placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">지라 링크</label><input type="url" id="add-jira-link" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] " placeholder="Jira 이슈 URL"></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">제목 <span class="text-[var(--err)]">*</span></label><input type="text" id="add-title" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">상세 내용 <span class="text-[var(--err)]">*</span></label><textarea id="add-details" rows="4" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "></textarea></div>
       </div>
-      <div class="p-6 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#2F2F2F] rounded-b-3xl">
-        <button onclick="closeAddModal()" class="px-5 py-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-sm">취소</button>
-        <button onclick="submitAddForm()" class="px-6 py-2 text-white bg-blue-600 hover:bg-blue-700 rounded-xl font-bold text-sm shadow-sm">이슈 등록 (이관)</button>
+      <div class="p-6 border-t border-[var(--line)] flex justify-end gap-3 sticky bottom-0 bg-[var(--dialog)] rounded-b-2xl">
+        <button type="button" onclick="closeAddModal()" class="kic-btn">취소</button>
+        <button type="button" onclick="submitAddForm()" class="kic-btn white">이슈 등록 (이관)</button>
       </div>
     </div>
   </div>
 
   <!-- [모달] 현황 업데이트 -->
   <div id="editModal" role="dialog" aria-modal="true" aria-labelledby="edit-modal-heading" class="kic-modal-backdrop fixed inset-0 z-50 flex items-center justify-center hidden opacity-0 transition-opacity duration-300">
-    <div class="bg-white dark:bg-[#2F2F2F] border border-slate-200 dark:border-[#424242] rounded-3xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
-      <div class="p-5 border-b border-slate-100 dark:border-slate-800 flex justify-between items-center sticky top-0 bg-white dark:bg-[#2F2F2F] z-10 rounded-t-3xl">
-        <h2 id="edit-modal-heading" class="text-base font-extrabold text-slate-900 dark:text-white flex items-center gap-2"><i class="fas fa-edit text-emerald-500"></i> 현황 업데이트</h2>
-        <button onclick="closeEditModal()" class="text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 w-8 h-8 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 flex items-center justify-center"><i class="fas fa-times"></i></button>
+    <div class="bg-[var(--dialog)] border border-[var(--line)] rounded-2xl shadow-2xl w-full max-w-lg m-4 transform scale-95 transition-transform duration-300" id="editModalContent">
+      <div class="p-5 border-b border-[var(--line)] flex justify-between items-center sticky top-0 bg-[var(--dialog)] z-10 rounded-t-2xl">
+        <h2 id="edit-modal-heading" class="text-base font-extrabold text-[var(--ink)] flex items-center gap-2"><i class="fas fa-edit text-[var(--ok)]"></i> 현황 업데이트</h2>
+        <button type="button" onclick="closeEditModal()" class="kic-ibtn" title="닫기" aria-label="닫기"><i class="fas fa-times" aria-hidden="true"></i></button>
       </div>
       <div class="p-5 space-y-4 max-h-[75vh] overflow-y-auto no-scrollbar">
-        <div class="bg-slate-50 dark:bg-[#262626] p-4 rounded-2xl border border-slate-200 dark:border-slate-700 space-y-2.5">
+        <div class="bg-[var(--raise)] p-4 rounded-2xl border border-[var(--line)] space-y-2.5">
             <div class="flex items-center justify-between">
-                <span class="text-[10px] font-bold text-slate-500 dark:text-slate-400 bg-white dark:bg-[#2F2F2F] px-2 py-0.5 rounded border border-slate-200 dark:border-slate-700 font-mono" id="edit-id-display"></span>
+                <span class="text-[10px] font-bold text-[var(--muted)] bg-[var(--card)] px-2 py-0.5 rounded border border-[var(--line)] font-mono" id="edit-id-display"></span>
                 <div class="flex items-center gap-2">
-                    <span class="text-[10px] text-slate-500 dark:text-slate-400 font-medium" id="edit-meta-display"></span>
-                    <span class="text-[10px] text-blue-600 dark:text-sky-400 font-bold bg-blue-50 dark:bg-sky-950/60 px-2 py-0.5 rounded" id="edit-menu-display"></span>
+                    <span class="text-[10px] text-[var(--muted)] font-medium" id="edit-meta-display"></span>
+                    <span class="text-[10px] text-[var(--accent)] font-bold bg-[var(--accent-soft)] px-2 py-0.5 rounded" id="edit-menu-display"></span>
                 </div>
             </div>
-            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">제목 수정</label><input type="text" id="edit-title" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
-            <div><label class="block text-[11px] font-bold text-slate-500 dark:text-slate-400 mb-1">상세 내용 수정</label><textarea id="edit-details" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-xs text-slate-600 dark:text-slate-300 bg-white dark:bg-[#2F2F2F] resize-none"></textarea></div>
+            <div><label class="block text-[11px] font-bold text-[var(--muted)] mb-1">제목 수정</label><input type="text" id="edit-title" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm font-bold bg-[var(--card)] text-[var(--ink)] "></div>
+            <div><label class="block text-[11px] font-bold text-[var(--muted)] mb-1">상세 내용 수정</label><textarea id="edit-details" rows="3" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-xs text-[var(--muted)] bg-[var(--card)] resize-none"></textarea></div>
         </div>
         <input type="hidden" id="edit-id">
         <input type="hidden" id="edit-source-type" value="helpdesk">
         <div class="grid grid-cols-2 gap-4">
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">담당 개발자</label><select id="edit-dev" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="">로딩중...</option></select></div>
-          <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">상태</label><select id="edit-status" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm font-bold bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"><option value="접수대기">접수대기</option><option value="검토중" class="text-purple-600">검토중</option><option value="예정" class="text-blue-600">예정</option><option value="처리중">처리중</option><option value="완료" class="text-green-600">완료</option><option value="반려" class="text-red-600">반려</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">담당 개발자</label><select id="edit-dev" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "><option value="">로딩중...</option></select></div>
+          <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">상태</label><select id="edit-status" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm font-bold bg-[var(--card)] text-[var(--ink)] "><option value="접수대기">접수대기</option><option value="검토중" class="text-[var(--accent)]">검토중</option><option value="예정" class="text-[var(--accent)]">예정</option><option value="처리중">처리중</option><option value="완료" class="text-[var(--ok)]">완료</option><option value="반려" class="text-[var(--err)]">반려</option></select></div>
         </div>
         <div>
           <div class="flex items-center justify-between gap-3 mb-1">
-            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">처리 내용 기록</label>
-            <button type="button" id="edit-ai-reply-btn" onclick="generateEditAiReply('fast')" class="px-3 py-1.5 rounded-lg bg-violet-50 dark:bg-violet-950/60 text-violet-700 dark:text-violet-300 border border-violet-200 dark:border-violet-800 hover:bg-violet-600 hover:text-white transition-colors text-xs font-bold flex items-center gap-1.5 shadow-sm">
+            <label class="block text-xs font-bold text-[var(--muted)] ">처리 내용 기록</label>
+            <button type="button" id="edit-ai-reply-btn" onclick="generateEditAiReply('fast')" class="px-3 py-1.5 rounded-lg bg-[var(--accent-soft)] text-[var(--accent)] border border-[var(--accent)] hover:bg-[var(--accent-hover)] hover:text-[var(--accent-ink)] transition-colors text-xs font-bold flex items-center gap-1.5 ">
               <i class="fas fa-wand-magic-sparkles"></i><span>AI 답변</span>
             </button>
           </div>
-          <textarea id="edit-action" rows="3" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="확인 결과, 처리 내용, 개선 방향 등 실제 답변의 핵심 내용을 간단히 입력하세요."></textarea>
-          <p class="mt-1.5 text-[11px] text-slate-400 dark:text-slate-500">※ 입력한 처리 내용을 답변 초안으로 사용하며, 별도 답변 메뉴와 동일한 AI 답변 로직을 사용합니다.</p>
+          <textarea id="edit-action" rows="3" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] " placeholder="확인 결과, 처리 내용, 개선 방향 등 실제 답변의 핵심 내용을 간단히 입력하세요."></textarea>
+          <p class="mt-1.5 text-[11px] text-[var(--dim)] ">※ 입력한 처리 내용을 답변 초안으로 사용하며, 별도 답변 메뉴와 동일한 AI 답변 로직을 사용합니다.</p>
         </div>
-        <div id="edit-ai-reply-panel" class="hidden rounded-2xl border border-violet-200 dark:border-violet-800 bg-violet-50/40 dark:bg-violet-950/30 p-3.5 space-y-2">
+        <div id="edit-ai-reply-panel" class="hidden rounded-2xl border border-[var(--accent)] bg-[var(--accent-soft)] p-3.5 space-y-2">
           <div class="flex items-center justify-between gap-3">
             <div>
-              <div class="text-xs font-bold text-violet-700 dark:text-violet-300 flex items-center gap-1.5"><i class="fas fa-robot"></i> AI 답변 생성 결과</div>
-              <div id="edit-ai-reply-status" class="text-[11px] text-slate-500 dark:text-slate-400 mt-0.5">생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.</div>
+              <div class="text-xs font-bold text-[var(--accent)] flex items-center gap-1.5"><i class="fas fa-robot"></i> AI 답변 생성 결과</div>
+              <div id="edit-ai-reply-status" class="text-[11px] text-[var(--muted)] mt-0.5">생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.</div>
             </div>
             <div class="flex items-center gap-1.5 shrink-0">
-              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply('precise')" class="px-2.5 py-1.5 rounded-lg bg-white dark:bg-[#262626] border border-violet-200 dark:border-violet-800 text-violet-700 dark:text-violet-300 hover:bg-violet-100 text-[11px] font-bold">다시 생성</button>
-              <button type="button" onclick="copyEditAiReply()" class="px-2.5 py-1.5 rounded-lg bg-violet-600 hover:bg-violet-700 text-white text-[11px] font-bold shadow-sm"><i class="fas fa-copy mr-1"></i>복사</button>
+              <button type="button" id="edit-ai-regenerate-btn" onclick="generateEditAiReply('precise')" class="px-2.5 py-1.5 rounded-lg bg-[var(--card)] border border-[var(--accent)] text-[var(--accent)] hover:bg-[var(--accent-soft)] text-[11px] font-bold">다시 생성</button>
+              <button type="button" onclick="copyEditAiReply()" class="px-2.5 py-1.5 rounded-full bg-[var(--accent)] hover:bg-[var(--accent-hover)] text-[var(--accent-ink)] text-[11px] font-bold "><i class="fas fa-copy mr-1"></i>복사</button>
             </div>
           </div>
-          <textarea id="edit-ai-reply-result" rows="8" class="w-full border border-violet-200 dark:border-violet-800 rounded-xl px-3 py-2 text-sm leading-relaxed bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100 resize-y" placeholder="AI 답변이 여기에 생성됩니다."></textarea>
+          <textarea id="edit-ai-reply-result" rows="8" class="w-full border border-[var(--accent)] rounded-xl px-3 py-2 text-sm leading-relaxed bg-[var(--card)] text-[var(--ink)] resize-y" placeholder="AI 답변이 여기에 생성됩니다."></textarea>
         </div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">비고 (내부 메모)</label><input type="text" id="edit-remark" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100"></div>
-        <div><label class="block text-xs font-bold text-slate-600 dark:text-slate-300 mb-1">원문/첨부 링크</label><input type="url" id="edit-source-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">비고 (내부 메모)</label><input type="text" id="edit-remark" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] "></div>
+        <div><label class="block text-xs font-bold text-[var(--muted)] mb-1">원문/첨부 링크</label><input type="url" id="edit-source-link" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] " placeholder="하이웍스 게시글 또는 첨부파일 URL"></div>
         <div>
           <div class="flex items-center justify-between gap-3 mb-1">
-            <label class="block text-xs font-bold text-slate-600 dark:text-slate-300">지라 링크</label>
-            <label class="inline-flex items-center gap-2 text-xs font-bold text-slate-600 dark:text-slate-300 select-none cursor-pointer" title="신규 Jira 일감 등록 또는 기존 Jira 건 매칭 완료 여부">
+            <label class="block text-xs font-bold text-[var(--muted)] ">지라 링크</label>
+            <label class="inline-flex items-center gap-2 text-xs font-bold text-[var(--muted)] select-none cursor-pointer" title="신규 Jira 일감 등록 또는 기존 Jira 건 매칭 완료 여부">
               <input type="checkbox" id="edit-jira-linked" class="sr-only peer">
-              <span class="relative w-10 h-5 bg-slate-200 dark:bg-slate-700 rounded-full transition-colors peer-checked:bg-emerald-500 after:content-[''] after:absolute after:left-0.5 after:top-0.5 after:w-4 after:h-4 after:bg-white after:rounded-full after:shadow after:transition-transform peer-checked:after:translate-x-5"></span>
+              <span class="relative w-10 h-5 bg-[var(--hover)] rounded-full transition-colors peer-checked:bg-[var(--ok)] after:content-[''] after:absolute after:left-0.5 after:top-0.5 after:w-4 after:h-4 after:bg-[var(--card)] after:rounded-full after:transition-transform peer-checked:after:translate-x-5"></span>
               <span>Jira 일감 연동 완료</span>
             </label>
           </div>
-          <input type="url" id="edit-jira-link" class="w-full border border-slate-200 dark:border-slate-700 rounded-lg px-3 py-2 text-sm bg-white dark:bg-[#2F2F2F] text-slate-800 dark:text-slate-100" placeholder="Jira 이슈 URL">
+          <input type="url" id="edit-jira-link" class="w-full border border-[var(--line)] rounded-lg px-3 py-2 text-sm bg-[var(--card)] text-[var(--ink)] " placeholder="Jira 이슈 URL">
         </div>
       </div>
-      <div class="p-5 border-t border-slate-100 dark:border-slate-800 flex justify-end gap-3 sticky bottom-0 bg-white dark:bg-[#2F2F2F] rounded-b-3xl">
-        <button onclick="closeEditModal()" class="px-5 py-2 text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-700 rounded-xl font-bold text-sm">취소</button>
-        <button onclick="submitEditForm()" class="px-6 py-2 text-white bg-emerald-600 hover:bg-emerald-700 rounded-xl font-bold text-sm shadow-sm">저장하기</button>
+      <div class="p-5 border-t border-[var(--line)] flex justify-end gap-3 sticky bottom-0 bg-[var(--dialog)] rounded-b-2xl">
+        <button type="button" onclick="closeEditModal()" class="kic-btn">취소</button>
+        <button type="button" onclick="submitEditForm()" class="kic-btn white">저장하기</button>
       </div>
     </div>
   </div>
@@ -486,13 +429,11 @@
       tabs.forEach(name => {
         document.getElementById('tab-' + name + '-content').classList.add('hidden');
         document.getElementById('tab-btn-' + name).classList.remove('tab-active');
-        document.getElementById('tab-btn-' + name).classList.add('text-slate-400');
-        document.getElementById('tab-btn-' + name).classList.remove('text-purple-600');
+        document.getElementById('tab-btn-' + name).setAttribute('aria-selected', 'false');
       });
       document.getElementById('tab-' + tabName + '-content').classList.remove('hidden');
       document.getElementById('tab-btn-' + tabName).classList.add('tab-active');
-      document.getElementById('tab-btn-' + tabName).classList.remove('text-slate-400');
-      if(tabName === 'ai') document.getElementById('tab-btn-' + tabName).classList.add('text-purple-600');
+      document.getElementById('tab-btn-' + tabName).setAttribute('aria-selected', 'true');
       if (tabName === 'stats') {
         [chartBranch, chartSystem, chartDev, chartType].forEach(c => c && c.resize());
       }
@@ -515,6 +456,10 @@
     }
 
     async function initDashboard() {
+      // v3: 이슈 검색칸을 위 막대 가운데로 옮깁니다(위 막대가 없으면 제자리).
+      const searchSlot = document.getElementById('kic-top-center');
+      const searchBox = document.getElementById('hd-search');
+      if (searchSlot && searchBox && typeof searchSlot.appendChild === 'function') searchSlot.appendChild(searchBox);
       const week = getThisWeekRange();
       document.getElementById('startDate').value = week.start;
       document.getElementById('endDate').value = week.end;
@@ -593,13 +538,14 @@
         failed: window.fullIssueData ? '동기화 실패 · 이전 목록 유지' : '목록 조회 실패' }[phase] || '목록 확인 중';
       const busy = ['syncing', 'retrying'].includes(phase);
       const success = ['complete', 'saved'].includes(phase);
-      const color = busy ? 'text-blue-700 dark:text-sky-300 bg-blue-50 dark:bg-sky-950/60 border-blue-200 dark:border-sky-800'
-        : success ? 'text-emerald-700 dark:text-emerald-300 bg-emerald-50 dark:bg-emerald-950/60 border-emerald-200 dark:border-emerald-800'
-        : 'text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-950/60 border-amber-200 dark:border-amber-800';
-      el.className = `text-xs font-medium border px-3 py-1.5 rounded-xl flex items-center gap-2 max-w-full ${color}`;
+      // v3: 위 막대 오른쪽(연결 상태 자리)에 점 + 한 줄로 표시합니다. 위 막대가 없으면 제목 옆에 그대로 둡니다.
+      const slot = document.getElementById('kic-top-right');
+      if (slot && typeof slot.prepend === 'function' && el.parentElement !== slot) slot.prepend(el);
+      el.className = `kic-sync ${busy ? 'busy' : success ? 'ok' : 'warn'}`;
       const time = dashboardLastSyncedAt ? `마지막 전체 동기화 ${formatDashboardSyncTime(dashboardLastSyncedAt)}` : '전체 동기화 시각 미확인';
       const note = dashboardNeedsRefresh ? ' · 저장 변경 재확인 필요' : dashboardLastLocalSaveAt > dashboardLastSyncedAt ? ' · 저장 내용 포함' : '';
-      el.innerHTML = `<i aria-hidden="true" class="fas ${busy ? 'fa-sync-alt fa-spin' : success ? 'fa-check-circle' : 'fa-exclamation-circle'} shrink-0"></i><span>${text}<span class="block text-[11px] opacity-80">${time}${note}</span></span>`;
+      el.title = `${text} · ${time}${note}`;
+      el.innerHTML = `<i aria-hidden="true" class="kic-sync-mark"></i><span class="kic-sync-text">${text}</span><span class="kic-sync-time">${time}${note}</span>`;
     }
 
     function markDashboardLocalChange() {
@@ -714,18 +660,19 @@
       const linked = isJiraLinked(item);
       if (!safeJiraLink && !linked) return '';
 
-      let cls = 'text-orange-700 bg-orange-50 border border-orange-200 hover:bg-orange-100';
+      let cls = 'text-[var(--warn)] bg-[var(--warn-soft)] border border-[var(--warn)] hover:bg-[var(--warn-soft)]';
       let title = 'Jira 링크 있음 / 일감 연동 확인 필요';
       if (safeJiraLink && linked) {
-        cls = 'text-green-700 bg-green-50 border border-green-200 hover:bg-green-100';
+        cls = 'text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)] hover:bg-[var(--ok-soft)]';
         title = 'Jira 일감 연동 완료';
       } else if (!safeJiraLink && linked) {
-        cls = 'text-red-700 bg-red-50 border border-red-200 hover:bg-red-100';
+        cls = 'text-[var(--err)] bg-[var(--err-soft)] border border-[var(--err)] hover:bg-[var(--err-soft)]';
         title = 'Jira 일감 연동 체크됨 / Jira 링크 누락';
       }
 
       const href = safeJiraLink ? `href="${escapeHtml(safeJiraLink)}" target="_blank"` : 'href="javascript:void(0)"';
-      return `<a ${href} onclick="event.stopPropagation()" class="text-[10px] ${cls} px-2 py-0.5 rounded-full font-bold" title="${escapeHtml(title)}"><i class="fas fa-external-link-alt mr-1"></i>Jira</a>`;
+      const state = cls.indexOf('--ok') !== -1 ? 'ok' : cls.indexOf('--err') !== -1 ? 'err' : 'warn';
+      return `<a ${href} onclick="event.stopPropagation()" class="kic-chip hd-link" title="${escapeHtml(title)}"><i class="kic-dot ${state}" aria-hidden="true"></i>Jira</a>`;
     }
 
     // 한글 IME 입력 보호: Apps Script iframe/브라우저 조합에서
@@ -931,7 +878,7 @@
       let followup = false;
       setDashboardSyncStatus('syncing');
       if (!isBackground && !window.fullIssueData) {
-        document.getElementById('loading').innerHTML = '<i class="fas fa-spinner fa-spin text-blue-500 text-3xl mb-3"></i><p class="font-medium">목록을 조회하고 있습니다...</p>';
+        document.getElementById('loading').innerHTML = '<i class="fas fa-spinner fa-spin text-[var(--accent)] text-3xl mb-3"></i><p class="font-medium">목록을 조회하고 있습니다...</p>';
         document.getElementById('loading').classList.remove('hidden');
         document.getElementById('dashboard-content').classList.add('hidden');
       }
@@ -981,7 +928,7 @@
     function onFailure(error, isBackground = false) {
       console.warn("Data load warning/error:", error);
       if (!window.currentStats) {
-        document.getElementById('loading').innerHTML = `<p class='text-red-500 font-bold'>⚠️ 데이터 로드 실패: ${escapeHtml(error.message || error)}</p><button onclick='loadData(false)' class='mt-4 text-blue-600 underline font-bold'>다시 시도</button>`;
+        document.getElementById('loading').innerHTML = `<p class='text-[var(--err)] font-bold'>⚠️ 데이터 로드 실패: ${escapeHtml(error.message || error)}</p><button onclick='loadData(false)' class='mt-4 text-[var(--accent)] underline font-bold'>다시 시도</button>`;
       } else if (!isBackground) {
         // 사용자가 직접 버튼을 클릭하여 수동 조회했을 때만 토스트 표시
         showToast('데이터 조회 실패: ' + (error.message || '네트워크 상태를 확인해주세요.'), 'error');
@@ -1037,23 +984,17 @@
     function showToast(message, type = 'success') {
       const toast = document.getElementById('toast');
       if (!toast) return;
-      const icon = type === 'error' ? '❌' : type === 'info' ? 'ℹ️' : '✅';
-      const bgClass = type === 'error'
-        ? 'bg-rose-600/95 text-white border border-rose-400 shadow-rose-900/20'
-        : type === 'info'
-        ? 'bg-slate-900/95 text-white border border-slate-700 shadow-slate-900/30'
-        : 'bg-emerald-600/95 text-white border border-emerald-400 shadow-emerald-900/20';
-
-      toast.className = `fixed top-6 right-6 z-[99999] flex items-center gap-2.5 px-5 py-3.5 rounded-2xl shadow-2xl text-sm font-extrabold transition-all duration-300 transform translate-y-0 opacity-100 backdrop-blur-md ${bgClass}`;
-      toast.innerHTML = `<span>${icon}</span><span style="white-space:pre-line;overflow-wrap:anywhere"></span>`;
+      // v3: 화면 아래 가운데 토스트. 색 점으로 성공·오류·안내를 구분합니다.
+      toast.className = `kic-toast ${type === 'error' ? 'toast-error' : type === 'info' ? 'toast-info' : 'toast-success'}`;
+      toast.innerHTML = `<span style="white-space:pre-line;overflow-wrap:anywhere"></span>`;
       toast.lastElementChild.textContent = message;
-      toast.classList.remove('hidden');
+      toast.style.opacity = '1';
 
       clearTimeout(window.__toastTimer);
       window.__toastTimer = setTimeout(() => {
-        toast.classList.add('translate-y-[-10px]', 'opacity-0');
-        setTimeout(() => toast.classList.add('hidden'), 300);
-      }, 2500);
+        toast.style.opacity = '0';
+        window.__toastTimer = setTimeout(() => toast.classList.add('hidden'), 200);
+      }, type === 'error' ? 5000 : 2800);
     }
 
     function normalizeSearchText(value) {
@@ -1136,9 +1077,9 @@
         el.title = `최근 등록: ${latest.id} · ${latest.title || ''} · ${who} · ${time}`;
         const dot = '<span class="opacity-40" aria-hidden="true">·</span>';
         el.innerHTML = [
-            '<span class="shrink-0 font-bold text-slate-600 dark:text-slate-300">최근 등록</span>',
-            `<span class="shrink-0 font-mono font-bold text-blue-600 dark:text-sky-400">${escapeHtml(latest.id)}</span>`,
-            `<span class="truncate font-bold text-slate-700 dark:text-slate-200">${escapeHtml(latest.title)}</span>`,
+            '<span class="shrink-0 font-bold text-[var(--muted)] ">최근 등록</span>',
+            `<span class="shrink-0 font-mono font-bold text-[var(--accent)] ">${escapeHtml(latest.id)}</span>`,
+            `<span class="truncate font-bold text-[var(--ink)] ">${escapeHtml(latest.title)}</span>`,
             who ? `<span class="shrink-0">${escapeHtml(who)}</span>` : '',
             time ? `<span class="shrink-0 font-mono">${escapeHtml(time)}</span>` : ''
         ].filter(Boolean).join(dot);
@@ -1192,6 +1133,9 @@
     function handleGlobalSearchInput() {
         const input = document.getElementById('globalSearchInput');
         window.globalSearchTerm = input ? input.value.trim() : '';
+        // 검색칸이 위 막대에 있으므로 통계·AI 탭에서 입력해도 결과가 보이게 이슈 관리 탭으로 돌아갑니다.
+        const pendingTab = document.getElementById('tab-pending-content');
+        if (window.globalSearchTerm && pendingTab && pendingTab.classList.contains('hidden')) switchTab('pending');
         if (window.currentStats) renderIssueSections(window.currentStats, false);
     }
 
@@ -1402,9 +1346,11 @@
         if (isSaving) {
             button.dataset.originalHtml = button.innerHTML;
             button.disabled = true;
-            button.innerHTML = `<i class="fas fa-spinner fa-spin mr-1"></i>${savingText || '저장중...'}`;
+            button.classList.add('kic-spinning');
+            button.textContent = savingText || '저장중...';
         } else {
             button.disabled = false;
+            button.classList.remove('kic-spinning');
             if (button.dataset.originalHtml) button.innerHTML = button.dataset.originalHtml;
         }
     }
@@ -1433,15 +1379,32 @@
         return 'slate';
     }
 
+    // v3: 유형·상태는 작은 알약 칩 + 색 점으로 표시합니다.
+    function getTypeDotClass(type) {
+        return { red: 'err', purple: 'purple', orange: 'warn', blue: 'accent', green: 'ok' }[getTypeColorKey(type)] || '';
+    }
+
+    function getStatusDotClass(status) {
+        if (status === '검토중' || status === '예정') return 'accent';
+        if (status === '처리중') return 'warn';
+        if (status === '완료') return 'ok';
+        if (status === '반려') return 'err';
+        return '';
+    }
+
+    function chipHtml(label, dot, attrs) {
+        return '<span class="kic-chip"' + (attrs || '') + '><i class="kic-dot ' + dot + '" aria-hidden="true"></i>' + escapeHtml(label) + '</span>';
+    }
+
     function getTypeBadgeClass(type) {
         const key = getTypeColorKey(type);
         const map = {
-          red: 'text-red-700 bg-red-50 border border-red-200',
-          purple: 'text-purple-700 bg-purple-50 border border-purple-200',
-          orange: 'text-orange-700 bg-orange-50 border border-orange-200',
-          blue: 'text-blue-700 bg-blue-50 border border-blue-200',
-          green: 'text-green-700 bg-green-50 border border-green-200',
-          slate: 'text-slate-600 bg-slate-100 border border-slate-200'
+          red: 'text-[var(--err)] bg-[var(--err-soft)] border border-[var(--err)]',
+          purple: 'text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]',
+          orange: 'text-[var(--warn)] bg-[var(--warn-soft)] border border-[var(--warn)]',
+          blue: 'text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)]',
+          green: 'text-[var(--ok)] bg-[var(--ok-soft)] border border-[var(--ok)]',
+          slate: 'text-[var(--muted)] bg-[var(--raise)] border border-[var(--line)]'
         };
         return map[key] || map.slate;
     }
@@ -1449,40 +1412,18 @@
     function getTypeIconClass(type) {
         const key = getTypeColorKey(type);
         const map = {
-          red: 'text-red-500',
-          purple: 'text-purple-500',
-          orange: 'text-orange-500',
-          blue: 'text-blue-500',
-          green: 'text-green-500',
-          slate: 'text-slate-400'
+          red: 'text-[var(--err)]',
+          purple: 'text-[var(--accent)]',
+          orange: 'text-[var(--warn)]',
+          blue: 'text-[var(--accent)]',
+          green: 'text-[var(--ok)]',
+          slate: 'text-[var(--dim)]'
         };
         return map[key] || map.slate;
     }
 
     function getTypeFilterClass(type, active) {
-        const base = 'px-3 py-1 text-xs font-bold rounded-full shadow-sm border transition-colors ';
-        const key = type === '__all__' ? 'slate' : getTypeColorKey(type);
-        const map = {
-          red: active 
-            ? 'bg-red-600 text-white border-red-600' 
-            : 'bg-white dark:bg-[#262626] text-red-700 dark:text-red-400 border-red-200 dark:border-red-950/60 hover:bg-red-50 dark:hover:bg-red-950/40',
-          purple: active 
-            ? 'bg-purple-600 text-white border-purple-600' 
-            : 'bg-white dark:bg-[#262626] text-purple-700 dark:text-purple-400 border-purple-200 dark:border-purple-950/60 hover:bg-purple-50 dark:hover:bg-purple-950/40',
-          orange: active 
-            ? 'bg-orange-500 text-white border-orange-500' 
-            : 'bg-white dark:bg-[#262626] text-orange-700 dark:text-orange-400 border-orange-200 dark:border-orange-950/60 hover:bg-orange-50 dark:hover:bg-orange-950/40',
-          blue: active 
-            ? 'bg-blue-600 text-white border-blue-600' 
-            : 'bg-white dark:bg-[#262626] text-blue-700 dark:text-sky-400 border-blue-200 dark:border-sky-950/60 hover:bg-blue-50 dark:hover:bg-sky-950/40',
-          green: active 
-            ? 'bg-green-600 text-white border-green-600' 
-            : 'bg-white dark:bg-[#262626] text-green-700 dark:text-emerald-400 border-green-200 dark:border-emerald-950/60 hover:bg-green-50 dark:hover:bg-emerald-950/40',
-          slate: active 
-            ? 'bg-slate-700 dark:bg-slate-300 text-white dark:text-slate-900 border-slate-700 dark:border-slate-300' 
-            : 'bg-white dark:bg-[#262626] text-slate-500 dark:text-slate-400 border-slate-200 dark:border-[#424242] hover:bg-slate-50 dark:hover:bg-[#333333]'
-        };
-        return base + (map[key] || map.slate);
+        return 'kic-chip hd-filter' + (active ? ' on' : '');
     }
 
     function getTypeChartColor(type) {
@@ -1544,7 +1485,8 @@
             const btn = document.createElement('button');
             btn.type = 'button';
             btn.dataset.filterType = type;
-            btn.innerHTML = `${escapeHtml(label)} <span class='opacity-70 ml-0.5'>${count}</span>`;
+            btn.innerHTML = (type === '__all__' ? '' : '<i class="kic-dot ' + getTypeDotClass(type) + '" aria-hidden="true"></i>') +
+                escapeHtml(label) + ' <span class="hd-filter-count">' + count + '</span>';
             btn.onclick = () => {
                 if (type === '__all__') {
                     selectedTypes.clear();
@@ -1568,7 +1510,7 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (!dataArray || dataArray.length === 0) {
-            container.innerHTML = `<div class='text-center py-10 text-slate-400 dark:text-slate-500'>${emptyMsg}</div>`;
+            container.innerHTML = `<div class='text-center py-10 text-[var(--dim)] '>${emptyMsg}</div>`;
             return;
         }
 
@@ -1581,7 +1523,7 @@
         const renderList = (items) => {
             listWrap.innerHTML = '';
             if (!items || items.length === 0) {
-                listWrap.innerHTML = `<div class='text-center py-10 text-slate-400 dark:text-slate-500'>선택한 유형의 이슈가 없습니다.</div>`;
+                listWrap.innerHTML = `<div class='text-center py-10 text-[var(--dim)] '>선택한 유형의 이슈가 없습니다.</div>`;
                 return;
             }
             const grid = document.createElement('div');
@@ -1598,16 +1540,16 @@
         const container = document.getElementById(containerId);
         container.innerHTML = '';
         if (!dataArray || dataArray.length === 0) {
-            container.innerHTML = `<div class='text-center py-10 text-slate-400 dark:text-slate-500'>${emptyMsg}</div>`;
+            container.innerHTML = `<div class='text-center py-10 text-[var(--dim)] '>${emptyMsg}</div>`;
             return;
         }
 
         const columns = [
-            { key: 'quarter', title: '분기', status: '접수대기', sourceType: 'quarter', icon: 'fa-calendar-check', iconClass: 'text-indigo-500 dark:text-indigo-400', headerClass: 'bg-indigo-50/70 dark:bg-[#262626] border-indigo-200 dark:border-[#383838]', match: item => item.sourceType === 'quarter' && (!item.status || item.status === '접수대기') },
-            { key: 'helpdesk', title: '헬프', status: '접수대기', sourceType: 'helpdesk', icon: 'fa-inbox', iconClass: 'text-slate-500 dark:text-slate-400', headerClass: 'bg-slate-50 dark:bg-[#262626] border-slate-200 dark:border-[#383838]', match: item => item.sourceType !== 'quarter' && (!item.status || item.status === '접수대기') },
-            { key: 'blocked', title: '불가', status: '반려', icon: 'fa-ban', iconClass: 'text-red-500 dark:text-red-400', headerClass: 'bg-red-50/70 dark:bg-[#262626] border-red-200 dark:border-[#383838]', match: item => item.status === '반려' },
-            { key: 'todo', title: '해야할 일', status: '예정', icon: 'fa-list-check', iconClass: 'text-blue-500 dark:text-sky-400', headerClass: 'bg-blue-50/70 dark:bg-[#262626] border-blue-200 dark:border-[#383838]', match: item => item.status === '예정' || item.status === '검토중' },
-            { key: 'doing', title: '진행 중', status: '처리중', icon: 'fa-spinner', iconClass: 'text-yellow-500 dark:text-amber-400', headerClass: 'bg-yellow-50/70 dark:bg-[#262626] border-yellow-200 dark:border-[#383838]', match: item => item.status === '처리중' }
+            { key: 'quarter', title: '분기', status: '접수대기', sourceType: 'quarter', icon: 'fa-calendar-check', iconClass: 'text-[var(--accent)] ', headerClass: 'bg-[var(--panel)] border-[var(--line)]', match: item => item.sourceType === 'quarter' && (!item.status || item.status === '접수대기') },
+            { key: 'helpdesk', title: '헬프', status: '접수대기', sourceType: 'helpdesk', icon: 'fa-inbox', iconClass: 'text-[var(--muted)] ', headerClass: 'bg-[var(--panel)] border-[var(--line)]', match: item => item.sourceType !== 'quarter' && (!item.status || item.status === '접수대기') },
+            { key: 'blocked', title: '불가', status: '반려', icon: 'fa-ban', iconClass: 'text-[var(--err)] ', headerClass: 'bg-[var(--panel)] border-[var(--line)]', match: item => item.status === '반려' },
+            { key: 'todo', title: '해야할 일', status: '예정', icon: 'fa-list-check', iconClass: 'text-[var(--accent)] ', headerClass: 'bg-[var(--panel)] border-[var(--line)]', match: item => item.status === '예정' || item.status === '검토중' },
+            { key: 'doing', title: '진행 중', status: '처리중', icon: 'fa-spinner', iconClass: 'text-[var(--warn)] ', headerClass: 'bg-[var(--panel)] border-[var(--line)]', match: item => item.status === '처리중' }
         ];
 
         // 칸반 유형 필터는 상태 변경 후에도 유지합니다.
@@ -1629,14 +1571,14 @@
             const hiddenCount = (dataArray || []).filter(isHiddenRejected).length;
             hiddenToggleWrap.className = 'flex justify-end -mt-2 mb-4';
             hiddenToggleWrap.innerHTML = `
-              <button type="button" id="btn-toggle-hidden-rejected" class="text-xs font-bold rounded-full border px-3 py-1 transition-colors ${showHiddenRejected ? 'bg-red-50 dark:bg-red-950/40 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800' : 'bg-white dark:bg-[#262626] text-slate-500 dark:text-[#B4B4B4] border-slate-200 dark:border-[#424242] hover:bg-slate-50 dark:hover:bg-[#333333]'}">
+              <button type="button" id="btn-toggle-hidden-rejected" class="text-xs font-bold rounded-full border px-3 py-1 transition-colors ${showHiddenRejected ? 'bg-[var(--err-soft)] text-[var(--err)] border-[var(--err)] ' : 'bg-[var(--card)] text-[var(--muted)] border-[var(--line)] hover:bg-[var(--raise)] '}">
                 <i class="fas ${showHiddenRejected ? 'fa-eye-slash' : 'fa-eye'} mr-1"></i>${showHiddenRejected ? '숨긴 불가 숨기기' : '숨긴 불가 보기'} <span class="opacity-70 ml-0.5">${hiddenCount}</span>
               </button>
             `;
             const btn = hiddenToggleWrap.querySelector('#btn-toggle-hidden-rejected');
             if (hiddenCount === 0) {
               btn.disabled = true;
-              btn.className = 'text-xs font-bold rounded-full border px-3 py-1 bg-white dark:bg-[#262626] text-slate-300 dark:text-slate-600 border-slate-100 dark:border-[#333333] cursor-not-allowed';
+              btn.className = 'text-xs font-bold rounded-full border px-3 py-1 bg-[var(--card)] text-[var(--dim)] border-[var(--line)] cursor-not-allowed';
             }
             btn.onclick = () => {
               showHiddenRejected = !showHiddenRejected;
@@ -1651,12 +1593,12 @@
             const guideWrap = document.createElement('div');
             guideWrap.className = 'mb-4 flex flex-col lg:flex-row gap-3 items-stretch';
             guideWrap.innerHTML = `
-              <div class="flex-1 text-xs text-slate-600 dark:text-[#B4B4B4] bg-red-50/70 dark:bg-[#2A2323] border border-red-100 dark:border-[#4A2828] rounded-xl px-4 py-3 leading-relaxed">
-                <i class="fas fa-info-circle text-red-400 mr-1"></i> 이월된 미처리 건은 칸반 보드에서 카드 드래그로 상태를 변경할 수 있습니다. 불가 카드의 <b>숨김</b> 버튼으로 정리 완료된 불가건만 숨길 수 있습니다.
+              <div class="flex-1 text-xs text-[var(--muted)] bg-[var(--raise)] border border-[var(--line)] rounded-xl px-4 py-3 leading-relaxed">
+                <i class="fas fa-info-circle text-[var(--dim)] mr-1"></i> 이월된 미처리 건은 칸반 보드에서 카드 드래그로 상태를 변경할 수 있습니다. 불가 카드의 <b>숨김</b> 버튼으로 정리 완료된 불가건만 숨길 수 있습니다.
               </div>
-              <div id="kanban-done-dropzone" class="kanban-done-dropzone w-full lg:w-72 shrink-0 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-green-300 dark:border-emerald-700 bg-green-50/80 dark:bg-[#1E2922] text-green-700 dark:text-emerald-400 text-xs font-bold transition-colors px-4 py-3">
+              <div id="kanban-done-dropzone" class="kanban-done-dropzone w-full lg:w-72 shrink-0 flex flex-col items-center justify-center rounded-xl border-2 border-dashed border-[var(--ok)] bg-[var(--ok-soft)] text-[var(--ok)] text-xs font-bold transition-colors px-4 py-3">
                 <div><i class="fas fa-check-circle mr-1"></i> 완료 처리</div>
-                <div class="text-[10px] font-medium text-green-600 dark:text-emerald-500 mt-1">카드를 이곳으로 드래그</div>
+                <div class="text-[10px] font-medium text-[var(--ok)] mt-1">카드를 이곳으로 드래그</div>
               </div>
             `;
             const doneDropzone = guideWrap.querySelector('#kanban-done-dropzone');
@@ -1681,16 +1623,16 @@
                 column.ondrop = (event) => handleKanbanDrop(event, col.status);
                 column.innerHTML = `
                   <div class="flex items-center justify-between mb-3 px-1">
-                    <h4 class="text-sm font-extrabold text-slate-800 dark:text-[#ECECEC] flex items-center gap-2">
+                    <h4 class="text-sm font-extrabold text-[var(--ink)] flex items-center gap-2">
                       <i class="fas ${col.icon} ${col.iconClass}"></i>${col.title}
                     </h4>
-                    <span class="text-xs font-bold bg-white dark:bg-[#383838] border border-slate-200 dark:border-[#424242] text-slate-600 dark:text-[#B4B4B4] px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
+                    <span class="text-xs font-bold bg-[var(--card)] border border-[var(--line)] text-[var(--muted)] px-2.5 py-0.5 rounded-full font-mono">${items.length}</span>
                   </div>
                   <div class="kanban-card-list space-y-3" data-status="${col.status}"></div>
                 `;
                 const list = column.querySelector('.kanban-card-list');
                 if (items.length === 0) {
-                  list.innerHTML = `<div class="text-center text-xs text-slate-400 dark:text-slate-600 py-8 border border-dashed border-slate-200 dark:border-[#383838] rounded-xl bg-white/40 dark:bg-[#212121]/40">카드를 이곳으로 이동</div>`;
+                  list.innerHTML = `<div class="text-center text-xs text-[var(--dim)] py-8 border border-dashed border-[var(--line)] rounded-xl bg-[var(--card)] ">카드를 이곳으로 이동</div>`;
                 } else {
                   items.slice().sort(latestFirst).forEach(item => list.appendChild(createKanbanCardElement(item)));
                 }
@@ -1725,38 +1667,38 @@
         const safeSourceLink = getSafeLink(item.sourceLink);
         const safeJiraLink = getSafeLink(item.jiraLink);
         const sourceLinkHtml = safeSourceLink
-          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="text-[10px] text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-sky-950/60 border border-blue-200/60 dark:border-sky-800/60 px-2 py-0.5 rounded-md font-bold hover:bg-blue-100 dark:hover:bg-sky-900/60" title="원문/첨부 링크 열기"><i class="fas fa-link mr-1"></i>원문</a>`
+          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="kic-chip hd-link" title="원문/첨부 링크 열기"><i class="fas fa-link" aria-hidden="true"></i>원문</a>`
           : '';
         const jiraLinkHtml = getJiraBadgeHtml(item, safeJiraLink);
         const sourceBadgeHtml = item.sourceType === 'quarter'
-          ? `<span class="ml-1 text-[10px] text-indigo-700 dark:text-indigo-300 bg-indigo-50 dark:bg-indigo-950/60 border border-indigo-200 dark:border-indigo-800 px-1.5 py-0.5 rounded-md font-bold whitespace-nowrap" title="분기요청 시트 항목"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
+          ? `<span class="kic-chip accent" title="분기요청 시트 항목">분기</span>`
           : '';
         const typeLabel = item.type || '기타';
         const typeBadgeClass = getTypeBadgeClass(typeLabel);
         const typeIconClass = getTypeIconClass(typeLabel);
-        const editButtonHtml = `<button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="w-7 h-7 flex items-center justify-center bg-slate-50 dark:bg-[#1A2234] hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-sky-400 rounded-lg transition-all shrink-0 shadow-sm" title="수정하기"><i class="fas fa-pen text-[9px]"></i></button>`;
+        const editButtonHtml = `<button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="kic-ibtn hd-card-edit-sm" title="수정하기" aria-label="수정하기"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
         const isHiddenRejected = item.status === '반려' && (item.isHidden === true || item.hiddenFlag === 'Y');
         const hiddenToggleHtml = item.status === '반려'
-          ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="text-[10px] ${isHiddenRejected ? 'text-slate-600 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200' : 'text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-950/50 hover:bg-red-100'} px-2 py-0.5 rounded-md font-bold" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>${isHiddenRejected ? '숨김 해제' : '숨김'}</button>`
+          ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="kic-chip hd-chip-btn${isHiddenRejected ? '' : ' err'}" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>${isHiddenRejected ? '숨김 해제' : '숨김'}</button>`
           : '';
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2 mb-2">
             <div class="min-w-0">
               <div class="text-[10px] font-bold mb-1 flex items-center gap-1">
-                <span class="kic-mono-badge text-blue-600 dark:text-sky-400 bg-blue-50/80 dark:bg-sky-950/60 border border-blue-100 dark:border-sky-800/60 px-1.5 py-0.5 rounded-md">#${escapeHtml(item.id)}</span>${sourceBadgeHtml}
+                <span class="kic-mono-badge hd-card-id">${escapeHtml(item.id)}</span>${sourceBadgeHtml}
               </div>
-              <div class="text-[10px] font-medium text-slate-400 dark:text-slate-500 truncate" title="${escapeHtml(metaText)}">${escapeHtml(metaText)}</div>
+              <div class="text-[10px] font-medium text-[var(--dim)] truncate" title="${escapeHtml(metaText)}">${escapeHtml(metaText)}</div>
             </div>
             ${editButtonHtml}
           </div>
-          <div class="font-bold text-sm text-slate-800 dark:text-slate-100 leading-snug mb-3 group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors">${escapeHtml(item.title)}</div>
+          <div class="font-bold text-sm text-[var(--ink)] leading-snug mb-3 group-hover:text-[var(--accent)] transition-colors">${escapeHtml(item.title)}</div>
           <div class="flex flex-wrap items-center gap-1.5 mb-3">
-            <span class="text-[10px] ${typeBadgeClass} px-2 py-0.5 rounded-md font-bold"><i class="fas fa-tag mr-1 ${typeIconClass}"></i>${escapeHtml(typeLabel)}</span>
+            ${chipHtml(typeLabel, getTypeDotClass(typeLabel))}
             ${sourceLinkHtml}${jiraLinkHtml}
           </div>
-          <div class="flex justify-between items-center pt-2.5 border-t border-slate-100 dark:border-slate-800/80 text-xs">
-            <span class="font-bold text-slate-700 dark:text-slate-300 text-xs">${escapeHtml(item.dev || '미배정')}</span>
-            <div class="flex items-center gap-1">${hiddenToggleHtml}<span class="text-slate-600 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-md text-[10px] font-bold">${escapeHtml(item.status || '접수대기')}</span></div>
+          <div class="flex justify-between items-center pt-2.5 border-t border-[var(--line)] text-xs">
+            <span class="font-bold text-[var(--ink)] text-xs">${escapeHtml(item.dev || '미배정')}</span>
+            <div class="flex items-center gap-1">${hiddenToggleHtml}${chipHtml(item.status || '접수대기', getStatusDotClass(item.status))}</div>
           </div>
         `;
         return card;
@@ -1944,42 +1886,33 @@
           openEditById(item.id);
         };
         
-        const getStatusStyles = (s) => {
-          if (s === '접수대기') return 'bg-slate-100 dark:bg-slate-800 text-slate-500 dark:text-slate-400';
-          if (s === '검토중') return 'bg-purple-50 dark:bg-purple-950/60 text-purple-700 dark:text-purple-300 border border-purple-200 dark:border-purple-800/60';
-          if (s === '예정') return 'bg-blue-50 dark:bg-blue-950/60 text-blue-700 dark:text-sky-300 border border-blue-200 dark:border-sky-800/60';
-          if (s === '완료') return 'bg-emerald-50 dark:bg-emerald-950/60 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800/60';
-          if (s === '반려') return 'bg-rose-50 dark:bg-rose-950/60 text-rose-700 dark:text-rose-300 border border-rose-200 dark:border-rose-800/60';
-          return 'bg-amber-50 dark:bg-amber-950/60 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800/60';
-        };
-
         const metaText = `${item.branch || '-'} · ${item.requester || '요청자 미상'}`;
         const safeSourceLink = getSafeLink(item.sourceLink);
         const safeJiraLink = getSafeLink(item.jiraLink);
         const typeLabel = item.type || '기타';
         const typeBadgeClass = getTypeBadgeClass(typeLabel);
         const typeIconClass = getTypeIconClass(typeLabel);
-        const typeBadgeHtml = `<span class="text-[10px] ${typeBadgeClass} px-2.5 py-0.5 rounded-md font-bold" title="접수 유형"><i class="fas fa-tag mr-1 ${typeIconClass}"></i>${escapeHtml(typeLabel)}</span>`;
+        const typeBadgeHtml = chipHtml(typeLabel, getTypeDotClass(typeLabel), ' title="접수 유형"');
         const sourceLinkHtml = safeSourceLink
-          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="text-[10px] text-blue-600 dark:text-sky-400 bg-blue-50 dark:bg-sky-950/60 border border-blue-200/60 dark:border-sky-800/60 px-2 py-0.5 rounded-md font-bold hover:bg-blue-100 dark:hover:bg-sky-900/60" title="원문/첨부 링크 열기"><i class="fas fa-link mr-1"></i>원문</a>`
+          ? `<a href="${escapeHtml(safeSourceLink)}" target="_blank" onclick="event.stopPropagation()" class="kic-chip hd-link" title="원문/첨부 링크 열기"><i class="fas fa-link" aria-hidden="true"></i>원문</a>`
           : '';
         const jiraLinkHtml = getJiraBadgeHtml(item, safeJiraLink);
         const linkHtml = [typeBadgeHtml, sourceLinkHtml, jiraLinkHtml].filter(Boolean).join('');
         div.innerHTML = `
-            <button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="absolute top-4 right-4 w-8 h-8 flex items-center justify-center bg-slate-50 dark:bg-[#1A2234] hover:bg-blue-50 dark:hover:bg-blue-950 text-slate-400 dark:text-slate-500 hover:text-blue-600 dark:hover:text-sky-400 rounded-xl transition-all z-10 shadow-sm" title="상태 수정">
-                <i class="fas fa-pen text-[10px]"></i>
+            <button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="kic-ibtn hd-card-edit" title="상태 수정" aria-label="상태 수정">
+                <i class="fas fa-pen" aria-hidden="true"></i>
             </button>
             <div class='mb-3 pr-10'>
                 <div class='flex items-center justify-between text-[11px] font-bold mb-2 gap-2'>
-                    <span class="kic-mono-badge text-blue-600 dark:text-sky-400 bg-blue-50/80 dark:bg-sky-950/60 border border-blue-100 dark:border-sky-800/60 px-2 py-0.5 rounded-md">#${escapeHtml(item.id)}</span>
-                    <span class='truncate text-slate-400 dark:text-slate-500 text-[11px] font-medium' title='${escapeHtml(metaText)}'>${escapeHtml(metaText)}</span>
+                    <span class="kic-mono-badge hd-card-id">${escapeHtml(item.id)}</span>
+                    <span class='truncate text-[var(--dim)] text-[11px] font-medium' title='${escapeHtml(metaText)}'>${escapeHtml(metaText)}</span>
                 </div>
-                <h4 class='font-bold text-sm text-slate-900 dark:text-slate-100 line-clamp-2 leading-snug group-hover:text-blue-600 dark:group-hover:text-sky-400 transition-colors'>${escapeHtml(item.title)}</h4>
+                <h4 class='font-bold text-sm text-[var(--ink)] line-clamp-2 leading-snug group-hover:text-[var(--accent)] transition-colors'>${escapeHtml(item.title)}</h4>
                 <div class="mt-2.5 flex flex-wrap items-center gap-1.5 min-h-[18px]">${linkHtml}</div>
             </div>
-            <div class='flex justify-between items-center pt-3 border-t border-slate-100 dark:border-slate-800/80 text-xs'>
-                <span class='font-bold text-slate-700 dark:text-slate-300 text-xs'>${escapeHtml(item.dev || '미배정')}</span>
-                <span class='px-2.5 py-0.5 rounded-md text-[11px] font-bold ${getStatusStyles(item.status)}'>${escapeHtml(item.status)}</span>
+            <div class='flex justify-between items-center pt-3 border-t border-[var(--line)] text-xs'>
+                <span class='font-bold text-[var(--ink)] text-xs'>${escapeHtml(item.dev || '미배정')}</span>
+                ${chipHtml(item.status, getStatusDotClass(item.status))}
             </div>
         `;
         return div;
@@ -2276,16 +2209,16 @@
 
     function buildAIReportMetricCards(stats, completedCount, waitingProgressCount, rejectedCount, completionRate) {
         const metrics = [
-            { label: '접수', value: Number(stats.total || 0), unit: '건', tone: 'text-slate-800' },
-            { label: '완료', value: completedCount, unit: '건', tone: 'text-emerald-600' },
-            { label: '대기/진행', value: waitingProgressCount, unit: '건', tone: 'text-amber-600' },
-            { label: '반려', value: rejectedCount, unit: '건', tone: 'text-red-500' },
-            { label: '완료율', value: completionRate, unit: '%', tone: 'text-purple-700' }
+            { label: '접수', value: Number(stats.total || 0), unit: '건', tone: 'text-[var(--ink)]' },
+            { label: '완료', value: completedCount, unit: '건', tone: 'text-[var(--ok)]' },
+            { label: '대기/진행', value: waitingProgressCount, unit: '건', tone: 'text-[var(--warn)]' },
+            { label: '반려', value: rejectedCount, unit: '건', tone: 'text-[var(--err)]' },
+            { label: '완료율', value: completionRate, unit: '%', tone: 'text-[var(--accent)]' }
         ];
         const cards = metrics.map(m => `
-            <div class="bg-white border border-slate-200 rounded-xl px-4 py-3">
-              <div class="text-[11px] font-bold text-slate-400 mb-1">${m.label}</div>
-              <div class="text-2xl font-bold ${m.tone}">${m.value}<span class="text-xs ml-0.5 font-bold text-slate-400">${m.unit}</span></div>
+            <div class="bg-[var(--card)] border border-[var(--line)] rounded-xl px-4 py-3">
+              <div class="text-[11px] font-bold text-[var(--dim)] mb-1">${m.label}</div>
+              <div class="text-2xl font-bold ${m.tone}">${m.value}<span class="text-xs ml-0.5 font-bold text-[var(--dim)]">${m.unit}</span></div>
             </div>`).join('');
 
         const prev = stats.previousWeek || {};
@@ -2294,11 +2227,11 @@
             const totalDelta = Number(stats.total || 0) - Number(prev.total || 0);
             const rateDelta = completionRate - Number(prev.completionRate || 0);
             compareHtml = `
-              <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs bg-purple-50 border border-purple-100 text-purple-800 rounded-lg px-3 py-2">
+              <div class="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs bg-[var(--accent-soft)] border border-[var(--line2)] text-[var(--accent)] rounded-lg px-3 py-2">
                 <span class="font-bold"><i class="fas fa-chart-line mr-1"></i>전주 동일 기간 대비</span>
                 <span>접수 <b>${signedNumber(totalDelta, '건')}</b></span>
                 <span>완료율 <b>${signedNumber(rateDelta, '%p')}</b></span>
-                <span class="text-purple-500">(${prev.startDate || '-'} ~ ${prev.endDate || '-'})</span>
+                <span class="text-[var(--accent)]">(${prev.startDate || '-'} ~ ${prev.endDate || '-'})</span>
               </div>`;
         }
         return `<div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-1">${cards}</div>${compareHtml}`;
@@ -2459,7 +2392,7 @@
             chatSection.classList.remove('hidden');
             chatSection.classList.add('flex');
         } catch (error) {
-            aiResultContainer.innerHTML = `<div class='text-red-500 font-bold'>⚠️ 실패: ${error.message}</div>`;
+            aiResultContainer.innerHTML = `<div class='text-[var(--err)] font-bold'>⚠️ 실패: ${error.message}</div>`;
         } finally {
             aiLoading.classList.add('hidden');
             btn.disabled = false;
@@ -2491,15 +2424,15 @@
         const msg = input.value.trim();
         if (!msg) return;
         const hist = document.getElementById('ai-chat-history');
-        hist.innerHTML += `<div class='flex justify-end'><div class='bg-purple-600 text-white px-4 py-2 rounded-lg text-sm'>${msg}</div></div>`;
+        hist.innerHTML += `<div class='flex justify-end'><div class='bg-[var(--accent)] text-[var(--accent-ink)] px-4 py-2 rounded-full text-sm'>${msg}</div></div>`;
         input.value = '';
         window.aiChatHistory.push({ role: "user", parts: [{ text: msg }] });
         try {
             const reply = await runServerFunction('chatWithGemini', window.aiChatHistory);
             window.aiChatHistory.push({ role: "model", parts: [{ text: reply }] });
-            hist.innerHTML += `<div class='flex justify-start'><div class='bg-white border p-3 rounded-lg text-sm ai-chat-content'>${marked.parse(reply)}</div></div>`;
+            hist.innerHTML += `<div class='flex justify-start'><div class='bg-[var(--card)] border p-3 rounded-lg text-sm ai-chat-content'>${marked.parse(reply)}</div></div>`;
         } catch (e) {
-            hist.innerHTML += `<div class='text-red-500 text-xs'>오류: ${e.message}</div>`;
+            hist.innerHTML += `<div class='text-[var(--err)] text-xs'>오류: ${e.message}</div>`;
         }
         hist.scrollTop = hist.scrollHeight;
     }
@@ -2531,9 +2464,9 @@
     function createDevRowHTML(name, email) {
         return `
         <div class="flex gap-2 dev-row items-center animate-in fade-in slide-in-from-top-2 duration-200">
-            <input type="text" class="dev-name bg-white dark:bg-[#212121] border border-slate-200 dark:border-[#424242] text-slate-800 dark:text-[#ECECEC] rounded-xl px-3.5 py-2 w-1/3 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500" value="${escapeHtml(name)}" placeholder="이름 (예: 홍길동)">
-            <input type="text" class="dev-email bg-white dark:bg-[#212121] border border-slate-200 dark:border-[#424242] text-slate-800 dark:text-[#ECECEC] rounded-xl px-3.5 py-2 flex-1 text-sm outline-none focus:ring-2 focus:ring-emerald-500 transition-colors placeholder:text-slate-400 dark:placeholder:text-slate-500" value="${escapeHtml(email)}" placeholder="이메일 (예: hong@kic21.co.kr)">
-            <button onclick="this.closest('.dev-row').remove()" class="w-9 h-9 bg-red-50 dark:bg-red-950/40 text-red-500 dark:text-red-400 border border-red-100 dark:border-red-900/60 rounded-xl flex items-center justify-center hover:bg-red-500 hover:text-white dark:hover:bg-red-600 transition-all shrink-0" title="삭제"><i class="fas fa-trash-alt text-xs"></i></button>
+            <input type="text" class="dev-name bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3.5 py-2 w-1/3 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-colors placeholder:text-[var(--dim)] " value="${escapeHtml(name)}" placeholder="이름 (예: 홍길동)">
+            <input type="text" class="dev-email bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3.5 py-2 flex-1 text-sm outline-none focus:ring-2 focus:ring-[var(--accent-soft)] transition-colors placeholder:text-[var(--dim)] " value="${escapeHtml(email)}" placeholder="이메일 (예: hong@kic21.co.kr)">
+            <button onclick="this.closest('.dev-row').remove()" class="w-9 h-9 bg-[var(--err-soft)] text-[var(--err)] border border-[var(--line2)] rounded-xl flex items-center justify-center hover:bg-[var(--err)] hover:text-[var(--bg)] transition-all shrink-0" title="삭제"><i class="fas fa-trash-alt text-xs"></i></button>
         </div>`;
     }
 
@@ -2585,7 +2518,7 @@
         document.getElementById('edit-id').dataset.identityRevision = String(item.identityRevision || 0);
         document.getElementById('edit-source-type').value = item.sourceType || 'helpdesk';
         document.getElementById('edit-id-display').innerHTML = item.sourceType === 'quarter'
-          ? `${escapeHtml(item.id)} <span class="ml-1 text-[10px] text-indigo-700 bg-indigo-100 border border-indigo-200 px-1.5 py-0.5 rounded-full font-bold"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
+          ? `${escapeHtml(item.id)} <span class="ml-1 text-[10px] text-[var(--accent)] bg-[var(--accent-soft)] border border-[var(--accent)] px-1.5 py-0.5 rounded-full font-bold"><i class="fas fa-calendar-check mr-1"></i>분기</span>`
           : escapeHtml(item.id);
         document.getElementById('edit-meta-display').innerText = `${item.branch} / ${item.requester || '요청자 미상'}`;
         document.getElementById('edit-menu-display').innerText = item.menu || '메뉴 정보 없음';
@@ -2633,7 +2566,7 @@
         if (result) result.value = '';
         if (status) {
             status.textContent = '생성된 답변은 내부 처리 내용에 저장되지 않으며 복사용으로만 사용됩니다.';
-            status.className = 'text-[11px] text-slate-500 mt-0.5';
+            status.className = 'text-[11px] text-[var(--muted)] mt-0.5';
         }
         [btn, regen].forEach(el => {
             if (!el) return;
@@ -2697,7 +2630,7 @@
         panel.classList.remove('hidden');
         result.value = '';
         status.textContent = replyMode === 'precise' ? '답변을 더 정교하게 다시 생성하고 있습니다...' : '답변을 빠르게 생성하고 있습니다...';
-        status.className = 'text-[11px] text-violet-600 mt-0.5 font-bold';
+        status.className = 'text-[11px] text-[var(--accent)] mt-0.5 font-bold';
         setEditAiReplyLoading(true);
 
         runServerFunction('generateHelpdeskReply', { requestText, draftAnswer, images: [], mode: replyMode })
@@ -2706,12 +2639,12 @@
               const text = String((res && res.text) || res || '').replace(/\*\*/g, '').trim();
               result.value = text;
               status.textContent = text ? `답변이 생성되었습니다. (${formatAiElapsed(startedAt)}) 필요하면 직접 수정한 뒤 복사하세요.` : `생성된 답변이 비어 있습니다. (${formatAiElapsed(startedAt)})`;
-              status.className = text ? 'text-[11px] text-emerald-600 mt-0.5 font-bold' : 'text-[11px] text-red-600 mt-0.5 font-bold';
+              status.className = text ? 'text-[11px] text-[var(--ok)] mt-0.5 font-bold' : 'text-[11px] text-[var(--err)] mt-0.5 font-bold';
           })
           .catch(err => {
               setEditAiReplyLoading(false);
               status.textContent = '답변 생성 실패: ' + ((err && err.message) || String(err));
-              status.className = 'text-xs text-red-600 mt-1 font-bold whitespace-pre-line break-words';
+              status.className = 'text-xs text-[var(--err)] mt-1 font-bold whitespace-pre-line break-words';
           });
     }
 
@@ -2721,7 +2654,7 @@
         const text = String(result.value || '').replace(/\*\*/g, '').trim();
         if (!text) {
             status.textContent = '복사할 AI 답변이 없습니다.';
-            status.className = 'text-[11px] text-red-600 mt-0.5 font-bold';
+            status.className = 'text-[11px] text-[var(--err)] mt-0.5 font-bold';
             showToast('복사할 AI 답변이 없습니다.', 'error');
             return;
         }
@@ -2757,7 +2690,7 @@
         }
         result.value = text;
         status.textContent = '답변이 서식(sans-serif, 13px, 줄간격 1.4)과 함께 복사되었습니다.';
-        status.className = 'text-[11px] text-emerald-600 mt-0.5 font-bold';
+        status.className = 'text-[11px] text-[var(--ok)] mt-0.5 font-bold';
         showToast('하이웍스 맞춤 서식(sans-serif, 13px, 줄간격 1.4)으로 복사되었습니다!', 'success');
     }
 
@@ -2862,7 +2795,7 @@
         const el = document.getElementById('add-capture-status');
         if (!el) return;
         el.textContent = message || '';
-        el.className = 'text-xs font-bold ml-1 whitespace-pre-line break-words ' + (type === 'ok' ? 'text-emerald-600' : type === 'err' ? 'text-red-600' : type === 'work' ? 'text-blue-600' : 'text-slate-500');
+        el.className = 'text-xs font-bold ml-1 whitespace-pre-line break-words ' + (type === 'ok' ? 'text-[var(--ok)]' : type === 'err' ? 'text-[var(--err)]' : type === 'work' ? 'text-[var(--accent)]' : 'text-[var(--muted)]');
     }
 
     function setAddCaptureWarnings(warnings) {
@@ -2923,8 +2856,8 @@
         thumbs.classList.remove('hidden');
         addCaptureImages.forEach((img, index) => {
             const item = document.createElement('div');
-            item.className = 'relative w-24 h-24 rounded-xl overflow-hidden border border-slate-200 bg-slate-50 shadow-sm';
-            item.innerHTML = `<img src="${img.data}" class="w-full h-full object-cover" alt="게시판 캡처 ${index + 1}"><button type="button" class="absolute right-1 top-1 w-6 h-6 rounded-full bg-slate-900/75 text-white text-xs flex items-center justify-center" title="삭제">×</button><span class="absolute left-1 bottom-1 bg-slate-900/70 text-white rounded px-1.5 py-0.5 text-[10px] font-bold">${index + 1}</span>`;
+            item.className = 'relative w-24 h-24 rounded-xl overflow-hidden border border-[var(--line)] bg-[var(--raise)] ';
+            item.innerHTML = `<img src="${img.data}" class="w-full h-full object-cover" alt="게시판 캡처 ${index + 1}"><button type="button" class="absolute right-1 top-1 w-6 h-6 rounded-full bg-[var(--ink)] text-[var(--bg)] text-xs flex items-center justify-center" title="삭제">×</button><span class="absolute left-1 bottom-1 bg-[var(--ink)] text-[var(--bg)] rounded px-1.5 py-0.5 text-[10px] font-bold">${index + 1}</span>`;
             item.querySelector('button').onclick = (e) => {
                 e.stopPropagation();
                 addCaptureImages.splice(index, 1);
@@ -2989,8 +2922,8 @@
     function flashImportedField(id) {
         const el = document.getElementById(id);
         if (!el) return;
-        el.classList.add('ring-2', 'ring-emerald-300', 'bg-emerald-50');
-        setTimeout(() => el.classList.remove('ring-2', 'ring-emerald-300', 'bg-emerald-50'), 1700);
+        el.classList.add('ring-2', 'ring-[var(--accent-soft)]', 'bg-[var(--ok-soft)]');
+        setTimeout(() => el.classList.remove('ring-2', 'ring-[var(--accent-soft)]', 'bg-[var(--ok-soft)]'), 1700);
     }
 
     function applyAddCaptureAnalysis(data, startedAt) {
@@ -3100,11 +3033,11 @@
         if (zone && !zone.dataset.captureBound) {
             zone.dataset.captureBound = 'Y';
             zone.addEventListener('click', () => zone.focus());
-            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-blue-500', 'bg-blue-50'); });
-            zone.addEventListener('dragleave', () => zone.classList.remove('border-blue-500', 'bg-blue-50'));
+            zone.addEventListener('dragover', e => { e.preventDefault(); zone.classList.add('border-[var(--accent)]', 'bg-[var(--accent-soft)]'); });
+            zone.addEventListener('dragleave', () => zone.classList.remove('border-[var(--accent)]', 'bg-[var(--accent-soft)]'));
             zone.addEventListener('drop', async e => {
                 e.preventDefault();
-                zone.classList.remove('border-blue-500', 'bg-blue-50');
+                zone.classList.remove('border-[var(--accent)]', 'bg-[var(--accent-soft)]');
                 await addCaptureFiles(e.dataTransfer && e.dataTransfer.files, true);
             });
         }
