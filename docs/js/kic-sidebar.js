@@ -8,7 +8,7 @@
 (function initKicSidebarModule() {
   'use strict';
 
-  const APP_VERSION = 'v3.0.0';
+  const APP_VERSION = 'v3.0.1';
   const SETTINGS_URL = 'https://script.google.com/u/0/home/projects/1jErMgSPLT27-zC16HWZpaxDa2CIfd69qEOkjujlvVylKa4TusD8sOu8O/edit';
   const MENU_ITEMS = [
     { id: 'helpdesk', title: 'IT 헬프데스크', short: '헬프데스크', icon: 'fa-headset', href: 'index.html', tab: true },
@@ -58,7 +58,7 @@
     top.innerHTML = `
       <button class="kic-burger" type="button" onclick="KicLnb.toggle()" title="메뉴 접기/펼치기" aria-label="메뉴 접기/펼치기"><i aria-hidden="true"></i></button>
       <a class="kic-brand" href="${resolveHref(basePath, home.href)}" title="${escapeAttr(home.title)}">
-        <span class="kic-brand-mark" aria-hidden="true">▣</span>
+        <img class="kic-brand-mark" src="${resolveHref(basePath, 'favicon.svg')}?v=${APP_VERSION.slice(1)}" alt="" width="26" height="26">
         <span class="kic-brand-name">KIC 업무 도구</span>
         <span class="kic-ver">${APP_VERSION}</span>
       </a>

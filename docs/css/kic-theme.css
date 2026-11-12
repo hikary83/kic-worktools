@@ -329,17 +329,7 @@ html textarea::placeholder {
   color: var(--ink);
   text-decoration: none;
 }
-.kic-brand-mark {
-  width: 26px;
-  height: 26px;
-  border-radius: 7px;
-  display: grid;
-  place-items: center;
-  background: var(--accent);
-  color: var(--accent-ink);
-  font-size: 13px;
-  font-weight: 900;
-}
+.kic-brand-mark { width: 26px; height: 26px; flex: none; display: block; }
 .kic-brand-name { font-size: 16px; font-weight: 800; letter-spacing: -0.4px; white-space: nowrap; }
 .kic-ver { font-size: 11px; color: var(--dim); white-space: nowrap; }
 

@@ -1,5 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-label="KIC 업무 도구">
-  <rect x="24" y="24" width="464" height="464" rx="132" fill="#2563EB"/>
-  <rect x="153" y="153" width="206" height="206" rx="18" fill="none" stroke="#FFFFFF" stroke-width="32"/>
-  <rect x="218" y="220" width="76" height="72" rx="8" fill="#FFFFFF"/>
+  <rect width="512" height="512" rx="120" fill="#065FD4"/>
+  <path d="M126 375 A150 150 0 1 1 386 375" fill="none" stroke="#FFFFFF" stroke-width="44" stroke-linecap="round"/>
+  <path d="M256 300 L330 212" stroke="#FFFFFF" stroke-width="40" stroke-linecap="round"/>
+  <circle cx="256" cy="300" r="34" fill="#FFFFFF"/>
 </svg>
