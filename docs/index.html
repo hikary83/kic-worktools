@@ -30,15 +30,15 @@
     }
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="css/kic-theme.css?v=3.0.1" rel="stylesheet">
-  <link href="css/helpdesk-sections.css?v=3.0.1" rel="stylesheet">
-  <link href="css/helpdesk-missing.css?v=3.0.1" rel="stylesheet">
+  <link href="css/kic-theme.css?v=3.0.2" rel="stylesheet">
+  <link href="css/helpdesk-sections.css?v=3.0.2" rel="stylesheet">
+  <link href="css/helpdesk-missing.css?v=3.0.2" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=3.0.1"></script>
-  <script src="js/kic-sidebar.js?v=3.0.1"></script>
-  <script src="js/kic-common.js?v=3.0.1"></script>
-  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.1">
+  <script src="js/config.js?v=3.0.2"></script>
+  <script src="js/kic-sidebar.js?v=3.0.2"></script>
+  <script src="js/kic-common.js?v=3.0.2"></script>
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.2">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
   <script src="js/helpdesk-missing.js?v=2.10.7" defer></script>
 </head>
@@ -1680,7 +1680,7 @@
         const editButtonHtml = `<button onclick="event.stopPropagation(); openEditById('${escapeHtml(item.id)}')" class="kic-ibtn hd-card-edit-sm" title="수정하기" aria-label="수정하기"><i class="fas fa-pen" aria-hidden="true"></i></button>`;
         const isHiddenRejected = item.status === '반려' && (item.isHidden === true || item.hiddenFlag === 'Y');
         const hiddenToggleHtml = item.status === '반려'
-          ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="kic-chip hd-chip-btn${isHiddenRejected ? '' : ' err'}" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'} mr-1"></i>${isHiddenRejected ? '숨김 해제' : '숨김'}</button>`
+          ? `<button type="button" onclick="event.stopPropagation(); handleIssueHiddenToggle(event, '${escapeHtml(item.id)}', '${escapeHtml(item.sourceType || 'helpdesk')}', ${isHiddenRejected ? 'false' : 'true'})" class="kic-chip hd-chip-btn${isHiddenRejected ? '' : ' err'}" title="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}" aria-label="${isHiddenRejected ? '숨김 해제' : '불가 목록에서 숨김'}"><i class="fas ${isHiddenRejected ? 'fa-eye' : 'fa-eye-slash'}" aria-hidden="true"></i></button>`
           : '';
         card.innerHTML = `
           <div class="flex items-start justify-between gap-2 mb-2">
