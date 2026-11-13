@@ -2,7 +2,7 @@
  * 스크립트 속성 (값은 사람만 넣고 봅니다. 원문 비밀번호·토큰·키는 어디에도 저장하지 않습니다):
  *   AUTH_USERS      계정 { 아이디: { name, role: admin|user, salt, rounds, hash, mustChange, createdAt } }
  *   AUTH_SESSIONS   세션 { sha256(토큰): { id, at, used, keep } }
- *   AUTH_TOOL_KEYS  도구 키 { 이름: sha256(키) } — CS팀·블로그팀 같은 Claude 세션의 서버 호출용
+ *   AUTH_TOOL_KEYS  도구 키 { 이름: sha256(키) } — CS팀·블로그팀·개발팀 Claude 세션의 서버 호출용
  *   AUTH_REQUIRED   'Y' 이면 잠금. 없으면 「확인 보류」: 토큰 없는 요청도 통과(배포 순서·되돌리기 스위치)
  * 참고: 컨텐츠 매니저 D:\Codex\shopping-shorts backend/Auth.js (계정 1개) → 사람별 계정으로 넓힘. */
 const AUTH_PROPS = { users: 'AUTH_USERS', sessions: 'AUTH_SESSIONS', tools: 'AUTH_TOOL_KEYS', required: 'AUTH_REQUIRED' };
@@ -17,7 +17,7 @@ const AUTH_LOCK_SECONDS = 3600;
 // 2026-11-13 운영 실측: 2,000번 = 서버 1.1~2.7초(목표 1초 초과) → 500번(사람 결정). 저장값이 새면 오래 못 버티는 건 둘 다 같고,
 // 실제 방어는 편집 권한자만 저장값을 봄 · 5회 잠금 · 비밀번호 길이입니다.
 const AUTH_HASH_ROUNDS = 500;
-const AUTH_TOOL_NAMES = ['CS팀', '블로그팀'];
+const AUTH_TOOL_NAMES = ['CS팀', '블로그팀', '개발팀']; // 설정 창 발급 버튼은 이 목록을 따라 그려집니다(11-13 개발팀 추가)
 const AUTH_ADMIN_ACTIONS = ['listUsers', 'addUser', 'deleteUser', 'resetUserPassword', 'issueToolKey'];
 const AUTH_ACCOUNT_ACTIONS = ['logout', 'changePassword'].concat(AUTH_ADMIN_ACTIONS);
 

@@ -114,7 +114,7 @@ test('관리자만 계정을 다루고, 임시 비밀번호를 새로 받으면 
   const list = f.req('listUsers', {}, admin).data;
   assert.deepEqual(list.users.map(u => u.id + ':' + u.role), ['admin:admin', 'staff:user']);
   assert.doesNotMatch(JSON.stringify(list), /hash|salt/);
-  assert.deepEqual(list.tools, [{ name: 'CS팀', issued: false }, { name: '블로그팀', issued: false }]);
+  assert.deepEqual(list.tools, [{ name: 'CS팀', issued: false }, { name: '블로그팀', issued: false }, { name: '개발팀', issued: false }]);
   const staff = f.login('staff', added.tempPassword).data.token;
   f.req('changePassword', { current: added.tempPassword, next: 'staff-pass-2' }, staff);
   assert.match(f.req('addUser', { id: 'x1x', name: 'x', role: 'admin' }, staff).error, /관리자만/);
@@ -135,10 +135,14 @@ test('도구 키는 「CS팀(도구)」로 기록되고, 계정은 못 다루며
   assert.equal(f.req('saveDevelopers', { devList: [] }, key).success, true);
   assert.deepEqual(f.log.at(-1).slice(1, 3), ['CS팀(도구)', '담당자 설정']);
   assert.match(f.req('listUsers', {}, key).error, /도구 키로는 계정을 다룰 수 없습니다/);
-  assert.match(f.req('issueToolKey', { name: '아무팀' }, admin).error, /CS팀·블로그팀 중 하나/);
+  assert.match(f.req('issueToolKey', { name: '아무팀' }, admin).error, /CS팀·블로그팀·개발팀 중 하나/);
   const next = f.req('issueToolKey', { name: 'CS팀' }, admin).data.key;
   assert.equal(f.req('getDevelopers', {}, key).code, 'AUTH_REQUIRED');
   assert.equal(f.req('getDevelopers', {}, next).success, true);
+  const dev = f.req('issueToolKey', { name: '개발팀' }, admin).data.key; // 11-13 추가
+  assert.equal(f.req('saveDevelopers', { devList: [] }, dev).success, true);
+  assert.deepEqual(f.log.at(-1).slice(1, 3), ['개발팀(도구)', '담당자 설정']);
+  assert.equal(f.req('getDevelopers', {}, next).success, true, '다른 팀 키 발급은 CS팀 키에 영향 없음');
 });
 
 test('로그인 유지 안 함은 1일, 유지는 마지막 사용부터 90일', () => {
