@@ -89,6 +89,29 @@ const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), co
       }
       await context.close();
     }
+    // 좁은 휴대폰(360px): 위 막대 검색칸이 자기 자리 밖으로 넘쳐 로고·상태 표시를 덮지 않고, 아래 탭은 60px (v3.0.3)
+    {
+      const context = await browser.newContext({ viewport: { width: 360, height: 780 }, isMobile: true, hasTouch: true });
+      await context.route('**/*', route => {
+        const url = new URL(route.request().url());
+        if (url.origin === origin || allowed.includes(url.hostname)) return route.continue();
+        if (url.hostname === 'script.google.com') return route.fulfill({ contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ success: true, data: dashboard }) });
+        return route.abort();
+      });
+      const page = await context.newPage();
+      await page.goto(`${origin}/index.html`); await page.waitForTimeout(1500);
+      const bar = await page.evaluate(() => {
+        const r = s => document.querySelector(s).getBoundingClientRect();
+        return { logo: r('.kic-brand-mark').right, slotL: r('#kic-top-center').left, slotR: r('#kic-top-center').right, searchL: r('#hd-search').left, searchR: r('#hd-search').right,
+          status: r('#kic-top-right').left, inSlot: !!document.querySelector('#kic-top-center #hd-search'), tabH: r('.kic-tabbar').height };
+      });
+      assert.ok(bar.inSlot, '검색칸이 위 막대 가운데로 옮겨짐');
+      assert.ok(bar.searchL >= bar.slotL && bar.searchR <= bar.slotR, `검색칸이 자리 안에 있음 ${JSON.stringify(bar)}`);
+      assert.ok(bar.searchL > bar.logo && bar.searchR < bar.status, `검색칸이 로고·상태 표시와 겹치지 않음 ${JSON.stringify(bar)}`);
+      assert.equal(bar.tabH, 60, '아래 탭 60px');
+      await page.screenshot({ path: path.join(outDir, 'index-phone-360.png') });
+      await context.close();
+    }
     // 헬프데스크 안쪽: 탭 · 창 캡처 (다크·라이트 넓은 화면). 저장 버튼은 누르지 않는다.
     for (const theme of ['dark', 'light']) {
       const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });

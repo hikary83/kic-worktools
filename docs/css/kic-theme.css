@@ -339,6 +339,7 @@ html textarea::placeholder {
 /* 가운데 알약 검색칸 (화면이 #kic-top-center 에 넣어 쓴다) */
 .kic-search {
   flex: 1;
+  min-width: 0; /* 좁은 휴대폰에서 자리보다 커져 로고·상태 표시를 덮지 않게 */
   max-width: 620px;
   height: 40px;
   display: flex;
@@ -555,7 +556,7 @@ body.kic-with-lnb, .kic-tool-offset {
   body.kic-with-lnb,
   .kic-tool-offset {
     padding-left: 0 !important;
-    padding-bottom: calc(var(--tab-h) + env(safe-area-inset-bottom));
+    padding-bottom: var(--tab-h);
   }
 
   .kic-tabbar {
@@ -566,8 +567,8 @@ body.kic-with-lnb, .kic-tool-offset {
     z-index: 45;
     display: grid;
     grid-template-columns: repeat(4, 1fr);
-    height: calc(var(--tab-h) + env(safe-area-inset-bottom));
-    padding-bottom: env(safe-area-inset-bottom);
+    /* 안전 여백(env)은 더하지 않는다: viewport-fit=cover 를 안 써서 원래 0인데, 삼성 인터넷은 값을 넣어 아래 빈 띠가 생겼다 */
+    height: var(--tab-h);
     background: var(--bg);
     border-top: 1px solid var(--line);
   }
@@ -628,7 +629,7 @@ body.kic-with-lnb, .kic-tool-offset {
 #kic-toast.toast-error::before, .kic-toast.toast-error::before { background: var(--err); }
 #kic-toast.hidden, .kic-toast.hidden { display: none; }
 @media (max-width: 860px) {
-  #kic-toast, .kic-toast { bottom: calc(var(--tab-h) + 16px + env(safe-area-inset-bottom)); }
+  #kic-toast, .kic-toast { bottom: calc(var(--tab-h) + 16px); }
 }
 
 /* ==============================================================
