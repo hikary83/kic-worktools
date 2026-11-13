@@ -30,15 +30,15 @@
     }
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="css/kic-theme.css?v=3.0.3" rel="stylesheet">
-  <link href="css/helpdesk-sections.css?v=3.0.3" rel="stylesheet">
-  <link href="css/helpdesk-missing.css?v=3.0.3" rel="stylesheet">
+  <link href="css/kic-theme.css?v=3.0.4" rel="stylesheet">
+  <link href="css/helpdesk-sections.css?v=3.0.4" rel="stylesheet">
+  <link href="css/helpdesk-missing.css?v=3.0.4" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=3.0.3"></script>
-  <script src="js/kic-sidebar.js?v=3.0.3"></script>
-  <script src="js/kic-common.js?v=3.0.3"></script>
-  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.3">
+  <script src="js/config.js?v=3.0.4"></script>
+  <script src="js/kic-sidebar.js?v=3.0.4"></script>
+  <script src="js/kic-common.js?v=3.0.4"></script>
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.4">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
   <script src="js/helpdesk-missing.js?v=2.10.7" defer></script>
 </head>
@@ -813,7 +813,10 @@
       ].forEach(protectKoreanImeInput);
     }
 
+    let serverCallsInFlight = 0; // 목록 조회 외 서버 작업(저장 등) 수. 자동 새로고침이 겹치지 않게 봅니다.
     async function runServerFunction(functionName, ...args) {
+      const counted = functionName !== 'getDashboardData';
+      if (counted) serverCallsInFlight++;
       function identityData(data) {
         if (Object.prototype.hasOwnProperty.call(data, 'identityRevision')) return data;
         const item = window.allIssuesMap && window.allIssuesMap[data.id];
@@ -859,6 +862,8 @@
       } catch (error) {
         console.error("Server function call failed:", error);
         throw error;
+      } finally {
+        if (counted) serverCallsInFlight--;
       }
     }
 
@@ -925,6 +930,27 @@
       document.getElementById('endDate').value = '';
       loadData(false);
     }
+
+    // 탭으로 돌아오면 바로, 화면이 보이는 동안엔 5분마다 목록을 다시 받아 옵니다(다른 사람이 등록한 건 반영).
+    // 창이 열려 있거나 서버 작업·조회 중이면 건너뜁니다. 펼친 상태·검색어는 onSuccess 가 그대로 둡니다.
+    const AUTO_REFRESH_MS = 5 * 60 * 1000;
+    let autoRefreshTriedAt = 0;
+    function autoRefreshDashboard(minAgeMs) {
+      if (document.hidden || !window.fullIssueData || fullIssueFetchPromise || serverCallsInFlight) return;
+      // 실패가 이어져도 1분마다 두드리지 않도록 마지막 시도 시각도 함께 봅니다.
+      if (Date.now() - Math.max(dashboardLastSyncedAt, autoRefreshTriedAt) < minAgeMs) return;
+      if (['addModal', 'editModal', 'settingsModal'].some(id => document.getElementById(id)?.classList.contains('hidden') === false)
+        || document.getElementById('hd-missing-dialog')?.open || document.querySelector('.hd-sync:not([hidden])')) return;
+      autoRefreshTriedAt = Date.now();
+      const before = new Set(window.fullIssueData.issues.map(issue => issue.id));
+      return fetchFullIssueData(true).then(() => {
+        const added = window.fullIssueData.issues.filter(issue => !before.has(issue.id)).length;
+        if (added) showToast(`새 이슈 ${added}건 반영`, 'info');
+      });
+    }
+    // 탭 복귀는 1분 안에 받아 온 적이 있으면 건너뜁니다(탭을 자주 오가도 서버를 두드리지 않게).
+    document.addEventListener('visibilitychange', () => autoRefreshDashboard(60 * 1000));
+    setInterval(() => autoRefreshDashboard(AUTO_REFRESH_MS), 60 * 1000);
 
     function onFailure(error, isBackground = false) {
       console.warn("Data load warning/error:", error);

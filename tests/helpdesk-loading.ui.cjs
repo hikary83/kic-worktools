@@ -117,6 +117,34 @@ async function main(){
     assert.equal(f.reads().length,4);assert.deepEqual(f.errors,[]);await f.context.close();
     console.log('PASS 재접속 시 저장된 목록 복원·권한 오류 재시도 없음·실패 안내 지속');
 
+    const auto=await fixture();const ap=auto.page;
+    const visible=()=>ap.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
+    const nextRead=async n=>{for(let i=0;i<50&&auto.reads().length<n;i++)await ap.waitForTimeout(20);return auto.reads()[n-1];};
+    await auto.reply(auto.reads()[0],'첫 목록');await ap.waitForFunction(()=>fullIssueFetchPromise===null);
+    await visible();assert.equal(auto.reads().length,1,'1분 안에 탭 복귀는 건너뜀');
+    await ap.evaluate(()=>{dashboardLastSyncedAt=0;openEditById('IT-261007-001');});await visible();
+    assert.equal(auto.reads().length,1,'수정 창이 열려 있으면 건너뜀');
+    await ap.evaluate(()=>closeEditModal());await ap.waitForFunction(()=>document.getElementById('editModal').classList.contains('hidden'));
+    await ap.evaluate(()=>{serverCallsInFlight++;autoRefreshDashboard(0);serverCallsInFlight--;});
+    assert.equal(auto.reads().length,1,'저장 등 서버 작업 중이면 건너뜀');
+    await ap.evaluate(()=>Object.defineProperty(document,'hidden',{value:true,configurable:true}));await visible();
+    assert.equal(auto.reads().length,1,'화면이 안 보이면 건너뜀');
+    await ap.evaluate(()=>delete document.hidden);await visible();
+    const extra=issue('IT-261007-009','다른 사람이 등록한 업무','2026-10-07 11:00'),read=await nextRead(2),base=stats('첫 목록');
+    await read.route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,
+      data:{...base,pendingCurrent:[extra,...base.pendingCurrent]},diagnostics:{schema:1,requestId:read.requestId,method:read.method,elapsedMs:10}})});
+    await ap.waitForFunction(()=>document.getElementById('toast').textContent.includes('새 이슈 1건 반영'));
+    assert.equal(await ap.locator('#kpi-total').innerText(),'3');
+    await ap.evaluate(()=>{document.getElementById('toast').textContent='';autoRefreshDashboard(AUTO_REFRESH_MS);});
+    assert.equal(auto.reads().length,2,'5분이 안 지났으면 건너뜀');
+    await ap.evaluate(()=>{dashboardLastSyncedAt=autoRefreshTriedAt=Date.now()-AUTO_REFRESH_MS;autoRefreshDashboard(AUTO_REFRESH_MS);});
+    const again=await nextRead(3);await again.route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,
+      data:{...base,pendingCurrent:[extra,...base.pendingCurrent]},diagnostics:{schema:1,requestId:again.requestId,method:again.method,elapsedMs:10}})});
+    await ap.waitForFunction(()=>fullIssueFetchPromise===null);
+    assert.equal(await ap.evaluate(()=>document.getElementById('toast').textContent),'','새 건 0건이면 알림 없음');
+    assert.deepEqual(auto.errors,[]);await auto.context.close();
+    console.log('PASS 자동 새로고침: 탭 복귀·5분 주기·창 열림/서버 작업/숨김 건너뜀·새 건 알림');
+
     const timed=await fixture(false,true);
     await timed.page.waitForFunction(()=>getGASDiagnostics().some(r=>r.code==='API_READ_TIMEOUT'));
     assert.match(await timed.page.locator('#sync-indicator').innerText(),/한 번 더 조회 중/);
@@ -125,7 +153,7 @@ async function main(){
     await timed.page.waitForFunction(()=>fullIssueFetchPromise===null);
     assert.equal(await timed.page.locator('#dashboard-content').isVisible(),true);assert.deepEqual(timed.errors,[]);
     await timed.context.close();console.log('PASS 초기 캐시 없음·합성 시간초과·한 번 재조회 후 정상 표시');
-    console.log('\n7 browser test groups passed. No live API or spreadsheet writes. External font/chart assets were mocked.');
+    console.log('\n8 browser test groups passed. No live API or spreadsheet writes. External font/chart assets were mocked.');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});
