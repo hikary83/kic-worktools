@@ -115,17 +115,39 @@ for (const action of ['analyzeCapture', 'generateReply', 'addIssue', 'updateIssu
   });
 }
 for (const action of ['getDevelopers', 'getBlogPostPlans']) {
-  test(action + ' 기존 읽기 전용 GET 대체 경로를 유지한다', async () => {
-    const f = setup([new Error('Test network failure'), response({ success: true, data: 'ok' })]);
-    assert.equal(await f.run(action), 'ok');
-    assert.equal(f.calls.length, 2);
-    assert.equal(f.calls[1].options.method, 'GET');
+  test(action + ' 실패는 GET 으로 다시 묻지 않는다(v3.1.0: 토큰을 주소에 싣지 않음)', async () => {
+    const f = setup([new Error('Test network failure')]);
+    await assert.rejects(f.run(action), /Test network failure/);
+    assert.equal(f.calls.length, 1);
+    assert.equal(f.calls[0].options.method, 'POST');
   });
 }
-test('getDashboardData는 GET 우선·일시 오류 때 POST 한 번 재조회한다', async () => {
+test('getDashboardData는 POST로 묻고 일시 오류 때 POST 한 번 재조회한다', async () => {
   const f = setup([new TypeError('Failed to fetch'), response({ success: true, data: { pendingCurrent: [], completedCurrent: [] } })]);
   assert.equal((await f.run('getDashboardData')).pendingCurrent.length, 0);
-  assert.deepEqual(f.calls.map(call => call.options.method), ['GET', 'POST']);
+  assert.deepEqual(f.calls.map(call => call.options.method), ['POST', 'POST']);
+});
+const fakeAuth = token => { const seen = []; return { seen, KicAuth: { token: () => token, rejected: (code, message) => seen.push(code) } }; };
+test('로그인 토큰은 POST 본문에만 싣고 주소에는 붙이지 않는다', async () => {
+  const auth = fakeAuth('t'.repeat(64));
+  const f = setup([response({ success: true, data: 'ok' })], { window: { KicAuth: auth.KicAuth } });
+  assert.equal(await f.run('getDevelopers'), 'ok');
+  assert.equal(JSON.parse(f.calls[0].options.body).token, 't'.repeat(64));
+  assert.doesNotMatch(f.calls[0].url, /token|t{20}/);
+});
+test('로그인 전에는 서버에 보내지 않고 로그인 화면을 부른다', async () => {
+  const auth = fakeAuth('');
+  const f = setup([], { window: { KicAuth: auth.KicAuth } });
+  await assert.rejects(f.run('getDashboardData'), error => error.code === 'AUTH_REQUIRED' && error.auth === true);
+  assert.equal(f.calls.length, 0); assert.deepEqual(auth.seen, ['AUTH_REQUIRED']);
+});
+test('서버가 로그인 끝남·비밀번호 변경 필요로 거절하면 로그인 화면을 부르고 진단 창은 띄우지 않는다', async () => {
+  for (const code of ['AUTH_REQUIRED', 'AUTH_PASSWORD_CHANGE']) {
+    const auth = fakeAuth('t'.repeat(64));
+    const f = setup([response({ success: false, code, error: '로그인이 끝났습니다.' })], { window: { KicAuth: auth.KicAuth } });
+    await assert.rejects(f.run('addIssue'), error => error.code === code && error.auth === true);
+    assert.deepEqual(auth.seen, [code]);
+  }
 });
 test('404의 시간·최종 응답 경로·형식을 보관하고 일회성 키는 제외한다', async () => {
   const f = setup([{ ...response('<html>private response</html>', 404, true), redirected: true,
@@ -147,15 +169,15 @@ test('네트워크 실패는 전송 단계, 본문 읽기 실패는 읽기 단�
   const bodyFailure = setup([{ ...response(''), text: async () => { throw new TypeError('Failed to fetch'); } }]);
   await assert.rejects(bodyFailure.run(), error => error.diagnostics.stage === 'response_body' && error.httpStatus === 200);
 });
-test('POST·GET 실패/성공 기록은 같은 요청 ID와 각 메서드로 구분한다', async () => {
-  const f = setup([new TypeError('Failed to fetch'), response({success: true, data: 'ok'})]);
-  assert.equal(await f.run('getDevelopers'), 'ok');
+test('재조회 실패/성공 기록은 같은 요청 ID로 남는다', async () => {
+  const f = setup([new TypeError('Failed to fetch'), response({success: true, data: { pendingCurrent: [], completedCurrent: [] }})]);
+  await f.run('getDashboardData');
   const records = f.context.getGASDiagnostics();
   assert.equal(records.length, 2);
   assert.equal(records[0].outcome, 'failure');
   assert.equal(records[1].outcome, 'success');
   assert.equal(records[0].requestId, records[1].requestId);
-  assert.equal(records[1].method, 'GET');
+  assert.equal(records.map(r => r.method).join(','), 'POST,POST');
 });
 test('요청 본문·이름·사진·서버 오류 원문은 진단에 보관하지 않는다', async () => {
   const saved = new Map();

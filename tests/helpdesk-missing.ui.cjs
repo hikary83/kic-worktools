@@ -17,6 +17,7 @@ const basicStyles='<style>.hidden{display:none!important}#addModal,#editModal,#s
   let browser,legacyCompare=false,failConfirmation=false,listAnalysisGate=null;const calls=[],errors=[];
   try{
     browser=await chromium.launch({channel:'msedge',headless:true});const context=await browser.newContext({viewport:{width:1440,height:1100}});
+    await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
     await context.addInitScript(()=>{const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2026-10-23T09:00:00+09:00']));}static now(){return NativeDate.parse('2026-10-23T09:00:00+09:00');}};});
     await context.route('**/*',async route=>{const request=route.request(),url=new URL(request.url());
       if(url.hostname==='script.google.com'){

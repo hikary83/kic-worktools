@@ -4,12 +4,12 @@ const CONFIG = {
   API_URL: "https://script.google.com/macros/s/AKfycbyjbf1M5XTqdW203XQWUdwO1Y9qgu1rG_WqiWX0LVgJNEEldw4gMOf6_tGfXGxc6ABQnA/exec",
 
   // Jira 일정 전용 Apps Script 배포 URL입니다. 기존 업무 API와 분리해 사용합니다.
-  JIRA_TIMELINE_API_URL: "https://script.google.com/macros/s/AKfycbxncJs9huZd1ENzETRxRyKO5ikexxscHptSYGE6LIXsWP1DFDEn1Zmodk0H7vE8EuDR/exec",
-
-  // 추후 비밀번호 로그인이 필요할 경우 true로 변경하고 비밀번호를 설정하세요.
-  USE_PASSWORD_PROTECTION: false,
-  PASSWORD: "kic21_password"
+  JIRA_TIMELINE_API_URL: "https://script.google.com/macros/s/AKfycbxncJs9huZd1ENzETRxRyKO5ikexxscHptSYGE6LIXsWP1DFDEn1Zmodk0H7vE8EuDR/exec"
+  // v3.1.0: 공개 파일에 있던 비밀번호 검사를 지웠습니다. 로그인은 서버(backend/Auth.js)가 확인합니다.
 };
+
+// 로그인 토큰은 kic-sidebar.js 의 KicAuth 가 이 브라우저에만 보관합니다(서버 시험용 vm 에는 없음).
+function getKicAuth() { return typeof window !== 'undefined' && window.KicAuth ? window.KicAuth : null; }
 
 // 화면에 표시하는 오류에는 인증 키/토큰을 남기지 않습니다. 요청 본문과 이미지는 기록하지 않습니다.
 function cleanGASApiErrorDetail(value) {
@@ -138,7 +138,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v3.0.4', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v3.1.0', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 
@@ -193,6 +193,11 @@ function getGASApiFailure(result, httpStatus) {
     (result && result.message) || ''
   );
   const serverCode = (result && result.code) || (serverError && serverError.code);
+  if (serverCode === 'AUTH_REQUIRED' || serverCode === 'AUTH_PASSWORD_CHANGE') {
+    const error = createGASApiError(detail || '로그인이 필요합니다.', serverCode, httpStatus);
+    error.auth = true;
+    return error;
+  }
   if (serverCode === 'ISSUE_LOCK_WAIT_FAILED') {
     return createGASApiError('다른 저장 작업을 기다리다가 등록 잠금 대기에서 실패했습니다. 목록에서 등록 여부를 먼저 확인해 주세요.', 'ISSUE_LOCK_WAIT_FAILED', httpStatus);
   }
@@ -276,19 +281,12 @@ async function performGASRequest(action, data, method, requestId, policy = {}) {
   const diagnostic = { requestId, action, method, startedAt: new Date(started).toISOString(), stage: 'request_send', responseFormat: 'unread' };
   let timeout;
   try {
+    // v3.1.0: 로그인 토큰을 주소에 붙이면 접속 기록에 남으므로 모든 요청을 POST 본문으로 보냅니다.
     const url = new URL(CONFIG.API_URL);
-    if (method === 'GET') {
-      url.searchParams.set('action', action);
-      url.searchParams.set('requestId', requestId);
-      if (action === 'getDashboardData') {
-        ['startDate', 'endDate'].forEach(key => {
-          if (typeof data[key] === 'string') url.searchParams.set(key, data[key]);
-        });
-      }
-    }
-    const options = method === 'GET' ? { method: 'GET' } : {
+    const token = getKicAuth() && getKicAuth().token();
+    const options = {
       method: 'POST', mode: 'cors', headers: { 'Content-Type': 'text/plain' },
-      body: JSON.stringify({ action, data, requestId })
+      body: JSON.stringify({ action, data, requestId, ...(token ? { token } : {}) })
     };
     const controller = policy.timeoutMs ? new AbortController() : null;
     if (controller) {
@@ -317,7 +315,9 @@ async function performGASRequest(action, data, method, requestId, policy = {}) {
       error = createGASApiError('네트워크 연결 또는 브라우저 접근 정책 때문에 서버 응답을 받지 못했습니다. [API_NETWORK_ERROR]', 'API_NETWORK_ERROR', diagnostic.httpStatus);
     }
     const failure = { ...diagnostic, elapsedMs: Date.now() - started, outcome: 'failure', code: error.code || 'UNKNOWN' };
-    recordGASDiagnostic(failure, policy.notify !== false);
+    // 로그인이 끝났거나 비밀번호를 바꿔야 하면 진단 창 대신 로그인 화면을 띄웁니다.
+    if (error.auth && getKicAuth()) getKicAuth().rejected(error.code, error.message);
+    recordGASDiagnostic(failure, policy.notify !== false && !error.auth);
     error.diagnostics = sanitizeGASDiagnostic(failure);
     // 원래 상세 메시지는 유지하고, 복사 가능한 진단은 별도로 제공합니다.
     error.requestId = requestId;
@@ -334,30 +334,25 @@ async function callGASApi(action, data = {}, options = {}) {
     throw new Error("API_URL is missing");
   }
 
-  // 비밀번호 인증 옵션이 켜져 있을 때 검증 (비밀번호 미일치 시 요청 차단)
-  if (CONFIG.USE_PASSWORD_PROTECTION) {
-    const savedPassword = localStorage.getItem("kic_access_password");
-    if (savedPassword !== CONFIG.PASSWORD) {
-      const input = prompt("사내 업무도구 접근을 위해 패스코드를 입력해 주세요:");
-      if (input === CONFIG.PASSWORD) {
-        localStorage.setItem("kic_access_password", input);
-      } else {
-        alert("올바르지 않은 패스코드입니다.");
-        throw new Error("Unauthorized access");
-      }
-    }
+  // v3.1.0: 로그인 전에는 서버에 보내지 않고 로그인 화면을 띄웁니다(서버도 따로 확인합니다).
+  const auth = getKicAuth();
+  if (auth && action !== 'login' && !auth.token()) {
+    auth.rejected('AUTH_REQUIRED');
+    const error = createGASApiError('로그인이 필요합니다.', 'AUTH_REQUIRED');
+    error.auth = true;
+    throw error;
   }
 
   // CORS 프리플라이트를 피하기 위해 text/plain 타입의 POST Simple Request로 전송합니다.
   const requestId = 'kic-' + (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Date.now().toString(36) + '-' + Math.random().toString(36).slice(2, 14));
 
   if (action === 'getDashboardData') {
-    // GET으로 조회 조건을 명시하고, 일시 오류에 한해서만 POST로 한 번 재조회합니다.
+    // 일시 오류에 한해서만 한 번 더 조회합니다(v3.1.0 부터 둘 다 POST: 토큰을 주소에 붙이지 않음).
     try {
-      return await performGASRequest(action, data, 'GET', requestId, { timeoutMs: GAS_DASHBOARD_READ_TIMEOUT_MS, notify: false });
+      return await performGASRequest(action, data, 'POST', requestId, { timeoutMs: GAS_DASHBOARD_READ_TIMEOUT_MS, notify: false });
     } catch (error) {
       if (!isDashboardReadRetryable(error)) {
-        try { showGASDiagnosticNotice(error.diagnostics); } catch (_) {}
+        try { if (!error.auth) showGASDiagnosticNotice(error.diagnostics); } catch (_) {}
         throw error;
       }
       try { if (typeof options.onRetry === 'function') options.onRetry(error); } catch (_) {}
@@ -374,18 +369,8 @@ async function callGASApi(action, data = {}, options = {}) {
     });
   }
 
-  try {
-    return await performGASRequest(action, data, 'POST', requestId);
-  } catch (error) {
-    // GET 재시도는 doGet이 같은 결과를 주는 단순 조회만 합니다. 분석·저장·싱크는 재시도하지 않습니다.
-    if (!['getDevelopers', 'getBlogPostPlans'].includes(action)) throw error;
-    
-    // 단순 조회 작업(getBlogPostPlans 등)의 경우 GET 쿼리스트링으로 안전하게 2차 시도
-    try {
-      return await performGASRequest(action, data, 'GET', requestId);
-    } catch (fallbackError) {
-      // 두 번의 조회 결과가 모두 진단 기록에 남습니다. 기존 최초 오류 반환 방식은 유지합니다.
-    }
-    throw error;
-  }
+  // 로그인·계정 요청의 실패(비밀번호 틀림 등)는 진단 창을 띄우지 않고 그 화면에서 알립니다.
+  const quiet = ['login', 'logout', 'changePassword', 'listUsers', 'addUser', 'deleteUser', 'resetUserPassword', 'issueToolKey'].includes(action);
+  // 분석·저장·싱크는 재시도하지 않습니다. 옛 GET 재조회는 토큰을 실을 수 없어 v3.1.0 에서 뺐습니다.
+  return performGASRequest(action, data, 'POST', requestId, quiet ? { notify: false } : {});
 }

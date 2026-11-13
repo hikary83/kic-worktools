@@ -42,7 +42,7 @@ function fixture(input=[record(3),record(2),record(1)]){
       return{getResponseCode:()=>200};
     }}
   });
-  ['backend/Code.js','backend/JiraSync.js','backend/HelpdeskInsertion.js'].forEach(file=>vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context));
+  ['backend/Code.js','backend/Auth.js','backend/JiraSync.js','backend/HelpdeskInsertion.js'].forEach(file=>vm.runInContext(fs.readFileSync(path.join(root,file),'utf8'),context));
   context.getMainSheet=()=>sheet;context.ensureLinkColumns=()=>{};context.getQuarterRequestSheet=()=>null;context.getDevelopers=()=>[];
   context.getHelpdeskJiraSyncIssues_=data=>{state.jiraCalls.push(structuredClone(data));if(state.onJira)state.onJira();if(state.jiraFailure)throw Error('synthetic inaccessible Jira');return{issues:state.jiraIssues,warnings:state.jiraWarnings};};
   context.callGeminiJsonFastFromServer=(_contents,options)=>{if(!options&&state.captureFailure)throw Error('synthetic capture failure');return JSON.stringify(options?.maxOutputTokens===8192?{rows:state.aiRows}:state.captureData||{});};

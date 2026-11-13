@@ -3,7 +3,7 @@ const assert = require('node:assert/strict');
 const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
-const source = fs.readFileSync(path.resolve(__dirname, '../backend/Code.js'), 'utf8');
+const source = ['Code.js', 'Auth.js'].map(f => fs.readFileSync(path.resolve(__dirname, '../backend/' + f), 'utf8')).join('\n');
 let passed = 0;
 function test(name, run) {run();console.log('PASS '+name);passed++;}
 function setup(options = {}) {
@@ -21,6 +21,7 @@ function setup(options = {}) {
     Utilities:{getUuid:()=> '00000000-0000-0000-0000-000000000001',formatDate:()=> '2026-10-07 09:00'},
     ContentService:{MimeType:{TEXT:'text/plain'},createTextOutput: text=>({text,setMimeType(){return this;}})},
     console:{log:text=>logs.push(text)},
+    PropertiesService:{getScriptProperties:()=>({getProperty:()=>null})},
     LockService:{getScriptLock:()=>({
       waitLock: ms=>{assert.equal(ms,10000);step('lock',options.failLock?10000:7500);if(options.failLock)throw Error('Lock timed out');},
       releaseLock:()=>{step('release',20);}
@@ -86,7 +87,7 @@ test('시트 접근 실패 단계를 남기며 입력 내용은 로그에 남기
 });
 test('다른 요청으로 처리 단계가 새지 않는다',()=>{
   const f=setup();f.request('addIssue');const result=f.request('getDevelopers');
-  assert.equal(result.diagnostics.writeStarted,null);assert.equal(result.diagnostics.stages.length,2);
+  assert.equal(result.diagnostics.writeStarted,null);assert.equal(result.diagnostics.stages.length,3); // 요청 해석·로그인 확인(v3.1.0)·실행
   assert.equal(result.data[0].name,'private-staff');
   assert.equal(vm.runInContext('activeApiDiagnostic',f.context),null);
 });

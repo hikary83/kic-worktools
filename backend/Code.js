@@ -199,6 +199,8 @@ function onOpen() {
     .addSeparator()
     .addItem('🔐 Gemini API 키 설정', 'setGeminiApiKey')
     .addItem('🧪 Gemini 연결 테스트', 'testGeminiConnection')
+    .addSeparator()
+    .addItem('👤 첫 관리자 만들기', 'createFirstAdmin')
     .addToUi();
 }
 
@@ -434,7 +436,12 @@ function doGet(e) {
     const action = parameter.action;
     activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
     markApiDiagnosticStage('action_execute');
-    
+    // v3.1.0: 주소창 요청은 토큰을 실을 수 없습니다. 잠금 뒤에는 아무 기능도 열지 않습니다.
+    // 「확인 보류」 동안에는 옛 화면(v3.0.x)의 조회만 남겨 둡니다. 쓰기·AI(블로그 시트 이전·이미지)는 주소창에서 뺐습니다.
+    if (authRequired_()) {
+      return finishApiDiagnostic({ success: false, code: 'AUTH_REQUIRED', auth: true, error: '로그인이 필요합니다. 화면에서 로그인해 주세요.' });
+    }
+
     if (action === 'getDashboardData') {
       const startDate = parameter.startDate;
       const endDate = parameter.endDate;
@@ -450,17 +457,6 @@ function doGet(e) {
     if (action === 'getBlogPostPlans') {
       const plans = getBlogPostPlans();
       return finishApiDiagnostic({ success: true, data: plans });
-    }
-
-    if (action === 'generateBlogImage') {
-      const prompt = e.parameter.prompt || (e.parameter.data ? JSON.parse(e.parameter.data).prompt : '');
-      const res = generateBlogImage({ prompt: prompt });
-      return finishApiDiagnostic({ success: true, data: res });
-    }
-
-    if (action === 'migrateBlogPostingSheet') {
-      const res = migrateBlogPostingSheet();
-      return finishApiDiagnostic({ success: true, data: res });
     }
 
     return finishApiDiagnostic({
@@ -492,8 +488,17 @@ function doPost(e) {
     const action = payload.action;
     activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
     if (action === 'addIssue' || action === 'updateIssue' || action === 'insertIssue' || action === 'setCaptureConfirmed') activeApiDiagnostic.writeStarted = false;
-    markApiDiagnosticStage('action_execute');
     const data = payload.data || {};
+    // v3.1.0 로그인: 누가 보냈는지 먼저 정합니다(Auth.js). 로그인·계정 요청은 여기서 끝냅니다.
+    markApiDiagnosticStage('auth_check');
+    const who = authorizeRequest_(action, payload.token);
+    markApiDiagnosticStage('action_execute');
+    if (action === 'login') return finishApiDiagnostic({ success: true, data: authLogin_(data) });
+    if (AUTH_ACCOUNT_ACTIONS.indexOf(action) !== -1) {
+      const accountResult = authAccountAction_(action, data, who);
+      appendWorkLog_(who, action, data, accountResult);
+      return finishApiDiagnostic({ success: true, data: accountResult });
+    }
     if (typeof assertHelpdeskIdentity_ === 'function' && ['updateIssue', 'updateStatus', 'updateHidden'].indexOf(action) !== -1 && data.sourceType !== SOURCE_TYPE_QUARTER) {
       identityMutationLock = LockService.getScriptLock();
       markApiDiagnosticStage('lock_wait'); identityMutationLock.waitLock(10000);
@@ -584,9 +589,12 @@ function doPost(e) {
       result = { success: true, data: devs };
     }
 
+    if (result.success) appendWorkLog_(who, action, data, result.data);
     return finishApiDiagnostic(result);
 
   } catch (error) {
+    if (error && error.auth) return finishApiDiagnostic({ success: false, code: 'AUTH_REQUIRED', auth: true, error: error.message });
+    if (error && error.mustChange) return finishApiDiagnostic({ success: false, code: 'AUTH_PASSWORD_CHANGE', error: error.message });
     const code = activeApiDiagnostic && activeApiDiagnostic.stage === 'lock_wait' ? 'ISSUE_LOCK_WAIT_FAILED' : 'API_EXECUTION_ERROR';
     return finishApiDiagnostic({ success: false, code: code, error: error.toString() });
   } finally {

@@ -27,8 +27,9 @@ async function main(){
   await new Promise(resolve=>server.listen(0,'127.0.0.1',resolve));const origin=`http://127.0.0.1:${server.address().port}`;let browser;
   try{
     browser=await chromium.launch({channel:'msedge',headless:true});
-    async function fixture(cached=true,accelerated=false){
+    async function fixture(cached=true,accelerated=false,loggedIn=true){
       const context=await browser.newContext({viewport:{width:1280,height:900}}),requests=[],errors=[];
+      if(loggedIn) await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
       await context.addInitScript(({cache,accelerated})=>{
         const NativeDate=Date,base=NativeDate.now(),start=Math.max(NativeDate.parse('2026-10-07T08:00:00Z'),Number(localStorage.getItem('test-clock'))||0);
         localStorage.setItem('test-clock',String(start+60000));
@@ -48,6 +49,9 @@ async function main(){
           if(entry.action==='updateIssue')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{}})});
           if(entry.action==='saveDevelopers')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{}})});
           if(entry.action==='addIssue')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{id:'IT-261007-004',date:'2026-10-07 10:00'}})});
+          if(entry.action==='login')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{token:'n'.repeat(64),id:'tester',name:'새 사람',role:'admin',mustChange:true,keep:false}})});
+          if(entry.action==='changePassword')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{changed:true}})});
+          if(entry.action==='listUsers')return route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:true,data:{users:[{id:'tester',name:'테스트',role:'admin',mustChange:false},{id:'staff',name:'직원',role:'user',mustChange:true}],tools:[{name:'CS팀',issued:false},{name:'블로그팀',issued:true}]}})});
           throw Error('Unexpected operation: '+entry.action);
         }
         if(url.origin===origin)return route.continue();
@@ -65,7 +69,8 @@ async function main(){
     }
     const f=await fixture();const {page}=f;
     await page.waitForFunction(()=>document.getElementById('kpi-total').innerText==='2');
-    assert.equal(f.reads().length,1);assert.equal(f.reads()[0].method,'GET');
+    assert.equal(f.reads().length,1);assert.equal(f.reads()[0].method,'POST');
+    assert.equal(JSON.parse(f.reads()[0].route.request().postData()).token,'t'.repeat(64),'로그인 토큰은 본문에');
     assert.equal(await page.evaluate(()=>chartBuilds.length),0);assert.equal(await page.locator('#dashboard-content').isVisible(),true);
     assert.match(await page.locator('#sync-indicator').innerText(),/이전 목록 표시.*동기화 중[\s\S]*2026.10.06/);
     console.log('PASS 폰트·조회 응답을 기다리지 않고 캐시 목록과 KPI를 표시');
@@ -91,7 +96,11 @@ async function main(){
     await f.reply(f.reads()[2],'수정 성공한 업무');await page.waitForFunction(()=>fullIssueFetchPromise===null);
     console.log('PASS 실제 수정 저장·캐시 반영·늦은 목록 덮어쓰기 방지·새 확인 한 번');
 
-    await page.evaluate(()=>openSettingsModal());await page.locator('.dev-name').fill('새 담당자');
+    await page.evaluate(()=>openSettingsModal());await page.locator('#settings-account-list').getByText('직원').waitFor();
+    assert.equal(await page.locator('#settings-accounts').isVisible(),true);assert.equal(await page.locator('[data-account-delete="staff"]').count(),1);
+    assert.equal(await page.locator('[data-account-delete="tester"]').count(),0,'내 계정은 지울 수 없음');
+    assert.match(await page.locator('#settings-tool-keys').innerText(),/CS팀 도구 키 발급[\s\S]*블로그팀 도구 키 다시 발급/);
+    await page.locator('.dev-name').fill('새 담당자');
     await page.locator('#settingsModal').getByRole('button',{name:'설정 저장',exact:true}).click();
     await page.waitForFunction(()=>fullIssueData.developers[0].name==='새 담당자');
     assert.equal(await page.evaluate(()=>JSON.parse(localStorage.getItem('kic_dashboard_cache')).full.developers[0].name),'새 담당자');
@@ -145,6 +154,26 @@ async function main(){
     assert.deepEqual(auto.errors,[]);await auto.context.close();
     console.log('PASS 자동 새로고침: 탭 복귀·5분 주기·창 열림/서버 작업/숨김 건너뜀·새 건 알림');
 
+    const lg=await fixture(true,false,false),lp=lg.page,submit=()=>lp.locator('.kic-login button[type="submit"]').click();
+    await lp.locator('.kic-login').waitFor();assert.equal(lg.reads().length,0,'로그인 전에는 목록을 묻지 않음');
+    await lp.locator('.kic-login [name="id"]').fill(' tester ');await lp.locator('.kic-login [name="password"]').fill('temp-pass-1');await submit();
+    await lp.locator('.kic-login [name="next"]').waitFor();assert.equal(await lp.locator('.kic-login [name="current"]').inputValue(),'temp-pass-1');
+    const login=lg.requests.find(r=>r.action==='login').data;assert.equal(login.id,'tester');assert.equal(login.keep,false);
+    await lp.locator('.kic-login [name="next"]').fill('new-pass-12');await lp.locator('.kic-login [name="confirm"]').fill('new-pass-99');await submit();
+    await lp.waitForFunction(()=>/서로 다릅니다/.test(document.querySelector('.kic-login-msg').textContent));
+    await lp.locator('.kic-login [name="confirm"]').fill('new-pass-12');await Promise.all([lp.waitForNavigation(),submit()]);
+    assert.deepEqual(lg.requests.find(r=>r.action==='changePassword').data,{current:'temp-pass-1',next:'new-pass-12'});
+    await lp.waitForFunction(()=>document.getElementById('kpi-total').innerText==='2');assert.equal(await lp.locator('.kic-login').count(),0);
+    assert.equal(await lp.evaluate(()=>JSON.parse(sessionStorage.getItem('kic-session')).mustChange),false,'유지 안 함은 탭 저장소');
+    assert.equal(await lp.evaluate(()=>localStorage.getItem('kic-session')),null);
+    const ended=await (async()=>{for(let i=0;i<50&&!lg.reads().length;i++)await lp.waitForTimeout(20);return lg.reads()[0];})();
+    assert.equal(JSON.parse(ended.route.request().postData()).token,'n'.repeat(64));
+    await ended.route.fulfill({contentType:'application/json',headers:{'Access-Control-Allow-Origin':'*'},body:JSON.stringify({success:false,code:'AUTH_REQUIRED',auth:true,error:'로그인이 끝났습니다.'})});
+    await lp.waitForFunction(()=>/로그인이 끝났습니다/.test(document.querySelector('.kic-login-msg')?.textContent||''));
+    assert.equal(await lp.evaluate(()=>sessionStorage.getItem('kic-session')),null);assert.equal(await lp.locator('#kic-api-diagnostic-notice').count(),0,'진단 창 대신 로그인 화면');
+    assert.deepEqual(lg.errors,[]);await lg.context.close();
+    console.log('PASS 로그인: 로그인 전 요청 없음·첫 비밀번호 변경·유지 안 함은 탭 저장·로그인 끝나면 다시 로그인 화면');
+
     const timed=await fixture(false,true);
     await timed.page.waitForFunction(()=>getGASDiagnostics().some(r=>r.code==='API_READ_TIMEOUT'));
     assert.match(await timed.page.locator('#sync-indicator').innerText(),/한 번 더 조회 중/);
@@ -153,7 +182,7 @@ async function main(){
     await timed.page.waitForFunction(()=>fullIssueFetchPromise===null);
     assert.equal(await timed.page.locator('#dashboard-content').isVisible(),true);assert.deepEqual(timed.errors,[]);
     await timed.context.close();console.log('PASS 초기 캐시 없음·합성 시간초과·한 번 재조회 후 정상 표시');
-    console.log('\n8 browser test groups passed. No live API or spreadsheet writes. External font/chart assets were mocked.');
+    console.log('\n9 browser test groups passed. No live API or spreadsheet writes. External font/chart assets were mocked.');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}
 }
 main().catch(error=>{console.error(error);process.exitCode=1;});

@@ -21,6 +21,7 @@ const basicStyles='<style>.hidden{display:none!important}.relative{position:rela
   try{
     browser=await chromium.launch({channel:'msedge',headless:true});
     const context=await browser.newContext({viewport:{width:1440,height:1100}}),requests=[],errors=[];let items=structuredClone(initial),failWrite=false;
+    await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
     await context.addInitScript(({items,quarter,developers})=>{
       const NativeDate=Date;window.Date=class extends NativeDate{constructor(...args){super(...(args.length?args:['2026-10-22T03:00:00Z']));}static now(){return NativeDate.parse('2026-10-22T03:00:00Z');}};
       if(!localStorage.getItem('kic_dashboard_cache'))localStorage.setItem('kic_dashboard_cache',JSON.stringify({schema:1,savedAt:Date.now(),full:{issues:items,quarterRequestItems:[quarter],developers}}));

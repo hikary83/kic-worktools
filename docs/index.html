@@ -30,15 +30,15 @@
     }
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="css/kic-theme.css?v=3.0.4" rel="stylesheet">
-  <link href="css/helpdesk-sections.css?v=3.0.4" rel="stylesheet">
-  <link href="css/helpdesk-missing.css?v=3.0.4" rel="stylesheet">
+  <link href="css/kic-theme.css?v=3.1.0" rel="stylesheet">
+  <link href="css/helpdesk-sections.css?v=3.1.0" rel="stylesheet">
+  <link href="css/helpdesk-missing.css?v=3.1.0" rel="stylesheet">
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=3.0.4"></script>
-  <script src="js/kic-sidebar.js?v=3.0.4"></script>
-  <script src="js/kic-common.js?v=3.0.4"></script>
-  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.0.4">
+  <script src="js/config.js?v=3.1.0"></script>
+  <script src="js/kic-sidebar.js?v=3.1.0"></script>
+  <script src="js/kic-common.js?v=3.1.0"></script>
+  <link rel="stylesheet" href="css/helpdesk-jira-sync.css?v=3.1.0">
   <script src="js/helpdesk-jira-sync.js?v=2.8.8" defer></script>
   <script src="js/helpdesk-missing.js?v=2.10.7" defer></script>
 </head>
@@ -274,6 +274,19 @@
         <button onclick="addDevRow()" class="w-full mt-4 py-2.5 border-2 border-dashed border-[var(--line2)] text-[var(--muted)] font-bold text-sm rounded-xl hover:border-[var(--accent)] hover:text-[var(--accent)] transition-colors">
             <i class="fas fa-plus mr-1"></i> 담당자 행 추가
         </button>
+        <!-- v3.1.0 계정 (관리자에게만 보임. 서버가 다시 확인합니다) -->
+        <section id="settings-accounts" class="space-y-3 pt-4 border-t border-[var(--line)]" hidden>
+          <h3 class="text-sm font-extrabold text-[var(--ink)]"><i class="fas fa-user-shield text-[var(--muted)] mr-1"></i> 계정 (관리자)</h3>
+          <p class="text-xs text-[var(--muted)]">임시 비밀번호와 도구 키는 한 번만 보여 줍니다. 계정을 받은 사람은 첫 로그인 때 비밀번호를 바꿉니다. 아래 계정 변경은 「설정 저장」과 따로 바로 저장됩니다.</p>
+          <div id="settings-account-list" class="space-y-2 text-sm"></div>
+          <form id="settings-account-add" class="flex gap-2 flex-wrap items-center" onsubmit="addAccount(event)">
+            <input name="id" required placeholder="아이디 (영문 소문자)" autocapitalize="off" class="bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3 py-2 w-36 text-sm">
+            <input name="name" required placeholder="이름" class="bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-3 py-2 w-24 text-sm">
+            <select name="role" aria-label="역할" class="bg-[var(--card)] border border-[var(--line)] text-[var(--ink)] rounded-xl px-2 py-2 text-sm"><option value="user">사용자</option><option value="admin">관리자</option></select>
+            <button type="submit" class="kic-btn sm">계정 추가</button>
+          </form>
+          <div id="settings-tool-keys" class="flex gap-2 flex-wrap"></div>
+        </section>
       </div>
       <div class="p-5 border-t border-[var(--line)] flex justify-end gap-3 rounded-b-2xl bg-[var(--raise)] ">
         <button type="button" onclick="closeSettingsModal()" class="kic-btn">취소</button>
@@ -937,6 +950,7 @@
     let autoRefreshTriedAt = 0;
     function autoRefreshDashboard(minAgeMs) {
       if (document.hidden || !window.fullIssueData || fullIssueFetchPromise || serverCallsInFlight) return;
+      if (window.KicAuth && !KicAuth.token()) return; // 로그인 화면이 떠 있으면 거절을 반복하지 않습니다(v3.1.0)
       // 실패가 이어져도 1분마다 두드리지 않도록 마지막 시도 시각도 함께 봅니다.
       if (Date.now() - Math.max(dashboardLastSyncedAt, autoRefreshTriedAt) < minAgeMs) return;
       if (['addModal', 'editModal', 'settingsModal'].some(id => document.getElementById(id)?.classList.contains('hidden') === false)
@@ -2479,8 +2493,52 @@
     /* ==============================================================
        담당 개발자 설정 모달 로직
        ============================================================== */
+    // v3.1.0 계정 관리. 화면은 관리자에게만 보이고, 서버가 요청마다 관리자인지 다시 확인합니다.
+    function loadAccounts() {
+        const section = document.getElementById('settings-accounts'), me = window.KicAuth && KicAuth.user();
+        section.hidden = !(me && me.role === 'admin');
+        if (section.hidden) return Promise.resolve();
+        const list = document.getElementById('settings-account-list');
+        list.textContent = '계정 목록을 불러오는 중...';
+        return callGASApi('listUsers').then(data => {
+            list.innerHTML = data.users.map(user => `<div class="flex items-center gap-2"><span class="flex-1 min-w-0">${escapeHtml(user.name)} <span class="text-[var(--muted)]">${escapeHtml(user.id)} · ${user.role === 'admin' ? '관리자' : '사용자'}${user.mustChange ? ' · 첫 비밀번호 변경 전' : ''}</span></span>` +
+                (user.id === me.id ? '<span class="text-xs text-[var(--muted)]">나</span>' :
+                `<button type="button" class="kic-btn sm" data-account-reset="${escapeHtml(user.id)}">임시 비밀번호</button><button type="button" class="kic-btn sm danger" data-account-delete="${escapeHtml(user.id)}">삭제</button>`) + '</div>').join('');
+            document.getElementById('settings-tool-keys').innerHTML = data.tools.map(tool =>
+                `<button type="button" class="kic-btn sm" data-tool-key="${escapeHtml(tool.name)}">${escapeHtml(tool.name)} 도구 키 ${tool.issued ? '다시 ' : ''}발급</button>`).join('');
+        }).catch(e => { list.textContent = '계정 목록을 불러오지 못했습니다: ' + String(e.message).replace(/^(?:Error:\s*)+/, ''); });
+    }
+
+    // 임시 비밀번호·도구 키는 이 응답에서 한 번만 받습니다. 복사할 수 있게 입력 창으로 보여 줍니다.
+    function accountCall(action, data, doneText) {
+        return callGASApi(action, data).then(result => {
+            if (result && result.key) prompt(`${result.name} 도구 키입니다. 지금 한 번만 보여 줍니다.\n복사해서 저장소 밖 tool-keys.json 에 붙여 넣으세요.`, result.key);
+            else if (result && result.tempPassword) prompt(`${result.id} 임시 비밀번호입니다. 지금 한 번만 보여 줍니다.\n본인에게 전해 주세요. 첫 로그인 때 바꿉니다.`, result.tempPassword);
+            else if (doneText) showToast(doneText);
+            loadAccounts();
+            return true;
+        }).catch(e => { showToast(String(e.message).replace(/^(?:Error:\s*)+/, ''), 'error'); return false; });
+    }
+
+    function addAccount(event) {
+        event.preventDefault();
+        const form = event.currentTarget;
+        accountCall('addUser', { id: form.elements.id.value.trim(), name: form.elements.name.value.trim(), role: form.elements.role.value })
+            .then(ok => { if (ok) form.reset(); });
+    }
+
+    document.getElementById('settings-accounts').addEventListener('click', event => {
+        const button = event.target.closest('button[data-account-reset], button[data-account-delete], button[data-tool-key]');
+        if (!button) return;
+        const { accountReset: reset, accountDelete: remove, toolKey: tool } = button.dataset;
+        if (remove && confirm(`${remove} 계정을 지울까요? 그 사람의 로그인도 바로 끝납니다.`)) accountCall('deleteUser', { id: remove }, '계정을 지웠습니다.');
+        if (reset && confirm(`${reset} 에게 새 임시 비밀번호를 줄까요? 지금 쓰던 비밀번호와 로그인은 바로 끝납니다.`)) accountCall('resetUserPassword', { id: reset });
+        if (tool && confirm(`${tool} 도구 키를 발급할까요? 전에 받은 키가 있으면 바로 쓸 수 없게 됩니다.`)) accountCall('issueToolKey', { name: tool });
+    });
+
     function openSettingsModal() {
         renderSettingsList();
+        loadAccounts();
         const modal = document.getElementById('settingsModal');
         modal.classList.remove('hidden');
         setTimeout(() => { modal.classList.remove('opacity-0'); document.getElementById('settingsModalContent').classList.remove('scale-95'); }, 10);

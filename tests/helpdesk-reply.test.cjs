@@ -5,7 +5,7 @@ const fs = require('node:fs');
 const path = require('node:path');
 const vm = require('node:vm');
 
-const source = fs.readFileSync(path.resolve(__dirname, '../backend/Code.js'), 'utf8');
+const source = ['Code.js', 'Auth.js'].map(f => fs.readFileSync(path.resolve(__dirname, '../backend/' + f), 'utf8')).join('\n');
 let passed = 0;
 function test(name, run) { run(); console.log('PASS ' + name); passed++; }
 const ok = (text = '문의 사항은 검토 후 개선할 예정입니다.') => [200, {

@@ -14,7 +14,7 @@ function run(responses) {
       return { getResponseCode: () => code, getContentText: () => JSON.stringify(body) };
     } }
   });
-  vm.runInContext(fs.readFileSync(path.resolve(__dirname, '../backend/Code.js'), 'utf8'), context);
+  vm.runInContext(['Code.js', 'Auth.js'].map(f => fs.readFileSync(path.resolve(__dirname, '../backend/' + f), 'utf8')).join('\n'), context);
   try { return { text: context.callGeminiJsonFastFromServer([]), calls }; }
   catch (error) { return { error: error.message, calls }; }
 }

@@ -27,6 +27,7 @@ async function main() {
     async function fixture(holdStaff = false) {
       const context = await browser.newContext({viewport:{width:1280, height:1000}});
       const calls = [], errors = [];
+      await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
       await context.addInitScript(() => {
         const nativeTimer = window.setTimeout;
         window.setTimeout = (fn, ms, ...args) => nativeTimer(fn, ms === 30000 ? 2500 : ms === 5000 ? 500 : ms, ...args);

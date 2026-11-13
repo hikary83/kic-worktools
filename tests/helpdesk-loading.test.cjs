@@ -20,17 +20,17 @@ function apiFixture(responses, extra = {}) {
   return {ctx,calls,timers,run:(data={},options={})=>ctx.callGASApi('getDashboardData',data,options),
     timeout:()=>{const timer=[...timers.values()][0];assert.equal(timer.ms,20000);timer.fn();}};
 }
-test('GET에 조회 조건·요청 ID가 명시되고 HTTP 캐시를 사용하지 않는다', async()=>{
-  const f=apiFixture([response()]);await f.run({startDate:'2026-10-01',endDate:'2026-10-07',token:'private'});
-  const call=f.calls[0],url=new URL(call.url);assert.equal(call.options.method,'GET');assert.equal(call.options.cache,'no-store');
-  assert.equal(url.searchParams.get('action'),'getDashboardData');assert.equal(url.searchParams.get('startDate'),'2026-10-01');
-  assert.equal(url.searchParams.get('endDate'),'2026-10-07');assert.match(url.searchParams.get('requestId'),/^kic-/);
-  assert.equal(url.searchParams.has('token'),false);assert.equal(f.timers.size,0);
+test('POST 본문에 조회 조건·요청 ID를 싣고 주소에는 아무것도 붙이지 않으며 HTTP 캐시를 사용하지 않는다', async()=>{
+  const f=apiFixture([response()]);await f.run({startDate:'2026-10-01',endDate:'2026-10-07'});
+  const call=f.calls[0],url=new URL(call.url),body=JSON.parse(call.options.body);assert.equal(call.options.method,'POST');assert.equal(call.options.cache,'no-store');
+  assert.equal(body.action,'getDashboardData');assert.equal(body.data.startDate,'2026-10-01');
+  assert.equal(body.data.endDate,'2026-10-07');assert.match(body.requestId,/^kic-/);
+  assert.equal(url.search,'');assert.equal(f.timers.size,0);
 });
 test('네트워크 실패 후 POST 한 번·동일 조건/ID로 재조회한다',async()=>{
   let retried=0;const f=apiFixture([new TypeError('Failed to fetch'),response()]);
   await f.run({startDate:'2026-10-01'}, {onRetry:()=>retried++});assert.equal(retried,1);assert.equal(f.calls.length,2);
-  const body=JSON.parse(f.calls[1].options.body);assert.equal(body.requestId,new URL(f.calls[0].url).searchParams.get('requestId'));
+  const body=JSON.parse(f.calls[1].options.body);assert.equal(body.requestId,JSON.parse(f.calls[0].options.body).requestId);
   assert.equal(body.data.startDate,'2026-10-01');assert.equal(f.calls[1].options.method,'POST');assert.equal(f.timers.size,0);
 });
 for(const status of [404,408,429,500,503]) test('일시 통신 오류 '+status+'는 한 번 재조회한다',async()=>{
@@ -48,14 +48,14 @@ test('다른 요청 ID의 성공 응답은 목록으로 채택하지 않는다',
   assert.equal((await f.run()).pendingCurrent[0].title,'correct');assert.equal(f.ctx.getGASDiagnostics()[0].code,'API_REQUEST_MISMATCH');
 });
 test('같은 ID라도 다른 서버 메서드이면 채택하지 않는다',async()=>{
-  const f=apiFixture([(url)=>({...response(),text:async()=>JSON.stringify({success:true,data:stats('wrong'),diagnostics:{schema:1,
-    requestId:new URL(url).searchParams.get('requestId'),method:'POST',elapsedMs:2}})}),response()]);
+  const f=apiFixture([(url,options)=>({...response(),text:async()=>JSON.stringify({success:true,data:stats('wrong'),diagnostics:{schema:1,
+    requestId:JSON.parse(options.body).requestId,method:'GET',elapsedMs:2}})}),response()]);
   await f.run();assert.equal(f.ctx.getGASDiagnostics()[0].code,'API_REQUEST_MISMATCH');
 });
 test('진단 없는 기존 서버 응답도 읽고, 올바른 진단은 유지한다',async()=>{
-  const f=apiFixture([(url)=>({...response(),text:async()=>JSON.stringify({success:true,data:stats('ok'),diagnostics:{schema:1,
-    requestId:new URL(url).searchParams.get('requestId'),method:'GET',elapsedMs:2}})})]);await f.run();
-  assert.equal(f.ctx.getGASDiagnostics()[0].server.method,'GET');assert.equal(f.calls.length,1);
+  const f=apiFixture([(url,options)=>({...response(),text:async()=>JSON.stringify({success:true,data:stats('ok'),diagnostics:{schema:1,
+    requestId:JSON.parse(options.body).requestId,method:'POST',elapsedMs:2}})})]);await f.run();
+  assert.equal(f.ctx.getGASDiagnostics()[0].server.method,'POST');assert.equal(f.calls.length,1);
 });
 test('API_INFO_RESPONSE와 목록 없는 성공 응답은 한 번 재조회한다',async()=>{
   for(const body of [{success:false,code:'API_INFO_RESPONSE'},{success:true,data:'not a list'}]){

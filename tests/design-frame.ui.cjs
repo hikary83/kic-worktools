@@ -37,6 +37,7 @@ const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), co
   try {
     for (const theme of ['dark', 'light']) for (const [label, viewport] of [['wide', { width: 1440, height: 900 }], ['phone', { width: 390, height: 844 }]]) {
       const context = await browser.newContext({ viewport });
+      await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
       await context.addInitScript(t => { try { localStorage.setItem('kic_theme', t); localStorage.removeItem('kic_lnb_collapsed'); } catch (_) {} }, theme);
       await context.route('**/*', route => {
         const url = new URL(route.request().url());
@@ -112,14 +113,44 @@ const dashboard = { pendingCurrent: items.filter(x => x.status !== '완료'), co
       await page.screenshot({ path: path.join(outDir, 'index-phone-360.png') });
       await context.close();
     }
-    // 헬프데스크 안쪽: 탭 · 창 캡처 (다크·라이트 넓은 화면). 저장 버튼은 누르지 않는다.
+    // v3.1.0 로그인 화면: 로그인 전이면 7개 메뉴 모두 로그인 화면만 보이고, 360px 에서도 옆으로 넘치지 않는다.
     for (const theme of ['dark', 'light']) {
-      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      const context = await browser.newContext({ viewport: { width: 360, height: 740 } });
       await context.addInitScript(t => { try { localStorage.setItem('kic_theme', t); } catch (_) {} }, theme);
       await context.route('**/*', route => {
         const url = new URL(route.request().url());
         if (url.origin === origin || allowed.includes(url.hostname)) return route.continue();
-        if (url.hostname === 'script.google.com') return route.fulfill({ contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' }, body: JSON.stringify({ success: true, data: dashboard }) });
+        if (url.hostname === 'script.google.com') errors.push('로그인 전에 서버를 불렀습니다: ' + (route.request().postData() || url.search));
+        return route.abort();
+      });
+      const page = await context.newPage();
+      for (const name of pages) {
+        page.removeAllListeners('pageerror'); page.on('pageerror', e => errors.push(`${name}(${theme}) login: ${e.message}`));
+        await page.goto(`${origin}/${name}.html`); await page.locator('.kic-login [name="id"]').waitFor();
+        await page.waitForTimeout(150);
+        const box = await page.evaluate(() => {
+          const card = document.querySelector('.kic-login-card').getBoundingClientRect();
+          return { scroll: document.documentElement.scrollWidth, left: card.left, right: card.right, focused: document.activeElement?.name || '' };
+        });
+        assert.ok(box.scroll <= 360 && box.left >= 0 && box.right <= 360, `${name} 로그인 화면이 360px 안에 있음 ${JSON.stringify(box)}`);
+        assert.equal(box.focused, 'id', `${name} 아이디 칸에 커서`);
+        if (name === 'index') await page.screenshot({ path: path.join(outDir, `login-${theme}-360.png`) });
+      }
+      await context.close();
+    }
+    assert.deepEqual(errors.filter(e => /로그인 전에 서버를|login:/.test(e)), [], '로그인 전 서버 호출·화면 오류 없음');
+    // 헬프데스크 안쪽: 탭 · 창 캡처 (다크·라이트 넓은 화면). 저장 버튼은 누르지 않는다.
+    for (const theme of ['dark', 'light']) {
+      const context = await browser.newContext({ viewport: { width: 1440, height: 900 } });
+      await context.addInitScript(() => { try { localStorage.setItem('kic-session', JSON.stringify({ token: 't'.repeat(64), id: 'tester', name: '테스트', role: 'admin', keep: true })); } catch (_) {} }); // v3.1.0 로그인 상태(가짜 토큰)
+      await context.addInitScript(t => { try { localStorage.setItem('kic_theme', t); } catch (_) {} }, theme);
+      await context.route('**/*', route => {
+        const url = new URL(route.request().url());
+        if (url.origin === origin || allowed.includes(url.hostname)) return route.continue();
+        const accounts = { users: [{ id: 'tester', name: '테스트', role: 'admin', mustChange: false }, { id: 'staff', name: '예시 직원', role: 'user', mustChange: true }],
+          tools: [{ name: 'CS팀', issued: true }, { name: '블로그팀', issued: false }] };
+        if (url.hostname === 'script.google.com') return route.fulfill({ contentType: 'application/json', headers: { 'Access-Control-Allow-Origin': '*' },
+          body: JSON.stringify({ success: true, data: /"listUsers"/.test(route.request().postData() || '') ? accounts : dashboard }) });
         return route.abort();
       });
       const page = await context.newPage();

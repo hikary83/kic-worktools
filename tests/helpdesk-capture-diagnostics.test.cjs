@@ -1,6 +1,6 @@
 // 모델별 캡처 진단 회귀 검증. 외부 API/운영 시트 호출 없음.
 const assert=require('node:assert/strict'),fs=require('node:fs'),path=require('node:path'),vm=require('node:vm');
-const serverSource=fs.readFileSync(path.resolve(__dirname,'../backend/Code.js'),'utf8');
+const serverSource=['Code.js','Auth.js'].map(f=>fs.readFileSync(path.resolve(__dirname,'../backend/'+f),'utf8')).join('\n');
 const clientSource=fs.readFileSync(path.resolve(__dirname,'../docs/js/config.js'),'utf8');
 const tests=[],test=(name,run)=>tests.push({name,run});
 const candidate=(text='{"title":"private-title","details":"private-body","requester":"private-staff"}',finishReason='STOP')=>({candidates:[{finishReason,content:{parts:[{text}]}}]});
@@ -103,7 +103,7 @@ function clientFixture(serverResult,existingStorage){
 test('서버 모델 진단이 저장·복사·새로고침 이후에도 유지됨',async()=>{
   const result=setup([jsonError(429,'RESOURCE_EXHAUSTED'),response()]).request(),f=clientFixture(result);
   const data=await f.context.callGASApi('analyzeCapture',{images});assert.equal(data.data.title,'private-title');
-  await f.context.copyGASDiagnostics();const log=JSON.parse(f.copied);assert.equal(log.version,'v3.0.4');
+  await f.context.copyGASDiagnostics();const log=JSON.parse(f.copied);assert.equal(log.version,'v3.1.0');
   const ai=log.records[0].server.ai;assert.equal(ai.selectedModel,'gemini-2.5-flash-lite');assert.equal(ai.fallbackUsed,true);
   assert.equal(ai.attempts[0].reason,'호출 한도 초과(HTTP 429)');assert.doesNotMatch(f.copied,/secret|private-title|private-body|private-staff|private-error/);
   const reload=clientFixture(result,f.storage);

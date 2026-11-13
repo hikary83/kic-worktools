@@ -759,3 +759,21 @@ body.kic-lnb-collapsed .kanban-floating-done-dropzone {
     width: calc(100vw - 24px);
   }
 }
+
+/* ==============================================================
+   v3.1.0 로그인 화면 (7개 메뉴 공통, kic-sidebar.js 가 그림)
+   ============================================================== */
+.kic-login { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: var(--bg); overflow-y: auto; }
+.kic-login[hidden] { display: none; }
+.kic-login-card { box-sizing: border-box; width: min(360px, 100%); display: grid; gap: 14px; padding: 28px 24px; background: var(--dialog); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-pop); color: var(--ink); }
+.kic-login-card h1 { margin: 0; font-size: 18px; font-weight: 800; }
+.kic-login-card [data-step] { display: grid; gap: 12px; }
+.kic-login-card [data-step][hidden] { display: none; }
+.kic-login-card label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
+.kic-login-card input:not([type="checkbox"]) { box-sizing: border-box; width: 100%; padding: 9px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--field); color: var(--ink); font-size: 14px; }
+.kic-login-card input:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.kic-login-card .kic-login-keep { display: flex; align-items: center; gap: 8px; font-weight: 600; }
+.kic-login-msg { margin: 0; padding: 9px 12px; border-radius: 10px; background: var(--err-soft); color: var(--err); font-size: 13px; white-space: pre-line; }
+.kic-login-note { margin: 0; font-size: 13px; color: var(--muted); }
+.kic-login-card .kic-btn { width: 100%; padding: 10px; }
+body.kic-locked { overflow: hidden; }

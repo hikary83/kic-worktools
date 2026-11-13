@@ -220,6 +220,8 @@
   }
 
   async function callJiraTimelineApi(action, data, method) {
+    // v3.1.0: 다른 메뉴처럼 로그인 전에는 부르지 않습니다. 일정 서버 자체의 잠금은 2단계(업무 서버에 합치기)에서 합니다.
+    if (window.KicAuth && !window.KicAuth.token()) throw new Error('로그인이 필요합니다.');
     const apiUrl = CONFIG.JIRA_TIMELINE_API_URL;
     if (!apiUrl) {
       throw new Error('Jira 조회 전용 API 주소가 아직 설정되지 않았습니다.');
