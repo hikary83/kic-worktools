@@ -13,7 +13,7 @@ const DAY = 864e5;
 
 function setup() {
   let now = Date.parse('2026-11-13T00:00:00Z');
-  const props = new Map(), cache = new Map(), log = [], alerts = [], prompts = [];
+  const props = new Map(), cache = new Map(), log = [], alerts = [], prompts = [], answers = [];
   const toBytes = value => Array.isArray(value) ? Buffer.from(value.map(b => b & 255)) : Buffer.from(String(value), 'utf8');
   const workSheet = { appendRow: row => log.push([...row]), setFrozenRows() {} };
   let workSheetMade = false;
@@ -33,9 +33,9 @@ function setup() {
       getUuid: () => crypto.randomUUID(), formatDate: () => '2026-11-13 09:00:00'
     },
     SpreadsheetApp: { openById: () => spreadsheet, getUi: () => ({
-      ButtonSet: { OK_CANCEL: 1 }, Button: { OK: 'ok' },
+      ButtonSet: { OK_CANCEL: 1, YES_NO: 2 }, Button: { OK: 'ok', YES: 'yes' },
       prompt: () => { const text = prompts.shift(); return { getSelectedButton: () => text === null ? 'cancel' : 'ok', getResponseText: () => text }; },
-      alert: text => alerts.push(text) }) },
+      alert: (...args) => { alerts.push(args.filter(a => typeof a === 'string').join(' | ')); return answers.shift(); } }) },
     Logger: { log() {} },
     ContentService: { MimeType: { TEXT: 'text/plain' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) }
   });
@@ -50,7 +50,7 @@ function setup() {
     assert.equal(req('changePassword', { current: 'first-pass-1', next: 'admin-pass-2' }, token).success, true);
     return token;
   };
-  return { context, props, cache, log, alerts, prompts, req, users, makeAdmin, login, readyAdmin, advance: ms => { now += ms; } };
+  return { context, props, cache, log, alerts, prompts, answers, req, users, makeAdmin, login, readyAdmin, advance: ms => { now += ms; } };
 }
 
 test('첫 관리자는 시트 메뉴로 한 번만 만들고, 비밀번호 원문은 남지 않는다', () => {
@@ -163,6 +163,18 @@ test('모든 기기 로그아웃은 내 세션만 끝내고, 계정 요청은 �
   assert.equal(f.req('getDevelopers', {}, admin).code, 'AUTH_REQUIRED');
   assert.equal(f.req('logout', {}, staff).success, true, '첫 비밀번호 변경 전에도 로그아웃은 된다');
   assert.equal(f.req('listUsers').code, 'AUTH_REQUIRED', '보류 중에도 계정 요청은 토큰 필수');
+});
+
+test('시트 메뉴로 잠금을 켜고 끈다(속성이 50개를 넘어 편집기에서 못 고칠 때)', () => {
+  const f = setup();
+  f.answers.push('no'); f.context.lockLogin(); assert.equal(f.props.has('AUTH_REQUIRED'), false, '아니요면 그대로');
+  f.answers.push('yes'); f.context.lockLogin(); assert.equal(f.props.get('AUTH_REQUIRED'), 'Y');
+  assert.match(f.alerts.at(-1), /잠금을 켰습니다/);
+  assert.equal(f.req('getDevelopers').code, 'AUTH_REQUIRED');
+  assert.equal(JSON.parse(f.context.doGet({ parameter: { action: 'getDevelopers' } }).text).code, 'AUTH_REQUIRED');
+  f.answers.push('yes'); f.context.unlockLogin(); assert.equal(f.props.has('AUTH_REQUIRED'), false);
+  assert.match(f.alerts.at(-2), /지금: 잠금 켜짐/, '확인 창에 지금 상태가 보인다');
+  assert.equal(f.req('getDevelopers').success, true, '끄면 바로 확인 보류로');
 });
 
 console.log(`\n${passed} auth tests passed. No live server, script properties or sheets were touched.`);

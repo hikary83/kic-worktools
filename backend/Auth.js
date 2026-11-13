@@ -218,6 +218,20 @@ function createFirstAdmin() {
   }
 }
 
+// 시트 메뉴 「🔒 로그인 잠금 켜기 / 🔓 끄기」. 스크립트 속성이 50개를 넘으면 편집기 화면이 읽기 전용이 되어
+// AUTH_REQUIRED 를 손으로 넣거나 지울 수 없습니다(11-13 확인). 그래서 메뉴로 켜고 끕니다.
+function lockLogin() { authSetLock_(true); }
+function unlockLogin() { authSetLock_(false); }
+function authSetLock_(on) {
+  const ui = SpreadsheetApp.getUi();
+  const now = '\n(지금: ' + (authRequired_() ? '잠금 켜짐' : '잠금 꺼짐') + ')';
+  const question = on ? '로그인 잠금을 켤까요?\n로그인이나 도구 키가 없는 요청은 모두 거절됩니다.' : '로그인 잠금을 끌까요?\n로그인 없이도 요청을 받게 됩니다(되돌리기).';
+  if (ui.alert('로그인 잠금', question + now, ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  const props = PropertiesService.getScriptProperties();
+  if (on) props.setProperty(AUTH_PROPS.required, 'Y'); else props.deleteProperty(AUTH_PROPS.required);
+  ui.alert(on ? '로그인 잠금을 켰습니다.' : '로그인 잠금을 껐습니다. 로그인 없이도 요청을 받습니다.');
+}
+
 // 작업 기록: 쓰기가 성공할 때마다 「작업 기록」 시트에 한 줄. 이슈 시트 열은 건드리지 않습니다.
 const WORK_LOG_SHEET_NAME = '작업 기록';
 const WORK_LOG_ACTIONS = {

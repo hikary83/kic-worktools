@@ -201,6 +201,8 @@ function onOpen() {
     .addItem('🧪 Gemini 연결 테스트', 'testGeminiConnection')
     .addSeparator()
     .addItem('👤 첫 관리자 만들기', 'createFirstAdmin')
+    .addItem('🔒 로그인 잠금 켜기', 'lockLogin')
+    .addItem('🔓 로그인 잠금 끄기(되돌리기)', 'unlockLogin')
     .addToUi();
 }
 
