@@ -56,7 +56,7 @@ function setup() {
 test('첫 관리자는 시트 메뉴로 한 번만 만들고, 비밀번호 원문은 남지 않는다', () => {
   const f = setup(); f.makeAdmin('first-pass-1');
   const admin = f.users().admin;
-  assert.equal(admin.role, 'admin'); assert.equal(admin.mustChange, true); assert.equal(admin.rounds, 2000);
+  assert.equal(admin.role, 'admin'); assert.equal(admin.mustChange, true); assert.equal(admin.rounds, 500);
   assert.match(admin.hash, /^[0-9a-f]{64}$/); assert.match(admin.salt, /^[0-9a-f]{32}$/);
   assert.doesNotMatch(JSON.stringify([...f.props]), /first-pass-1/);
   assert.match(f.alerts[0], /관리자 「admin」를 만들었습니다[\s\S]*비밀번호 처리 시간 \d+ms/);

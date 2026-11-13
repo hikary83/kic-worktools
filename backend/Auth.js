@@ -14,7 +14,9 @@ const AUTH_FAIL_LIMIT = 5;
 const AUTH_LOCK_SECONDS = 3600;
 // ponytail: 솔트 + SHA-256 반복. Apps Script 에 PBKDF2·bcrypt 가 없어 직접 반복합니다.
 // 횟수는 계정마다 저장하므로 나중에 바꿔도 기존 비밀번호는 그대로 맞습니다. 첫 관리자 만들 때 걸린 시간을 알림에 보여 줍니다.
-const AUTH_HASH_ROUNDS = 2000;
+// 2026-11-13 운영 실측: 2,000번 = 서버 1.1~2.7초(목표 1초 초과) → 500번(사람 결정). 저장값이 새면 오래 못 버티는 건 둘 다 같고,
+// 실제 방어는 편집 권한자만 저장값을 봄 · 5회 잠금 · 비밀번호 길이입니다.
+const AUTH_HASH_ROUNDS = 500;
 const AUTH_TOOL_NAMES = ['CS팀', '블로그팀'];
 const AUTH_ADMIN_ACTIONS = ['listUsers', 'addUser', 'deleteUser', 'resetUserPassword', 'issueToolKey'];
 const AUTH_ACCOUNT_ACTIONS = ['logout', 'changePassword'].concat(AUTH_ADMIN_ACTIONS);
