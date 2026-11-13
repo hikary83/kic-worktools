@@ -133,9 +133,15 @@
     box.setAttribute('role', 'dialog');
     box.setAttribute('aria-modal', 'true');
     box.setAttribute('aria-labelledby', 'kic-login-title');
+    // 로고는 위 막대에 이미 그린 계기판 그림(favicon.svg)을 그대로 씁니다(하위 경로 페이지도 주소가 맞음).
+    const mark = document.querySelector('.kic-brand-mark');
+    const logo = mark ? mark.getAttribute('src') : 'favicon.svg';
     box.innerHTML = `
       <form class="kic-login-card">
-        <h1 id="kic-login-title">KIC 업무 도구</h1>
+        <div class="kic-login-head">
+          <img src="${escapeAttr(logo)}" alt="" width="52" height="52">
+          <h1 id="kic-login-title">KIC 업무 도구</h1>
+        </div>
         <p class="kic-login-msg" role="alert" hidden></p>
         <div data-step="login">
           <label>아이디<input name="id" autocomplete="username" autocapitalize="off" spellcheck="false"></label>

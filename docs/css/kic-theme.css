@@ -766,7 +766,9 @@ body.kic-lnb-collapsed .kanban-floating-done-dropzone {
 .kic-login { position: fixed; inset: 0; z-index: 1000; display: grid; place-items: center; padding: 16px; background: var(--bg); overflow-y: auto; }
 .kic-login[hidden] { display: none; }
 .kic-login-card { box-sizing: border-box; width: min(360px, 100%); display: grid; gap: 14px; padding: 28px 24px; background: var(--dialog); border: 1px solid var(--line); border-radius: 16px; box-shadow: var(--shadow-pop); color: var(--ink); }
-.kic-login-card h1 { margin: 0; font-size: 18px; font-weight: 800; }
+.kic-login-head { display: grid; justify-items: center; gap: 10px; margin-bottom: 4px; }
+.kic-login-head img { display: block; width: 52px; height: 52px; }
+.kic-login-card h1 { margin: 0; font-size: 19px; font-weight: 800; }
 .kic-login-card [data-step] { display: grid; gap: 12px; }
 .kic-login-card [data-step][hidden] { display: none; }
 .kic-login-card label { display: grid; gap: 6px; font-size: 13px; font-weight: 700; color: var(--muted); }
