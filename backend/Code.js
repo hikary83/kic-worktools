@@ -203,6 +203,8 @@ function onOpen() {
     .addItem('👤 첫 관리자 만들기', 'createFirstAdmin')
     .addItem('🔒 로그인 잠금 켜기', 'lockLogin')
     .addItem('🔓 로그인 잠금 끄기(되돌리기)', 'unlockLogin')
+    .addSeparator()
+    .addItem('🧹 스크립트 속성 정리', 'cleanupScriptProperties')
     .addToUi();
 }
 
@@ -638,6 +640,46 @@ function setGeminiApiKey() {
   if (!key) return ui.alert('API 키가 비어 있습니다.');
   PropertiesService.getScriptProperties().setProperty(GEMINI_API_KEY_PROPERTY, key);
   ui.alert('Gemini API 키가 저장되었습니다.');
+}
+
+// 시트 메뉴 「🧹 스크립트 속성 정리」(2026-11-13). 속성이 50개를 넘으면 편집기 화면이 읽기 전용이 됩니다.
+// 값은 보여 주지 않고 종류별 개수만 보여 준 뒤, 확인하면 없어도 다시 만들어지는 것만 지웁니다.
+//  - 이슈번호 카운터(HELPDESK_ISSUE_SEQ_YYMMDD): 14일 지난 날짜. 없으면 다음 등록 때 시트 A열에서 다시 셉니다.
+//  - 중간 등록 완료 기록(HD_INSERT_DONE_*): 7일 지난 것. 응답이 끊겼을 때 다시 확인하는 단기 기록입니다.
+// 로그인·열쇠값·담당자·Jira 싱크 제외·누락 점검 확인은 지우지 않습니다.
+const PROPERTY_FAMILIES = [
+  ['로그인', 'AUTH_'], ['이슈번호 카운터', ISSUE_SEQ_PROPERTY_PREFIX], ['중간 등록 완료 기록', 'HD_INSERT_DONE_'],
+  ['중간 등록 진행 상태', 'HELPDESK_INSERT_'], ['누락 점검 확인', 'HELPDESK_CAPTURE_CONFIRMED_'], ['Jira 싱크 제외', 'HELPDESK_JIRA_SYNC_EXCLUDED_']
+];
+function propertyCleanupPlan_(all, now) {
+  const counts = {}, seq = [], done = [];
+  const seqCut = Utilities.formatDate(new Date(now - 14 * 864e5), TIMEZONE, DATE_FORMAT_ID);
+  Object.keys(all).forEach(function(key) {
+    const family = PROPERTY_FAMILIES.filter(function(item) { return key.indexOf(item[1]) === 0; })[0];
+    const label = family ? family[0] : '그 밖(열쇠값·담당자 등)';
+    counts[label] = (counts[label] || 0) + 1;
+    const day = key.slice(ISSUE_SEQ_PROPERTY_PREFIX.length);
+    if (label === '이슈번호 카운터' && /^\d{6}$/.test(day) && day < seqCut) seq.push(key);
+    if (label === '중간 등록 완료 기록') {
+      let savedAt = 0;
+      try { savedAt = Number(JSON.parse(all[key]).savedAt) || 0; } catch (_) {}
+      if (now - savedAt > 7 * 864e5) done.push(key);
+    }
+  });
+  return { total: Object.keys(all).length, counts: counts, seq: seq, done: done };
+}
+function cleanupScriptProperties() {
+  const ui = SpreadsheetApp.getUi(), props = PropertiesService.getScriptProperties();
+  const plan = propertyCleanupPlan_(props.getProperties(), Date.now()), remove = plan.seq.concat(plan.done);
+  const labels = PROPERTY_FAMILIES.map(function(item) { return item[0]; }).concat(['그 밖(열쇠값·담당자 등)'])
+    .filter(function(label) { return plan.counts[label]; });
+  const summary = '스크립트 속성 ' + plan.total + '개\n' + labels.map(function(label) { return '· ' + label + ': ' + plan.counts[label] + '개'; }).join('\n') +
+    '\n\n지울 것: 이슈번호 카운터(14일 지난 것) ' + plan.seq.length + '개, 중간 등록 완료 기록(7일 지난 것) ' + plan.done.length + '개';
+  if (!remove.length) return ui.alert('스크립트 속성 정리', summary + '\n\n지울 것이 없습니다.', ui.ButtonSet.OK);
+  if (ui.alert('스크립트 속성 정리', summary + '\n정리하면 ' + (plan.total - remove.length) + '개가 남습니다. 지울까요?', ui.ButtonSet.YES_NO) !== ui.Button.YES) return;
+  authWithLock_(function() { remove.forEach(function(key) { props.deleteProperty(key); }); });
+  ui.alert('스크립트 속성 정리', remove.length + '개를 지웠습니다. 남은 속성 ' + (plan.total - remove.length) + '개' +
+    (plan.total - remove.length > 50 ? '\n아직 50개가 넘어 편집기 화면은 읽기 전용입니다(누락 점검 확인 기록이 많기 때문).' : ''), ui.ButtonSet.OK);
 }
 
 function testGeminiConnection() {

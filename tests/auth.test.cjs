@@ -30,7 +30,9 @@ function setup() {
     Utilities: {
       DigestAlgorithm: { SHA_256: 'sha256' }, Charset: { UTF_8: 'utf8' },
       computeDigest: (_, value) => [...crypto.createHash('sha256').update(toBytes(value)).digest()].map(b => b > 127 ? b - 256 : b),
-      getUuid: () => crypto.randomUUID(), formatDate: () => '2026-11-13 09:00:00'
+      getUuid: () => crypto.randomUUID(),
+      // 작업 기록 일시는 고정값, 이슈번호 카운터 날짜(yyMMdd)는 한국시간으로 계산합니다.
+      formatDate: (date, tz, format) => format === 'yyMMdd' ? new Date(date.getTime() + 9 * 3600e3).toISOString().slice(2, 10).replace(/-/g, '') : '2026-11-13 09:00:00'
     },
     SpreadsheetApp: { openById: () => spreadsheet, getUi: () => ({
       ButtonSet: { OK_CANCEL: 1, YES_NO: 2 }, Button: { OK: 'ok', YES: 'yes' },
@@ -175,6 +177,26 @@ test('시트 메뉴로 잠금을 켜고 끈다(속성이 50개를 넘어 편집�
   f.answers.push('yes'); f.context.unlockLogin(); assert.equal(f.props.has('AUTH_REQUIRED'), false);
   assert.match(f.alerts.at(-2), /지금: 잠금 켜짐/, '확인 창에 지금 상태가 보인다');
   assert.equal(f.req('getDevelopers').success, true, '끄면 바로 확인 보류로');
+});
+
+test('속성 정리는 값 없이 개수만 보여 주고, 2주 지난 번호 카운터와 7일 지난 완료 기록만 지운다', () => {
+  const f = setup(), now = Date.parse('2026-11-13T00:00:00Z');
+  const seed = { AUTH_REQUIRED: 'Y', GEMINI_API_KEY: 'secret-gemini', DEV_LIST_DATA: '[]',
+    HELPDESK_ISSUE_SEQ_261020: '3', HELPDESK_ISSUE_SEQ_261029: '1', HELPDESK_ISSUE_SEQ_261030: '1', HELPDESK_ISSUE_SEQ_261110: '2', // 10-30 은 딱 14일 전이라 남김
+    HD_INSERT_DONE_old: JSON.stringify({ savedAt: now - 8 * DAY }), HD_INSERT_DONE_new: JSON.stringify({ savedAt: now - DAY }),
+    HELPDESK_INSERT_REVISION_1: '4', HELPDESK_CAPTURE_CONFIRMED_1_abc: 'Y', HELPDESK_JIRA_SYNC_EXCLUDED_1_IT: 'Y' };
+  Object.entries(seed).forEach(([k, v]) => f.props.set(k, v));
+  f.answers.push('no'); f.context.cleanupScriptProperties();
+  assert.equal(f.props.size, 12, '아니요면 그대로');
+  const shown = f.alerts.at(-1);
+  assert.match(shown, /스크립트 속성 12개[\s\S]*이슈번호 카운터: 4개[\s\S]*누락 점검 확인: 1개[\s\S]*그 밖\(열쇠값·담당자 등\): 2개/);
+  assert.match(shown, /이슈번호 카운터\(14일 지난 것\) 2개, 중간 등록 완료 기록\(7일 지난 것\) 1개[\s\S]*정리하면 9개가 남습니다/);
+  assert.doesNotMatch(shown, /secret-gemini|savedAt/, '값은 보여 주지 않는다');
+  f.answers.push('yes'); f.context.cleanupScriptProperties();
+  assert.deepEqual([...f.props.keys()].sort(), ['AUTH_REQUIRED', 'DEV_LIST_DATA', 'GEMINI_API_KEY', 'HD_INSERT_DONE_new', 'HELPDESK_CAPTURE_CONFIRMED_1_abc',
+    'HELPDESK_INSERT_REVISION_1', 'HELPDESK_ISSUE_SEQ_261030', 'HELPDESK_ISSUE_SEQ_261110', 'HELPDESK_JIRA_SYNC_EXCLUDED_1_IT']);
+  assert.match(f.alerts.at(-1), /3개를 지웠습니다\. 남은 속성 9개/);
+  f.context.cleanupScriptProperties(); assert.match(f.alerts.at(-1), /지울 것이 없습니다/);
 });
 
 console.log(`\n${passed} auth tests passed. No live server, script properties or sheets were touched.`);
