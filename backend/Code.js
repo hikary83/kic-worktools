@@ -514,6 +514,14 @@ function doPost(e) {
     if (action === 'getDashboardData') {
       const stats = getDashboardData(data.startDate, data.endDate);
       result = { success: true, data: stats };
+    } else if (action === 'getJiraTimelineConfig') { // v3.2.0 통합 일정(JiraTimeline.js) — 옛 일정 서버에서 옮김
+      result = { success: true, data: getJiraTimelineConfig_() };
+    } else if (action === 'getJiraTimelineIssues') {
+      result = { success: true, data: getJiraIssues_() };
+    } else if (action === 'getJiraTimelineProjects') {
+      result = { success: true, data: getAvailableProjects_() };
+    } else if (action === 'saveJiraTimelineProjects') {
+      result = { success: true, data: saveProjectSettings_(data) };
     } else if (action === 'previewJiraSync') {
       result = { success: true, data: previewHelpdeskJiraSync() };
     } else if (action === 'lookupJiraSync') {

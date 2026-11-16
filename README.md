@@ -2,7 +2,7 @@
 
 > **코리아인스트루먼트(주) IT · CMS 전사 업무 자동화 및 헬프데스크 통합 플랫폼**  
 > **공식 서비스 URL**: <https://hikary83.github.io/kic-worktools/>  
-> **현재 버전**: `v3.1.0` (2026-11-13 기준)
+> **현재 버전**: `v3.2.0` (2026-11-16 기준)
 
 ---
 
@@ -16,7 +16,7 @@
 | **⏳ 교정 지연 안내** | [`docs/delay.html`](docs/delay.html) | `v2.1.1` | 표준기 교정 지연 및 납기 조정 고객 안내문 생성 (미리보기 일치 PNG·선명한 썸네일·화면 맞춤 미리보기) |
 | **🏷️ 필증 출력 확인** | [`docs/print.html`](docs/print.html) | `v1.2.0` | CMS kpo_idx 기반 API 응답 확인, 인앱 모달 뷰어 및 교정필증/접수표찰 카드 분석 |
 | **✍️ 블로그 마케터** | [`docs/marketer.html`](docs/marketer.html) | `v2.1.1` | AI 교정 기술 블로그 포스팅 초안 생성 및 공식 블로그 퀵 링크 탑재 |
-| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.1.1` | 로그인 없는 테스트 모드로 설정된 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회 |
+| **🗓️ IT전략실 통합 일정** | [`docs/jira-timeline.html`](docs/jira-timeline.html) | `v1.2.0` | 설정된 Jira 프로젝트의 진행 업무를 월·분기 타임라인에서 통합 조회. v3.2.0 부터 업무 서버에서 로그인 뒤 조회 |
 | **📊 CWIZ 이용 분석** | [`docs/dashboard/`](docs/dashboard/index.html) | `v2.5.2` | 로그 엑셀 6종 분석, 관리자 도메인 고객 집계 제외·운영지원 분리, 상세 모달·요약 PDF 및 Upload/Save 공통 저장·복원. 기존 운영현황은 `legacy.html`로 보존 |
 
 ---
@@ -32,6 +32,14 @@
 ---
 
 ## 📋 버전 변경 이력 (Release Changelog)
+
+### `v3.2.0` (2026-11-16, 서버 @135) — 로그인 2단계: 통합 일정 서버 합치기
+* **통합 일정(Jira)을 업무 서버로 옮김**: 옛 일정 전용 서버(`jira-api/`)의 일정 조회·프로젝트 목록·프로젝트 설정 저장을 `backend/JiraTimeline.js` 로. 업무 서버의 로그인·도구 키 확인을 그대로 거침
+  * 화면(`docs/js/jira-timeline.js`)은 공통 호출 함수로 업무 서버를 부름. `docs/js/config.js` 의 `JIRA_TIMELINE_API_URL` 삭제. 처음 설정 확인도 주소창(GET) 대신 POST(`getJiraTimelineConfig`)
+  * 「웹 조회 스위치」(`JIRA_TIMELINE_WEB_ENABLED`) 없앰. 속성 복사 없음: Jira 계정은 헬프데스크 Jira 싱크와 같은 `JIRA_ACCOUNT_EMAIL`·`JIRA_API_TOKEN`, 시작일 칸 번호는 자동으로 찾아 저장, 프로젝트 목록은 기본 5개(필요하면 화면 「프로젝트 설정」에서 다시 저장)
+  * 프로젝트 설정 저장은 작업 기록에 「일정 프로젝트 설정」으로 남음
+  * 옛 일정 서버는 1주 확인 뒤 배포를 내리고(`clasp undeploy`) 옛 Jira 토큰 속성 삭제, 저장소 `jira-api/` 정리
+* 테스트: `tests/jira-timeline.test.cjs`·`tests/jira-timeline.ui.cjs` 추가
 
 ### 서버 @134 (2026-11-16, 웹은 `v3.1.0` 그대로)
 * **헬프데스크 상세 줄바꿈이 사라지던 문제**: 목록 조회가 제목·상세·처리내용·비고·링크의 줄바꿈을 공백으로, `'` `"` 를 ’ ”로, `\` 를 `/` 로 바꿔 돌려줬고, 웹 수정 창·`updateIssue` 가 그 값을 다시 저장해 시트 글이 바뀌었음
@@ -484,20 +492,18 @@
   호출은 지금처럼 POST 본문에 `token` 만 더함: `{ "action": "getDashboardData", "data": {}, "requestId": "kic-…", "token": "<자기 팀 키>" }`. 다시 발급하면 옛 키는 바로 막힘. 도구 키로는 계정을 다룰 수 없음.
 * **작업 기록:** 같은 스프레드시트의 「작업 기록」 시트(처음 쓰기 때 생김).
 
-### Jira 통합 일정 조회 전용 API
+### Jira 통합 일정 (v3.2.0 부터 업무 서버)
 
-Jira 일정은 기존 업무 API와 분리된 [`jira-api/`](jira-api/) Apps Script 프로젝트에서 조회합니다. Jira 인증정보는 저장소에 작성하지 않고 조회 전용 프로젝트의 **Script Properties**에 저장합니다.
+통합 일정은 업무 서버(`backend/JiraTimeline.js`)에서 로그인 뒤 조회합니다. Jira 이슈는 조회만 하고 화면에서 수정하지 않습니다. 업무 서버 **스크립트 속성**:
 
 | 속성 | 설명 |
 |---|---|
 | `JIRA_BASE_URL` | 선택값. 미설정 시 `https://kic-itsd.atlassian.net` 사용 |
-| `JIRA_ACCOUNT_EMAIL` | Jira 조회 계정 이메일 |
-| `JIRA_API_TOKEN` | Jira API Token |
-| `JIRA_START_DATE_FIELD_ID` | 선택값. 미설정 시 `Start date` 날짜 필드를 자동 탐색 |
-| `JIRA_TIMELINE_WEB_ENABLED` | `true`일 때만 웹 조회 허용 |
-| `JIRA_TIMELINE_PROJECTS` | 화면의 프로젝트 설정에서 관리하는 조회 대상·표시명·사용 여부 JSON |
+| `JIRA_ACCOUNT_EMAIL` · `JIRA_API_TOKEN` | Jira 조회 계정(헬프데스크 Jira 싱크와 같이 씀) |
+| `JIRA_START_DATE_FIELD_ID` | 선택값. 없으면 `Start date` 날짜 칸을 찾아 서버가 저장 |
+| `JIRA_TIMELINE_PROJECTS` | 화면 「프로젝트 설정」에서 저장하는 조회 대상·표시명·사용 여부. 없으면 기본 5개 |
 
-현재 기능 검증 기간에는 Google 로그인 없이 공개 테스트 방식으로 조회합니다. `docs/js/config.js`의 `JIRA_TIMELINE_API_URL`에는 일정 전용 웹앱의 `/exec` URL만 사용하며, Jira Issue 자체는 화면에서 수정하지 않습니다.
+옛 일정 전용 서버([`jira-api/`](jira-api/))는 v3.2.0 배포 뒤 1주 확인하고 닫습니다(배포 내리기·옛 Jira 토큰 속성 삭제·폴더 정리).
 
 ### 1) Git 커밋 및 GitHub Pages 배포
 ```powershell

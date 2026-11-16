@@ -239,7 +239,7 @@ const WORK_LOG_ACTIONS = {
   saveDevelopers: '담당자 설정', applyJiraSync: 'Jira 싱크 적용', setJiraSyncExcluded: 'Jira 싱크 제외', setCaptureConfirmed: '누락 점검 확인',
   addBlogPostPlan: '블로그 일정 추가', updateBlogPostStatus: '블로그 상태', updateBlogPostUrl: '블로그 주소', deleteBlogPostPlan: '블로그 일정 삭제',
   migrateBlogPostingSheet: '블로그 시트 이전', addUser: '계정 추가', deleteUser: '계정 삭제', resetUserPassword: '임시 비밀번호 발급',
-  issueToolKey: '도구 키 발급', changePassword: '비밀번호 변경'
+  issueToolKey: '도구 키 발급', changePassword: '비밀번호 변경', saveJiraTimelineProjects: '일정 프로젝트 설정'
 };
 function appendWorkLog_(who, action, data, result) {
   const label = WORK_LOG_ACTIONS[action];
@@ -250,6 +250,7 @@ function appendWorkLog_(who, action, data, result) {
     const target = data.id || result.id || data.name || (data.row ? data.row + '행' : '');
     // 부분 수정은 바꾼 칸 이름만 남깁니다(값은 남기지 않음).
     const detail = action === 'updateIssueFields' ? (result.fields || []).join('·') :
+      action === 'saveJiraTimelineProjects' ? (result.projects || []).filter(function(p) { return p.enabled; }).map(function(p) { return p.key; }).join('·') :
       data.status || (data.hiddenYn !== undefined ? (data.hiddenYn === 'Y' ? '숨김' : '숨김 해제') : '') ||
       (action === 'addIssue' || action === 'insertIssue' ? String(data.title || '').slice(0, 60) : '');
     const spreadsheet = getSpreadsheet();

@@ -1,11 +1,9 @@
 const CONFIG = {
   // 배포된 Google Apps Script 웹앱 URL을 이곳에 입력하세요.
   // 예: "https://script.google.com/macros/s/AKfycb.../exec"
-  API_URL: "https://script.google.com/macros/s/AKfycbyjbf1M5XTqdW203XQWUdwO1Y9qgu1rG_WqiWX0LVgJNEEldw4gMOf6_tGfXGxc6ABQnA/exec",
-
-  // Jira 일정 전용 Apps Script 배포 URL입니다. 기존 업무 API와 분리해 사용합니다.
-  JIRA_TIMELINE_API_URL: "https://script.google.com/macros/s/AKfycbxncJs9huZd1ENzETRxRyKO5ikexxscHptSYGE6LIXsWP1DFDEn1Zmodk0H7vE8EuDR/exec"
+  API_URL: "https://script.google.com/macros/s/AKfycbyjbf1M5XTqdW203XQWUdwO1Y9qgu1rG_WqiWX0LVgJNEEldw4gMOf6_tGfXGxc6ABQnA/exec"
   // v3.1.0: 공개 파일에 있던 비밀번호 검사를 지웠습니다. 로그인은 서버(backend/Auth.js)가 확인합니다.
+  // v3.2.0: 통합 일정도 이 업무 서버로 합쳐 일정 전용 주소(JIRA_TIMELINE_API_URL)를 지웠습니다.
 };
 
 // 로그인 토큰은 kic-sidebar.js 의 KicAuth 가 이 브라우저에만 보관합니다(서버 시험용 vm 에는 없음).
@@ -138,7 +136,7 @@ try {
 } catch (_) { /* 저장 제한/손상된 기록은 API 요청에 영향을 주지 않습니다. */ }
 
 async function copyGASDiagnostics() {
-  const text = JSON.stringify({ version: 'v3.1.0', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
+  const text = JSON.stringify({ version: 'v3.2.0', copiedAt: new Date().toISOString(), records: getGASDiagnostics() }, null, 2);
   await navigator.clipboard.writeText(text);
 }
 

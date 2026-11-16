@@ -149,7 +149,7 @@
     try {
       const payload = state.demoMode
         ? buildDemoPayload()
-        : await callJiraTimelineApi('getJiraTimelineIssues', {}, 'POST');
+        : await callJiraTimelineApi('getJiraTimelineIssues', {});
 
       if (!payload || payload.enabled === false) {
         state.issues = [];
@@ -190,7 +190,6 @@
       renderFilteredData();
       const errorMessage = normalizeErrorMessage(error);
       setStatus('error', errorMessage);
-      showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL'] });
       elements.lastUpdated.innerHTML = '<i class="fa-solid fa-triangle-exclamation"></i> 조회 실패';
     } finally {
       setLoading(false);
@@ -201,55 +200,26 @@
     setLoading(true);
     setStatus('loading', 'Jira 조회 설정을 확인하고 있습니다.', true);
     try {
-      state.publicConfig = await callJiraTimelineApi('getJiraTimelinePublicConfig', {}, 'GET');
+      state.publicConfig = await callJiraTimelineApi('getJiraTimelineConfig', {});
       applyProjectConfig(state.publicConfig && state.publicConfig.projects);
-      if (!state.publicConfig || state.publicConfig.enabled === false || state.publicConfig.configured === false) {
+      if (!state.publicConfig || state.publicConfig.configured === false) {
         showSetupGuide(state.publicConfig || {});
-        setStatus('warning', 'Jira 조회 전용 연동 설정이 아직 완료되지 않았습니다.');
+        setStatus('warning', '업무 서버에 Jira 조회 계정 설정이 없습니다.');
         return;
       }
 
       await loadIssues();
     } catch (error) {
-      const message = normalizeErrorMessage(error);
-      setStatus('error', message);
-      showSetupGuide({ missingProperties: ['JIRA_TIMELINE_API_URL'] });
+      setStatus('error', normalizeErrorMessage(error));
     } finally {
       setLoading(false);
     }
   }
 
-  async function callJiraTimelineApi(action, data, method) {
-    // v3.1.0: 다른 메뉴처럼 로그인 전에는 부르지 않습니다. 일정 서버 자체의 잠금은 2단계(업무 서버에 합치기)에서 합니다.
-    if (window.KicAuth && !window.KicAuth.token()) throw new Error('로그인이 필요합니다.');
-    const apiUrl = CONFIG.JIRA_TIMELINE_API_URL;
-    if (!apiUrl) {
-      throw new Error('Jira 조회 전용 API 주소가 아직 설정되지 않았습니다.');
-    }
-
-    const requestMethod = method || 'POST';
-    const url = requestMethod === 'GET'
-      ? apiUrl + '?action=' + encodeURIComponent(action)
-      : apiUrl;
-    const options = requestMethod === 'GET'
-      ? { method: 'GET', mode: 'cors' }
-      : {
-          method: 'POST',
-          mode: 'cors',
-          headers: { 'Content-Type': 'text/plain' },
-          body: JSON.stringify({ action: action, data: data || {} })
-        };
-    const response = await fetch(url, options);
-    if (!response.ok) throw new Error('Jira 조회 서버 응답 오류 (' + response.status + ')');
-    const text = await response.text();
-    let result;
-    try {
-      result = JSON.parse(text);
-    } catch (error) {
-      throw new Error('Jira 조회 전용 API 배포 설정을 확인해 주세요.');
-    }
-    if (!result.success) throw new Error(result.error || 'Jira 일정 조회에 실패했습니다.');
-    return result.data;
+  // v3.2.0: 옛 일정 전용 서버 대신 업무 서버를 공통 호출 함수(config.js callGASApi)로 부릅니다.
+  // 로그인 토큰을 싣고, 로그인 전이거나 로그인이 끝났으면 공통 함수가 로그인 화면을 띄웁니다.
+  function callJiraTimelineApi(action, data) {
+    return callGASApi(action, data || {});
   }
 
   function populateFilters() {
@@ -674,7 +644,7 @@
         { key: 'SEC', name: '정보보안 업무' }
       ]);
     } else {
-      const result = await callJiraTimelineApi('getJiraTimelineProjects', {}, 'POST');
+      const result = await callJiraTimelineApi('getJiraTimelineProjects', {});
       projects = result && result.projects;
     }
     state.availableProjects = mergeAvailableProjects(projects);
@@ -730,7 +700,7 @@
       if (state.demoMode) {
         applyProjectConfig(projects);
       } else {
-        const result = await callJiraTimelineApi('saveJiraTimelineProjects', { projects: projects }, 'POST');
+        const result = await callJiraTimelineApi('saveJiraTimelineProjects', { projects: projects });
         applyProjectConfig(result && result.projects);
       }
       closeModal(elements.projectSettingsModal);
@@ -901,10 +871,8 @@
   }
 
   function showSetupGuide(payload) {
+    // v3.2.0: 웹 조회 스위치(JIRA_TIMELINE_WEB_ENABLED)는 없앴습니다. 서버가 알려 준 빠진 설정만 보여 줍니다.
     const missing = Array.isArray(payload.missingProperties) ? payload.missingProperties.slice() : [];
-    if (missing.indexOf('JIRA_TIMELINE_WEB_ENABLED=true') === -1) {
-      missing.push('JIRA_TIMELINE_WEB_ENABLED=true');
-    }
     elements.missingProperties.innerHTML = missing.map(function(name) {
       return '<code>' + escapeHtml(name) + '</code>';
     }).join('');
