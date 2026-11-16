@@ -235,7 +235,7 @@ function authSetLock_(on) {
 // 작업 기록: 쓰기가 성공할 때마다 「작업 기록」 시트에 한 줄. 이슈 시트 열은 건드리지 않습니다.
 const WORK_LOG_SHEET_NAME = '작업 기록';
 const WORK_LOG_ACTIONS = {
-  addIssue: '등록', insertIssue: '중간 등록', updateIssue: '수정', updateStatus: '상태 변경', updateHidden: '숨김',
+  addIssue: '등록', insertIssue: '중간 등록', updateIssue: '수정', updateIssueFields: '부분 수정', updateStatus: '상태 변경', updateHidden: '숨김',
   saveDevelopers: '담당자 설정', applyJiraSync: 'Jira 싱크 적용', setJiraSyncExcluded: 'Jira 싱크 제외', setCaptureConfirmed: '누락 점검 확인',
   addBlogPostPlan: '블로그 일정 추가', updateBlogPostStatus: '블로그 상태', updateBlogPostUrl: '블로그 주소', deleteBlogPostPlan: '블로그 일정 삭제',
   migrateBlogPostingSheet: '블로그 시트 이전', addUser: '계정 추가', deleteUser: '계정 삭제', resetUserPassword: '임시 비밀번호 발급',
@@ -248,7 +248,9 @@ function appendWorkLog_(who, action, data, result) {
     data = data || {}; result = result || {};
     // 비밀번호·키·본문은 남기지 않습니다. 대상과 상태값만 남깁니다.
     const target = data.id || result.id || data.name || (data.row ? data.row + '행' : '');
-    const detail = data.status || (data.hiddenYn !== undefined ? (data.hiddenYn === 'Y' ? '숨김' : '숨김 해제') : '') ||
+    // 부분 수정은 바꾼 칸 이름만 남깁니다(값은 남기지 않음).
+    const detail = action === 'updateIssueFields' ? (result.fields || []).join('·') :
+      data.status || (data.hiddenYn !== undefined ? (data.hiddenYn === 'Y' ? '숨김' : '숨김 해제') : '') ||
       (action === 'addIssue' || action === 'insertIssue' ? String(data.title || '').slice(0, 60) : '');
     const spreadsheet = getSpreadsheet();
     let sheet = spreadsheet.getSheetByName(WORK_LOG_SHEET_NAME);

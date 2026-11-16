@@ -129,7 +129,7 @@ async function main(){
     const auto=await fixture();const ap=auto.page;
     const visible=()=>ap.evaluate(()=>document.dispatchEvent(new Event('visibilitychange')));
     const nextRead=async n=>{for(let i=0;i<50&&auto.reads().length<n;i++)await ap.waitForTimeout(20);return auto.reads()[n-1];};
-    await auto.reply(auto.reads()[0],'첫 목록');await ap.waitForFunction(()=>fullIssueFetchPromise===null);
+    await auto.reply(await nextRead(1),'첫 목록');await ap.waitForFunction(()=>fullIssueFetchPromise===null);
     await visible();assert.equal(auto.reads().length,1,'1분 안에 탭 복귀는 건너뜀');
     await ap.evaluate(()=>{dashboardLastSyncedAt=0;openEditById('IT-261007-001');});await visible();
     assert.equal(auto.reads().length,1,'수정 창이 열려 있으면 건너뜀');

@@ -172,19 +172,19 @@ function buildDashboardIssueObject(row, sourceType) {
     sourceLabel: sourceLabel,
     date: Utilities.formatDate(receiptDate, TIMEZONE, "yyyy-MM-dd HH:mm"),
     branch: row[1] || '-',
-    requester: sanitizeString(row[3]),
+    requester: sheetText_(row[3]),
     system: row[4] || '-',
     type: row[5] || '-',
     priority: row[6] || '보통',
-    menu: sanitizeString(row[7]),
-    title: sanitizeString(row[8]),
-    details: sanitizeString(row[9]),
+    menu: sheetText_(row[7]),
+    title: sheetText_(row[8]),
+    details: sheetText_(row[9]),
     dev: row[10] || '',
     status: status,
-    actionContent: sanitizeString(row[13]),
-    remark: sanitizeString(row[14]),
-    sourceLink: sanitizeString(row[15]),
-    jiraLink: sanitizeString(row[16]),
+    actionContent: sheetText_(row[13]),
+    remark: sheetText_(row[14]),
+    sourceLink: sheetText_(row[15]),
+    jiraLink: sheetText_(row[16]),
     hiddenFlag: isHiddenFlagValue(row[17]) ? "Y" : "",
     isHidden: isHiddenFlagValue(row[17]),
     jiraLinkedFlag: isJiraLinkedFlagValue(row[18]) ? "Y" : "",
@@ -491,7 +491,7 @@ function doPost(e) {
     if (/^kic-[a-z0-9-]{10,70}$/.test(String(payload.requestId || ''))) activeApiDiagnostic.requestId = payload.requestId;
     const action = payload.action;
     activeApiDiagnostic.action = /^[A-Za-z][A-Za-z0-9]{0,50}$/.test(String(action || '')) ? action : 'unknown';
-    if (action === 'addIssue' || action === 'updateIssue' || action === 'insertIssue' || action === 'setCaptureConfirmed') activeApiDiagnostic.writeStarted = false;
+    if (['addIssue', 'updateIssue', 'updateIssueFields', 'insertIssue', 'setCaptureConfirmed'].indexOf(action) !== -1) activeApiDiagnostic.writeStarted = false;
     const data = payload.data || {};
     // v3.1.0 로그인: 누가 보냈는지 먼저 정합니다(Auth.js). 로그인·계정 요청은 여기서 끝냅니다.
     markApiDiagnosticStage('auth_check');
@@ -503,7 +503,7 @@ function doPost(e) {
       appendWorkLog_(who, action, data, accountResult);
       return finishApiDiagnostic({ success: true, data: accountResult });
     }
-    if (typeof assertHelpdeskIdentity_ === 'function' && ['updateIssue', 'updateStatus', 'updateHidden'].indexOf(action) !== -1 && data.sourceType !== SOURCE_TYPE_QUARTER) {
+    if (typeof assertHelpdeskIdentity_ === 'function' && ['updateIssue', 'updateIssueFields', 'updateStatus', 'updateHidden'].indexOf(action) !== -1 && data.sourceType !== SOURCE_TYPE_QUARTER) {
       identityMutationLock = LockService.getScriptLock();
       markApiDiagnosticStage('lock_wait'); identityMutationLock.waitLock(10000);
       markApiDiagnosticStage('identity_verify');
@@ -540,6 +540,8 @@ function doPost(e) {
     } else if (action === 'updateIssue') {
       const stats = updateIssueFromDashboard(data);
       result = { success: true, data: stats };
+    } else if (action === 'updateIssueFields') {
+      result = { success: true, data: updateIssueFieldsFromDashboard(data) };
     } else if (action === 'updateStatus') {
       const stats = updateIssueStatusFromDashboard(data.id, data.status, data.sourceType);
       result = { success: true, data: stats };
@@ -1348,9 +1350,10 @@ function getDashboardData(startDateStr, endDateStr) {
   return stats;
 }
 
-function sanitizeString(str) {
-  if (str === null || str === undefined) return "";
-  return str.toString().replace(/\\/g, "/").replace(/\r/g, "").replace(/\n/g, " ").replace(/'/g, "’").replace(/"/g, "”").trim();
+// [서버 @134, 11-16] 시트 글을 그대로 돌려줍니다. 예전 sanitizeString 은 줄바꿈→공백, ' → ’, " → ”, \ → / 로 바꿔 돌려줬고,
+// 웹 수정 창·updateIssue 가 그 값을 다시 저장해 제목·상세·처리내용이 바뀌었습니다. 화면은 escapeHtml·textContent 로 그리므로 안전합니다.
+function sheetText_(value) {
+  return value === null || value === undefined ? '' : String(value);
 }
 
 function addIssueFromDashboard(formData) {
@@ -1485,6 +1488,33 @@ function updateIssueFromDashboard(formData) {
 
   // 담당자/상태 수정은 접수일시를 바꾸지 않으므로 전체 시트 재정렬하지 않습니다.
   return {success: true, id: formData.id, sourceType: targetSourceType};
+}
+
+// [서버 @134, 11-16] 「부분 수정」: 원문 링크·담당·처리내용·비고·Jira 링크 중 보낸 칸만 그 셀에 씁니다.
+// 제목·상세·상태는 읽지도 쓰지도 않습니다. 일괄 보정(CS팀 도구 키)용이며 이 밖의 칸을 보내면 거절합니다.
+const ISSUE_FIELD_COLUMNS = { dev: 11, actionContent: 14, remark: 15, sourceLink: SOURCE_LINK_COLUMN, jiraLink: JIRA_LINK_COLUMN };
+const ISSUE_FIELD_LABELS = { dev: '담당', actionContent: '처리내용', remark: '비고', sourceLink: '원문 링크', jiraLink: 'Jira 링크' };
+function updateIssueFieldsFromDashboard(data) {
+  if (!data || !data.id) throw new Error('수정할 이슈 ID가 없습니다.');
+  const others = Object.keys(data).filter(function(key) { return ['id', 'identityRevision', 'sourceType'].indexOf(key) === -1 && !ISSUE_FIELD_COLUMNS[key]; });
+  if (others.length) throw new Error('부분 수정으로는 고칠 수 없는 칸입니다: ' + others.join(', ') + ' (원문 링크·담당·처리내용·비고·Jira 링크만)');
+  const fields = Object.keys(ISSUE_FIELD_COLUMNS).filter(function(key) { return data[key] !== undefined; });
+  if (!fields.length) throw new Error('고칠 칸이 없습니다(원문 링크·담당·처리내용·비고·Jira 링크).');
+  fields.forEach(function(key) { if (typeof data[key] !== 'string') throw new Error(ISSUE_FIELD_LABELS[key] + ' 값은 글자여야 합니다.'); });
+
+  const quarter = data.sourceType === SOURCE_TYPE_QUARTER;
+  markApiDiagnosticStage('sheet_open');
+  const sheet = quarter ? getQuarterRequestSheet() : getMainSheet();
+  if (!sheet) throw new Error(quarter ? '분기요청 시트를 찾을 수 없습니다.' : '이슈사항 시트를 찾을 수 없습니다.');
+  markApiDiagnosticStage('sheet_headers');
+  ensureLinkColumns(sheet);
+  markApiDiagnosticStage('issue_find');
+  const targetRow = findIssueRowById(sheet, data.id);
+  if (targetRow === -1) throw new Error('해당 이슈를 찾을 수 없습니다: ' + data.id);
+  markApiDiagnosticStage('sheet_write');
+  apiDiagnosticWriteStarted();
+  fields.forEach(function(key) { sheet.getRange(targetRow, ISSUE_FIELD_COLUMNS[key]).setValue(data[key]); });
+  return { success: true, id: data.id, fields: fields.map(function(key) { return ISSUE_FIELD_LABELS[key]; }) };
 }
 
 function updateIssueStatusFromDashboard(issueId, newStatus, sourceType) {
