@@ -100,6 +100,13 @@ const basicStyles='<style>.hidden{display:none!important}.relative{position:rela
     assert.match(await latestText(),/IT-261022-009/);await page.locator('#globalSearchInput').fill('이월 반려');await page.waitForTimeout(150);assert.match(await latestText(),/IT-261022-009/);await page.locator('#globalSearchClearBtn').click();await page.waitForTimeout(120);
     await page.evaluate(()=>applyLocalIssueUpdate({id:'IT-261023-001',date:'2026-10-23 08:30',title:'새로 등록한 업무',status:'접수대기',type:'오류',sourceType:'helpdesk',sourceLabel:'헬프',branch:'부산지사',requester:'예시 신규',details:'합성',system:'CMS',priority:'보통'}));
     assert.match(await latestText(),/IT-261023-001[\s\S]*새로 등록한 업무[\s\S]*부산지사 예시 신규[\s\S]*10\/23 08:30/);console.log('PASS 최근 등록 건: 조회 기간·검색 무관, 분기 요청 제외, 신규 등록 즉시 갱신');
+    // v3.2.1: ?q=이슈번호 링크 — 번호 날짜가 든 주로 기간을 맞추고 바로 검색. 최신 목록이 늦게 와도(동기화 완료 뒤) 검색어 유지.
+    const linkPage=await context.newPage();linkPage.on('pageerror',e=>errors.push(e.message));const synced=()=>linkPage.waitForFunction(()=>document.querySelector('#sync-indicator').innerText.includes('동기화 완료'));
+    const linkState=async()=>[await linkPage.locator('#globalSearchInput').inputValue(),await linkPage.locator('#startDate').inputValue(),await linkPage.locator('#endDate').inputValue()];
+    await linkPage.goto(origin+'/index.html?q=IT-261015-002');await synced();assert.deepEqual(await linkState(),['IT-261015-002','2026-10-12','2026-10-18']);
+    assert.equal(await linkPage.locator('#count-done-current').innerText(),'1건');assert.match(await linkPage.locator('#done-current-container').innerText(),/이월 반려 업무/);assert.match(await linkPage.locator('#globalSearchSummary').innerText(),/검색 결과 1건/);
+    for(const plain of ['/index.html?q=','/index.html']){await linkPage.goto(origin+plain);await synced();assert.deepEqual(await linkState(),['','2026-10-19','2026-10-25']);assert.equal(await linkPage.locator('#globalSearchSummary').isVisible(),false);}
+    await linkPage.close();console.log('PASS ?q= 이슈번호 링크: 그 주로 기간 맞춤·바로 검색·동기화 뒤 유지, q 없거나 비면 기존과 같음');
     assert.deepEqual(errors,[]);assert.equal(requests.filter(x=>x.action==='updateIssue').length,3);
     console.log('PASS 재접속 시 저장 상태 반영·진행 관리 초기 접힘. 운영 API 호출·실제 데이터 변경 없음.');
   }finally{if(browser)await browser.close();await new Promise(resolve=>server.close(resolve));}

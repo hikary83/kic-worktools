@@ -103,7 +103,7 @@ function dashboardFixture(cached, storageFails=false){
   const element=id=>{if(!elements.has(id)){const classes=new Set();elements.set(id,{value:'',innerHTML:'',className:'',
     classList:{add:c=>classes.add(c),remove:c=>classes.delete(c),contains:c=>classes.has(c)}});}return elements.get(id);};
   class Clock extends Date {static now(){return now;}}
-  const ctx=vm.createContext({Date:Clock,console:{warn(){}},
+  const ctx=vm.createContext({Date:Clock,console:{warn(){}},URLSearchParams,location:{search:''},
     window:{allIssuesMap:{},globalDevList:[]},document:{getElementById:element},
     localStorage:{getItem:k=>stored.get(k),setItem(k,v){if(storageFails)throw Error('quota');stored.set(k,v);}},
     getThisWeekRange:()=>({start:'2026-10-05',end:'2026-10-11'}),initImeProtection(){},loadHelpdeskStaffBranchMap(){},
