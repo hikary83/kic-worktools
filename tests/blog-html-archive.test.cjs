@@ -149,7 +149,7 @@ test('창 뒤 막은 글자색이 아니라 공용 막 색을 쓰고, 일정 상
   }
   const marketer = fs.readFileSync(path.join(root, 'docs', 'marketer.html'), 'utf8');
   assert.match(marketer, /id="modal-btn-html" onclick="downloadModalPlanHtml\(\)"/);
-  assert.match(marketer, /runServerFunction\('getBlogPostHtml', \{ row: plan\.row, date:/);
+  assert.match(marketer, /const file = await runServerFunction\('getBlogPostHtml', \{ row: plan\.row, date:/, '서버 호출 함수는 data 만 돌려준다(res.data 아님)');
 });
 
 console.log(`${passed} passed`);

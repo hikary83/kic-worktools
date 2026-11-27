@@ -1110,8 +1110,8 @@
       label.textContent = '받는 중...';
       try {
         // 행이 밀렸을 때 다른 글을 받지 않도록 날짜도 같이 보냅니다(서버가 맞춰 봄).
-        const res = await runServerFunction('getBlogPostHtml', { row: plan.row, date: String(plan.fullDate || '').slice(0, 10) });
-        const file = res.data;
+        // callGASApi 는 서버 답의 data 만 돌려줍니다({ name, html }).
+        const file = await runServerFunction('getBlogPostHtml', { row: plan.row, date: String(plan.fullDate || '').slice(0, 10) });
         const a = document.createElement('a');
         a.href = URL.createObjectURL(new Blob([file.html], { type: 'text/html;charset=utf-8' }));
         a.download = file.name;
