@@ -36,7 +36,7 @@ function setup() {
   };
   const folders = [];
   const DriveApp = {
-    createFolder: name => { const f = { name, getId: () => 'folder' + folders.length + '0'.repeat(25), isTrashed: () => false, createFile: makeFile }; folders.push(f); return f; },
+    createFolder: name => { const id = 'folder' + folders.length + '0'.repeat(25), f = { name, getId: () => id, getUrl: () => 'https://drive.google.com/drive/folders/' + id, isTrashed: () => false, createFile: makeFile }; folders.push(f); return f; },
     getFolderById: id => { const f = folders.find(x => x.getId() === id); if (!f) throw new Error('no folder'); return f; },
     getFileById: id => { if (!files[id]) throw new Error('no file'); return files[id]; }
   };
@@ -52,7 +52,7 @@ function setup() {
   vm.runInContext(source, context);
   Object.assign(context, { getBlogPostingSheet: () => sheet });
   const req = (action, data) => JSON.parse(context.doPost({ postData: { contents: JSON.stringify({ action, data, requestId: 'kic-test-blog-html-01' }) } }).text);
-  return { grid, files, folders, props, log, req };
+  return { grid, files, folders, props, log, req, context };
 }
 
 test('저장하면 드라이브 폴더에 파일을 만들고 「원문 HTML」 열에 주소를 적는다', () => {
@@ -99,6 +99,16 @@ test('행과 날짜가 다르거나 HTML 이 아니면 거절하고 아무것도
   assert.match(f.req('getBlogPostHtml', { row: 3, date: '2026-12-15' }).error, /등록된 원문이 없습니다/);
   f.req('saveBlogPostHtml', { row: 3, date: '2026-12-15', html: HTML });
   assert.match(f.req('getBlogPostHtml', { row: 3, date: '2026-12-01' }).error, /다릅니다/, '내려받기도 날짜를 맞춰 본다');
+});
+
+test('편집기용 prepareBlogHtmlFolder 는 드라이브 권한을 먼저 확인하고 폴더 주소를 돌려준다', () => {
+  const f = setup(), asked = [];
+  f.context.ScriptApp = { AuthMode: { FULL: 'FULL' }, requireScopes: (mode, scopes) => asked.push([mode, ...scopes]) };
+  assert.equal(f.context.prepareBlogHtmlFolder(), 'https://drive.google.com/drive/folders/' + f.folders[0].getId());
+  assert.deepEqual(asked, [['FULL', 'https://www.googleapis.com/auth/drive']]);
+  assert.equal(f.folders[0].name, 'KIC 블로그 원문');
+  f.context.prepareBlogHtmlFolder();
+  assert.equal(f.folders.length, 1, '두 번 실행해도 폴더는 하나');
 });
 
 test('창 뒤 막은 글자색이 아니라 공용 막 색을 쓰고, 일정 상세 창에 「원문 다운」 버튼이 있다', () => {

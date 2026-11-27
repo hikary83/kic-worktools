@@ -2343,6 +2343,14 @@ function blogHtmlFolder_() {
   return folder;
 }
 
+// 편집기에서 한 번 실행합니다. 권한 창에서 드라이브 체크가 빠졌을 때 드라이브 권한만 다시 묻고, 원문 폴더를 만들어 주소를 남깁니다.
+function prepareBlogHtmlFolder() {
+  if (ScriptApp.requireScopes) ScriptApp.requireScopes(ScriptApp.AuthMode.FULL, ['https://www.googleapis.com/auth/drive']);
+  const url = blogHtmlFolder_().getUrl();
+  Logger.log('블로그 원문 폴더: ' + url);
+  return url;
+}
+
 // 행과 날짜가 함께 맞아야 합니다. 그사이 일정이 지워져 행이 밀렸으면 다른 글에 붙지 않게 거절합니다.
 function blogHtmlPlan_(data) {
   const day = String(data.date || '');
