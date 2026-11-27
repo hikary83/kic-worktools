@@ -592,6 +592,10 @@ function doPost(e) {
     } else if (action === 'deleteBlogPostPlan') {
       const stats = deleteBlogPostPlan(data);
       result = { success: true, data: stats };
+    } else if (action === 'saveBlogPostHtml') {
+      result = { success: true, data: saveBlogPostHtml(data) };
+    } else if (action === 'getBlogPostHtml') {
+      result = { success: true, data: getBlogPostHtml(data) };
     } else if (action === 'addBlogPostPlan') {
       const stats = addBlogPostPlan(data);
       result = { success: true, data: stats };
@@ -2117,6 +2121,7 @@ function getBlogPostPlans() {
       if (statusColIdx === -1) statusColIdx = 6;
       let urlColIdx = headers.findIndex(h => h.includes("URL") || h.includes("url") || h.includes("링크"));
       if (urlColIdx === -1) urlColIdx = 7;
+      const htmlColIdx = headers.indexOf(BLOG_HTML_HEADER);
 
       for (let i = 1; i < values.length; i++) {
         const row = values[i];
@@ -2147,7 +2152,8 @@ function getBlogPostPlans() {
           keywords: keywords,
           note: note,
           status: status,
-          postUrl: postUrl
+          postUrl: postUrl,
+          hasHtml: htmlColIdx !== -1 && !!String(row[htmlColIdx] || '').trim()
         });
       }
     } else {
@@ -2302,6 +2308,76 @@ function deleteBlogPostPlan(data) {
     row: rowNumber,
     message: "포스팅 일정이 성공적으로 삭제되었습니다."
   };
+}
+
+// v3.2.2 블로그 원문 HTML 보관(2026-11-27 이광희님 요청). 파일은 드라이브 「KIC 블로그 원문」 폴더에,
+// 시트에는 「원문 HTML」 열에 파일 주소만 둡니다(한 장이 약 150만 자라 시트 칸 5만 자에 안 들어감).
+const BLOG_HTML_HEADER = '원문 HTML';
+const BLOG_HTML_FOLDER_NAME = 'KIC 블로그 원문';
+const BLOG_HTML_MAX_CHARS = 10 * 1024 * 1024;
+
+function blogHtmlColumn_(sheet, create) {
+  const lastCol = sheet.getLastColumn();
+  const headers = sheet.getRange(1, 1, 1, lastCol).getValues()[0].map(h => String(h || '').trim());
+  const idx = headers.indexOf(BLOG_HTML_HEADER);
+  if (idx !== -1 || !create) return idx + 1;
+  const col = lastCol + 1;
+  if (col > sheet.getMaxColumns()) sheet.insertColumnsAfter(sheet.getMaxColumns(), 1);
+  sheet.getRange(1, col).setValue(BLOG_HTML_HEADER).setBackground("#f1f5f9").setFontWeight("bold").setHorizontalAlignment("center");
+  return col;
+}
+
+function blogHtmlFileId_(link) {
+  const m = String(link || '').match(/[-\w]{25,}/);
+  return m ? m[0] : '';
+}
+
+function blogHtmlFolder_() {
+  const props = PropertiesService.getScriptProperties();
+  const id = props.getProperty('BLOG_HTML_FOLDER_ID');
+  if (id) {
+    try { const found = DriveApp.getFolderById(id); if (!found.isTrashed()) return found; } catch (e) {}
+  }
+  const folder = DriveApp.createFolder(BLOG_HTML_FOLDER_NAME);
+  props.setProperty('BLOG_HTML_FOLDER_ID', folder.getId());
+  return folder;
+}
+
+// 행과 날짜가 함께 맞아야 합니다. 그사이 일정이 지워져 행이 밀렸으면 다른 글에 붙지 않게 거절합니다.
+function blogHtmlPlan_(data) {
+  const day = String(data.date || '');
+  const plan = getBlogPostPlans().find(p => p.row === Number(data.row));
+  if (!plan) throw new Error("유효하지 않은 행 번호입니다: " + data.row);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(day) || String(plan.fullDate).indexOf(day) !== 0) {
+    throw new Error(`${plan.row}행 일자(${plan.fullDate})가 ${day || '빈 값'}과 다릅니다. 새로고침 후 다시 시도해 주세요.`);
+  }
+  return plan;
+}
+
+function saveBlogPostHtml(data) {
+  const html = String(data.html || '');
+  if (!/^\s*(<!doctype html|<html)/i.test(html)) throw new Error('HTML 문서가 아닙니다.');
+  if (html.length > BLOG_HTML_MAX_CHARS) throw new Error('HTML이 너무 큽니다(최대 약 1천만 자).');
+  const plan = blogHtmlPlan_(data);
+  const sheet = getBlogPostingSheet();
+  const cell = sheet.getRange(plan.row, blogHtmlColumn_(sheet, true));
+  const name = (data.date + '_' + plan.topic).replace(/[\\/:*?"<>|]/g, '').slice(0, 120) + '.html';
+  const file = blogHtmlFolder_().createFile(Utilities.newBlob(html, 'text/html', name));
+  const oldId = blogHtmlFileId_(cell.getValue());
+  cell.setValue(file.getUrl());
+  // 이전 파일은 지우지 않고 휴지통으로만 보냅니다.
+  if (oldId) { try { DriveApp.getFileById(oldId).setTrashed(true); } catch (e) {} }
+  return { success: true, row: plan.row, name: name, size: html.length };
+}
+
+function getBlogPostHtml(data) {
+  const plan = blogHtmlPlan_(data);
+  const sheet = getBlogPostingSheet();
+  const col = blogHtmlColumn_(sheet, false);
+  const id = col ? blogHtmlFileId_(sheet.getRange(plan.row, col).getValue()) : '';
+  if (!id) throw new Error('이 일정에는 등록된 원문이 없습니다.');
+  const file = DriveApp.getFileById(id);
+  return { name: file.getName(), html: file.getBlob().getDataAsString('UTF-8') };
 }
 
 function addBlogPostPlan(data) {

@@ -30,14 +30,14 @@
     }
   </script>
   <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-  <link href="css/kic-theme.css?v=3.2.1" rel="stylesheet" />
+  <link href="css/kic-theme.css?v=3.2.2" rel="stylesheet" />
   <!-- Lucide Icons CDN -->
   <script src="https://unpkg.com/lucide@latest"></script>
   <!-- Marked.js Markdown Parser CDN -->
   <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
-  <script src="js/config.js?v=3.2.1"></script>
-  <script src="js/kic-sidebar.js?v=3.2.1"></script>
-  <script src="js/kic-common.js?v=3.2.1"></script>
+  <script src="js/config.js?v=3.2.2"></script>
+  <script src="js/kic-sidebar.js?v=3.2.2"></script>
+  <script src="js/kic-common.js?v=3.2.2"></script>
   <style>
     body {
       font-family: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, system-ui, Roboto, sans-serif !important;
@@ -508,7 +508,7 @@
   </main>
 
   <!-- ⚙️ 카테고리 관리 모달 -->
-  <div id="modal-categories" class="fixed inset-0 bg-[var(--ink)] backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+  <div id="modal-categories" class="fixed inset-0 bg-[var(--backdrop)] backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
     <div class="bg-[var(--card)] rounded-2xl shadow-2xl w-full max-w-md border border-[var(--line)] flex flex-col overflow-hidden transition-colors">
       <div class="p-5 border-b border-[var(--line)] flex justify-between items-center">
         <h3 class="font-extrabold text-[var(--ink)] text-base">카테고리 목록 설정</h3>
@@ -523,7 +523,7 @@
   </div>
 
   <!-- 📌 포스팅 일정 상세 & 실제 포스팅 URL 관리 모달 -->
-  <div id="modal-plan-detail" class="fixed inset-0 bg-[var(--ink)] backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
+  <div id="modal-plan-detail" class="fixed inset-0 bg-[var(--backdrop)] backdrop-blur-xs z-50 flex items-center justify-center hidden p-4">
     <div class="bg-[var(--card)] rounded-2xl shadow-2xl w-full max-w-lg border border-[var(--line)] flex flex-col overflow-hidden transition-colors">
       
       <!-- 모달 헤더 -->
@@ -562,9 +562,15 @@
             <label class="text-xs font-bold text-[var(--muted)] flex items-center gap-1.5">
               <i data-lucide="check-circle" class="w-3.5 h-3.5 text-[var(--ok)]"></i> 포스팅 상태 변경
             </label>
-            <button onclick="deleteModalPlan()" class="text-xs font-bold text-[var(--err)] hover:text-[var(--err)] hover:bg-[var(--err-soft)] px-2.5 py-1 rounded-xl transition-all flex items-center gap-1" title="이 포스팅 일정 영구 삭제">
-              <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 일정 삭제
-            </button>
+            <div class="flex items-center gap-1">
+              <!-- v3.2.2 블로그팀이 만든 붙여넣기 화면(HTML) 원문 내려받기 -->
+              <button id="modal-btn-html" onclick="downloadModalPlanHtml()" class="text-xs font-bold text-[var(--accent)] hover:bg-[var(--accent-soft)] disabled:text-[var(--dim)] disabled:hover:bg-transparent disabled:cursor-default px-2.5 py-1 rounded-xl transition-all flex items-center gap-1" title="블로그팀이 만든 원문(HTML) 내려받기">
+                <i data-lucide="file-down" class="w-3.5 h-3.5"></i> <span id="modal-btn-html-label">원문 다운</span>
+              </button>
+              <button onclick="deleteModalPlan()" class="text-xs font-bold text-[var(--err)] hover:text-[var(--err)] hover:bg-[var(--err-soft)] px-2.5 py-1 rounded-xl transition-all flex items-center gap-1" title="이 포스팅 일정 영구 삭제">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i> 일정 삭제
+              </button>
+            </div>
           </div>
           <div class="grid grid-cols-3 gap-2">
             <button id="modal-btn-status-done" onclick="setModalPlanStatus('○')" class="py-2.5 px-3 rounded-xl border border-[var(--line)] bg-[var(--card)] text-[var(--ink)] text-xs font-extrabold flex items-center justify-center gap-1.5 transition-all">
@@ -972,6 +978,9 @@
         statusBadge.className = 'text-[10px] font-extrabold text-[var(--dim)]';
       }
 
+      $('modal-btn-html').disabled = !plan.hasHtml;
+      $('modal-btn-html-label').textContent = plan.hasHtml ? '원문 다운' : '원문 없음';
+
       $('modal-plan-detail').classList.remove('hidden');
       lucide.createIcons();
     }
@@ -1090,6 +1099,29 @@
         showToast('포스팅 일정이 성공적으로 삭제되었습니다.', 'success');
       } catch (err) {
         showToast('일정 삭제 실패: ' + (err.message || String(err)), 'error');
+      }
+    }
+
+    async function downloadModalPlanHtml() {
+      const plan = currentModalPlan;
+      if (!plan || !plan.hasHtml) return;
+      const btn = $('modal-btn-html'), label = $('modal-btn-html-label');
+      btn.disabled = true;
+      label.textContent = '받는 중...';
+      try {
+        // 행이 밀렸을 때 다른 글을 받지 않도록 날짜도 같이 보냅니다(서버가 맞춰 봄).
+        const res = await runServerFunction('getBlogPostHtml', { row: plan.row, date: String(plan.fullDate || '').slice(0, 10) });
+        const file = res.data;
+        const a = document.createElement('a');
+        a.href = URL.createObjectURL(new Blob([file.html], { type: 'text/html;charset=utf-8' }));
+        a.download = file.name;
+        a.click();
+        setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+      } catch (err) {
+        showToast('원문 내려받기 실패: ' + (err.message || String(err)), 'error');
+      } finally {
+        btn.disabled = false;
+        label.textContent = '원문 다운';
       }
     }
 

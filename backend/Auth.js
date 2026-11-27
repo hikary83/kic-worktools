@@ -237,7 +237,7 @@ const WORK_LOG_SHEET_NAME = '작업 기록';
 const WORK_LOG_ACTIONS = {
   addIssue: '등록', insertIssue: '중간 등록', updateIssue: '수정', updateIssueFields: '부분 수정', updateStatus: '상태 변경', updateHidden: '숨김',
   saveDevelopers: '담당자 설정', applyJiraSync: 'Jira 싱크 적용', setJiraSyncExcluded: 'Jira 싱크 제외', setCaptureConfirmed: '누락 점검 확인',
-  addBlogPostPlan: '블로그 일정 추가', updateBlogPostStatus: '블로그 상태', updateBlogPostUrl: '블로그 주소', deleteBlogPostPlan: '블로그 일정 삭제',
+  addBlogPostPlan: '블로그 일정 추가', updateBlogPostStatus: '블로그 상태', updateBlogPostUrl: '블로그 주소', deleteBlogPostPlan: '블로그 일정 삭제', saveBlogPostHtml: '블로그 원문 등록',
   migrateBlogPostingSheet: '블로그 시트 이전', addUser: '계정 추가', deleteUser: '계정 삭제', resetUserPassword: '임시 비밀번호 발급',
   issueToolKey: '도구 키 발급', changePassword: '비밀번호 변경', saveJiraTimelineProjects: '일정 프로젝트 설정'
 };
