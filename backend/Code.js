@@ -2370,11 +2370,21 @@ function saveBlogPostHtml(data) {
   const sheet = getBlogPostingSheet();
   const cell = sheet.getRange(plan.row, blogHtmlColumn_(sheet, true));
   const name = (data.date + '_' + plan.topic).replace(/[\\/:*?"<>|]/g, '').slice(0, 120) + '.html';
-  const file = blogHtmlFolder_().createFile(Utilities.newBlob(html, 'text/html', name));
+  const folder = blogHtmlFolder_();
+  const file = folder.createFile(Utilities.newBlob(html, 'text/html', name));
   const oldId = blogHtmlFileId_(cell.getValue());
+  // 블로그포스팅 표의 I열은 드롭다운 칸이라 주소가 버려졌습니다(2026-11-27). 이 칸만 풀고 적은 뒤 다시 읽어 확인합니다.
+  try { cell.clearDataValidations(); } catch (e) {}
   cell.setValue(file.getUrl());
-  // 이전 파일은 지우지 않고 휴지통으로만 보냅니다.
-  if (oldId) { try { DriveApp.getFileById(oldId).setTrashed(true); } catch (e) {} }
+  SpreadsheetApp.flush();
+  if (blogHtmlFileId_(cell.getValue()) !== file.getId()) {
+    file.setTrashed(true);
+    throw new Error(`${plan.row}행 「${BLOG_HTML_HEADER}」 칸에 파일 주소가 들어가지 않았습니다. 시트의 칸 설정(드롭다운 등)을 확인해 주세요.`);
+  }
+  // 이전 파일과 같은 이름의 파일(연결이 끊긴 것 포함)은 지우지 않고 휴지통으로만 보냅니다.
+  const same = folder.getFilesByName(name);
+  while (same.hasNext()) { const f = same.next(); if (f.getId() !== file.getId()) f.setTrashed(true); }
+  if (oldId && oldId !== file.getId()) { try { DriveApp.getFileById(oldId).setTrashed(true); } catch (e) {} }
   return { success: true, row: plan.row, name: name, size: html.length };
 }
 

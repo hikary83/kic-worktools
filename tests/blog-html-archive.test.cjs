@@ -18,10 +18,13 @@ function setup() {
     [75, '2026-12-15 (화)', '01_이론', '2026년 측정/품질 이슈 총결산', '', '', '', '']
   ];
   const width = () => Math.max(...grid.map(r => r.length));
+  // dropdown: 드롭다운 칸(목록에 없는 값은 버려짐, 설정을 풀면 받음) · stuck: 무엇을 해도 안 받는 칸
+  const dropdown = new Set(), stuck = new Set();
   const range = (r, c, h = 1, w = 1) => ({
     getValues: () => Array.from({ length: h }, (_, i) => Array.from({ length: w }, (_, j) => (grid[r - 1 + i] || [])[c - 1 + j] ?? '')),
     getValue: () => (grid[r - 1] || [])[c - 1] ?? '',
-    setValue(v) { while (grid[r - 1].length < c) grid[r - 1].push(''); grid[r - 1][c - 1] = v; return this; },
+    setValue(v) { if (dropdown.has(r + ',' + c) || stuck.has(r + ',' + c)) return this; while (grid[r - 1].length < c) grid[r - 1].push(''); grid[r - 1][c - 1] = v; return this; },
+    clearDataValidations() { dropdown.delete(r + ',' + c); return this; },
     setBackground() { return this; }, setFontWeight() { return this; }, setHorizontalAlignment() { return this; }
   });
   const sheet = { getLastRow: () => grid.length, getLastColumn: width, getMaxColumns: () => 26, insertColumnsAfter() {}, getRange: range };
@@ -36,7 +39,8 @@ function setup() {
   };
   const folders = [];
   const DriveApp = {
-    createFolder: name => { const id = 'folder' + folders.length + '0'.repeat(25), f = { name, getId: () => id, getUrl: () => 'https://drive.google.com/drive/folders/' + id, isTrashed: () => false, createFile: makeFile }; folders.push(f); return f; },
+    createFolder: name => { const id = 'folder' + folders.length + '0'.repeat(25), f = { name, getId: () => id, getUrl: () => 'https://drive.google.com/drive/folders/' + id, isTrashed: () => false, createFile: makeFile,
+      getFilesByName: n => { const list = Object.values(files).filter(x => x.getName() === n); return { hasNext: () => list.length > 0, next: () => list.shift() }; } }; folders.push(f); return f; },
     getFolderById: id => { const f = folders.find(x => x.getId() === id); if (!f) throw new Error('no folder'); return f; },
     getFileById: id => { if (!files[id]) throw new Error('no file'); return files[id]; }
   };
@@ -46,13 +50,13 @@ function setup() {
     Utilities: { formatDate: () => '2026-11-27 10:00:00', getUuid: () => '00000000-0000-0000-0000-000000000001', newBlob: (data, type, name) => ({ data, type, name }) },
     PropertiesService: { getScriptProperties: () => ({ getProperty: k => props[k] || null, setProperty: (k, v) => { props[k] = v; } }) },
     LockService: { getScriptLock: () => ({ waitLock() {}, tryLock: () => true, releaseLock() {} }) },
-    SpreadsheetApp: { openById: () => ({ getSheetByName: () => workSheet }) },
+    SpreadsheetApp: { openById: () => ({ getSheetByName: () => workSheet }), flush() {} },
     ContentService: { MimeType: { TEXT: 'text/plain' }, createTextOutput: text => ({ text, setMimeType() { return this; } }) }
   });
   vm.runInContext(source, context);
   Object.assign(context, { getBlogPostingSheet: () => sheet });
   const req = (action, data) => JSON.parse(context.doPost({ postData: { contents: JSON.stringify({ action, data, requestId: 'kic-test-blog-html-01' }) } }).text);
-  return { grid, files, folders, props, log, req, context };
+  return { grid, files, folders, props, log, req, context, dropdown, stuck };
 }
 
 test('저장하면 드라이브 폴더에 파일을 만들고 「원문 HTML」 열에 주소를 적는다', () => {
@@ -87,6 +91,33 @@ test('다시 올리면 새 파일로 바꾸고 이전 파일은 휴지통으로,
   assert.deepEqual(Object.values(f.files).map(x => x.isTrashed()), [true, false]);
   assert.equal(f.folders.length, 1);
   assert.match(f.req('getBlogPostHtml', { row: 3, date: '2026-12-15' }).data.html, /고친 본문/);
+});
+
+test('드롭다운 칸이면 그 칸 설정만 풀고 적는다 · 그래도 안 들어가면 실패로 답하고 새 파일은 휴지통으로', () => {
+  const f = setup();
+  f.grid[0].push('원문 HTML');
+  f.dropdown.add('3,9');
+  const ok = f.req('saveBlogPostHtml', { row: 3, date: '2026-12-15', html: HTML });
+  assert.equal(ok.success, true, ok.error);
+  assert.match(f.grid[2][8], /^https:\/\/drive\.google\.com\/file\/d\//);
+  f.stuck.add('2,9');
+  const bad = f.req('saveBlogPostHtml', { row: 2, date: '2026-12-01', html: HTML });
+  assert.match(bad.error, /2행 「원문 HTML」 칸에 파일 주소가 들어가지 않았습니다/);
+  assert.deepEqual(Object.values(f.files).map(x => x.isTrashed()), [false, true], '실패한 새 파일만 휴지통');
+});
+
+test('시트와 연결이 끊긴 같은 이름 파일은 다시 올릴 때 휴지통으로 보낸다', () => {
+  const f = setup();
+  f.grid[0].push('원문 HTML');
+  f.stuck.add('3,9');
+  f.req('saveBlogPostHtml', { row: 3, date: '2026-12-15', html: HTML });
+  f.stuck.delete('3,9');
+  const orphan = Object.values(f.files)[0];
+  orphan.setTrashed(false); // 예전 서버가 남긴, 시트와 연결 안 된 파일
+  const res = f.req('saveBlogPostHtml', { row: 3, date: '2026-12-15', html: HTML });
+  assert.equal(res.success, true, res.error);
+  assert.equal(orphan.isTrashed(), true);
+  assert.equal(Object.values(f.files).filter(x => !x.isTrashed()).length, 1);
 });
 
 test('행과 날짜가 다르거나 HTML 이 아니면 거절하고 아무것도 만들지 않는다', () => {
